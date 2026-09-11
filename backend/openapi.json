@@ -10,7 +10,7 @@
         "tags": [
           "health"
         ],
-        "summary": "El proceso está vivo",
+        "summary": "El proceso está vivo y qué versión corre",
         "operationId": "live_api_health_live_get",
         "responses": {
           "200": {
@@ -73,11 +73,16 @@
             "type": "string",
             "const": "ok",
             "title": "Status"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
           }
         },
         "type": "object",
         "required": [
-          "status"
+          "status",
+          "version"
         ],
         "title": "LivenessResponse"
       },

@@ -11,12 +11,14 @@ def _client(settings: Settings, *, database_reachable: bool = True) -> TestClien
     return TestClient(create_app(settings, database_probe=probe))
 
 
-def test_live_returns_ok(settings: Settings) -> None:
-    with _client(settings) as client:
+def test_live_returns_ok_and_running_version(settings: Settings) -> None:
+    deployed = settings.model_copy(update={"version": "abc123"})
+
+    with _client(deployed) as client:
         response = client.get("/api/health/live")
 
     assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"status": "ok"}
+    assert response.json() == {"status": "ok", "version": "abc123"}
 
 
 def test_ready_returns_ok_when_database_is_reachable(settings: Settings) -> None:
