@@ -3,17 +3,17 @@
 Cada fase es un corte vertical desplegable. No se empieza una fase con la anterior a medias.
 
 ## Fase 0: esqueleto andante (desplegado desde el día 1)
-* [ ] Scaffolding backend (uv, FastAPI, SQLAlchemy, Alembic) y frontend (Vite, React, TS)
-* [ ] Docker Compose: api, db, web; healthchecks; imágenes multi-stage sin root
+* [x] Scaffolding backend (uv, FastAPI, SQLAlchemy, Alembic) y frontend (Vite, React, TS)
+* [x] Docker Compose: api, db, web; healthchecks; imágenes multi-stage sin root
 * [x] Validación de mensajes de commit: hook local `commit-msg` y job de CI con el mismo script
 * [x] Escaneo de secretos en CI (gitleaks) y Dependabot para las acciones
-* [ ] CI: ruff, mypy, import-linter, pytest, tsc, eslint, vitest, pip-audit, npm audit, escaneo de imágenes
+* [x] CI: ruff, mypy, import-linter, pytest, tsc, eslint, vitest, pip-audit, npm audit, escaneo de imágenes
 * [ ] pre-commit con los mismos chequeos que la CI
 * [x] Protección de `main`: PR obligatorio, CI en verde, historial lineal
 * [x] Estrategia de ramas con nombres en español, validada en hook y en CI (ADR-0004)
 * [ ] CD: al mergear a `main`, build de imágenes, migraciones, despliegue y smoke test automáticos
-* [ ] Tipos TS generados desde OpenAPI
-* [ ] i18n base (es/en) y selector de idioma
+* [x] Tipos TS generados desde OpenAPI, con verificación de desvíos en CI
+* [x] i18n base (es/en) y selector de idioma
 * [ ] Deploy del "hola mundo" a un entorno público
 
 ## Fase 1: autenticación
