@@ -36,6 +36,12 @@ La aplicación queda en http://localhost:8080 y el estado de la API en http://lo
 * **Base de datos:** no se publica fuera de la red interna de Docker. Para conectarte desde tu máquina, creá un `docker-compose.override.yml` (ignorado por git) que agregue `ports: ["127.0.0.1:<puerto>:5432"]` al servicio `db`.
 * **Contrato de la API:** el backend publica su contrato en `backend/openapi.json` y el frontend genera sus tipos a partir de él. Si cambia un endpoint, regenerar con `uv run python -m rinde.openapi openapi.json` (en `backend/`) y `npm run generate:api` (en `frontend/`). La CI verifica que estén al día.
 
+## En producción
+
+Se publica automáticamente al integrar en `main` ([ADR-0005](docs/adr/0005-hosting-gratuito.md)): frontend en Cloudflare Workers, API en Render y PostgreSQL en Neon, todo en planes gratuitos. La imagen que se despliega es la misma que pasó el escaneo de vulnerabilidades.
+
+La API se suspende tras 15 minutos sin tráfico: el primer pedido después de una pausa puede tardar alrededor de un minuto.
+
 ## Decisiones de arquitectura
 
 Cada decisión importante está registrada con sus alternativas y costos en [docs/adr](docs/adr/README.md).
