@@ -149,9 +149,6 @@ blob-report/
 playwright/.cache/
 playwright/.auth/
 
-# Clientes generados desde OpenAPI (se regeneran en build y en CI)
-frontend/src/shared/api/generated/
-
 # =============================================================================
 # 5. Docker
 # =============================================================================

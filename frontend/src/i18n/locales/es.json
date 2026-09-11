@@ -1,0 +1,18 @@
+{
+  "app": {
+    "title": "Rinde",
+    "tagline": "¿Me rinde el sueldo?"
+  },
+  "health": {
+    "heading": "Estado del sistema",
+    "checking": "Consultando el estado…",
+    "ok": "La API y la base de datos están operativas.",
+    "unavailable": "La API responde, pero la base de datos no está disponible.",
+    "error": "No se pudo contactar a la API."
+  },
+  "language": {
+    "label": "Idioma",
+    "es": "Español",
+    "en": "English"
+  }
+}
