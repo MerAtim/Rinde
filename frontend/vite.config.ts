@@ -1,8 +1,10 @@
 import react from "@vitejs/plugin-react";
+import svgr from "vite-plugin-svgr";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  plugins: [react()],
+  // svgr convierte cada ícono en un componente: solo se empaquetan los que se importan.
+  plugins: [react(), svgr()],
   server: {
     // En desarrollo, /api va al backend local: mismo origen que en producción, sin CORS.
     proxy: { "/api": "http://localhost:8000" },

@@ -1,0 +1,4 @@
+/** Une nombres de clase e ignora los vacíos: `cx("a", cond && "b")`. */
+export function cx(...parts: (string | false | null | undefined)[]): string {
+  return parts.filter(Boolean).join(" ");
+}

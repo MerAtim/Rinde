@@ -1,0 +1,18 @@
+.iconButton {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--rinde-shape-full);
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.iconButton[data-focus-visible] {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
