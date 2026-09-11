@@ -10,6 +10,11 @@ export default defineConfig({
   test: {
     restoreMocks: true,
     unstubGlobals: true,
+    // material-color-utilities importa sus módulos sin extensión .js: Node no los
+    // resuelve, así que Vite los procesa igual que en el build.
+    server: { deps: { inline: ["@material/material-color-utilities"] } },
+    // Vitest devuelve vacío todo CSS que no figure acá; tokens.test.ts necesita leer los tokens.
+    css: { include: [/shared\/design\/tokens\.css/] },
     // Dos entornos: la app corre en el navegador (jsdom) y el Worker en el servidor (node).
     projects: [
       {
