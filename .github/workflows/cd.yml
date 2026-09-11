@@ -1,0 +1,158 @@
+name: CD
+
+# Despliegue continuo a producción (ADR-0005). Corre al integrar en main.
+# Los pasos de Render y Cloudflare se saltean hasta que existan las variables
+# RINDE_API_ORIGIN y RINDE_WEB_URL en el entorno produccion.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un despliegue nunca se cancela a mitad de camino: el siguiente espera su turno.
+concurrency:
+  group: cd-produccion
+  cancel-in-progress: false
+
+env:
+  IMAGEN: ghcr.io/meratim/rinde-api
+
+jobs:
+  imagen:
+    name: Imagen de la API
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.publicar.outputs.digest }}
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Construir la imagen con la versión del commit
+        run: docker build --build-arg "RINDE_VERSION=$GITHUB_SHA" --tag "$IMAGEN:sha-$GITHUB_SHA" --tag "$IMAGEN:main" backend
+
+      - name: Instalar Trivy
+        uses: ./.github/actions/instalar-trivy
+
+      - name: Escanear vulnerabilidades antes de publicar
+        run: trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed --no-progress "$IMAGEN:sha-$GITHUB_SHA"
+
+      - name: Publicar en GitHub Container Registry
+        id: publicar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          echo "$GH_TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+          docker push --quiet "$IMAGEN:sha-$GITHUB_SHA"
+          docker push --quiet "$IMAGEN:main"
+          referencia="$(docker inspect --format '{{index .RepoDigests 0}}' "$IMAGEN:sha-$GITHUB_SHA")"
+          echo "digest=${referencia#*@}" >> "$GITHUB_OUTPUT"
+          docker logout ghcr.io
+
+  migraciones:
+    name: Migraciones
+    needs: imagen
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: produccion
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Aplicar migraciones con la misma imagen que se va a desplegar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTOR: ${{ github.actor }}
+          DIGEST: ${{ needs.imagen.outputs.digest }}
+          RINDE_DATABASE_URL: ${{ secrets.RINDE_DATABASE_URL }}
+        run: |
+          test -n "$RINDE_DATABASE_URL" || { echo "::error::Falta el secreto RINDE_DATABASE_URL en el entorno produccion"; exit 1; }
+          echo "$GH_TOKEN" | docker login ghcr.io --username "$ACTOR" --password-stdin
+          docker run --rm --env RINDE_DATABASE_URL "$IMAGEN@$DIGEST" alembic upgrade head
+          docker logout ghcr.io
+
+  api:
+    name: Despliegue de la API
+    needs: [imagen, migraciones]
+    if: vars.RINDE_API_ORIGIN != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: produccion
+    steps:
+      - name: Pedir a Render que despliegue la imagen escaneada
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          REFERENCIA: ${{ env.IMAGEN }}@${{ needs.imagen.outputs.digest }}
+        run: |
+          test -n "$HOOK" || { echo "::error::Falta el secreto RENDER_DEPLOY_HOOK_URL en el entorno produccion"; exit 1; }
+          curl -fsS -X POST --get --data-urlencode "imgURL=$REFERENCIA" "$HOOK" > /dev/null
+
+      - name: Esperar a que la API informe la versión nueva
+        env:
+          API: ${{ vars.RINDE_API_ORIGIN }}
+        run: |
+          for intento in $(seq 1 40); do
+            version="$(curl -fsS --max-time 10 "$API/api/health/live" | jq -r '.version' || true)"
+            if [ "$version" = "$GITHUB_SHA" ]; then
+              echo "La API corre la versión $GITHUB_SHA"
+              exit 0
+            fi
+            echo "Intento $intento: la API informa ${version:-sin respuesta}"
+            sleep 15
+          done
+          echo "::error::La API no informó la versión nueva a tiempo"
+          exit 1
+
+  web:
+    name: Despliegue del frontend
+    needs: api
+    if: vars.RINDE_API_ORIGIN != '' && vars.RINDE_WEB_URL != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: produccion
+      url: ${{ vars.RINDE_WEB_URL }}
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Instalar Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias y compilar
+        run: |
+          npm ci
+          npm run build
+
+      - name: Publicar en Cloudflare Workers
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          API_ORIGIN: ${{ vars.RINDE_API_ORIGIN }}
+        run: npx wrangler deploy --var "API_ORIGIN:$API_ORIGIN"
+
+      - name: Prueba de humo contra la URL pública
+        env:
+          WEB: ${{ vars.RINDE_WEB_URL }}
+        run: |
+          curl -fsS "$WEB/" | grep -q '<div id="root"></div>'
+          curl -fsSI "$WEB/" | grep -qi '^content-security-policy:'
+          curl -fsS --retry 5 --retry-delay 10 --retry-all-errors "$WEB/api/health/ready" | jq -e '.status == "ok"'
