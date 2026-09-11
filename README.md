@@ -24,10 +24,13 @@ Cada decisión importante está registrada con sus alternativas y costos en [doc
 
 ## Convenciones
 
-Los mensajes de commit siguen [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/) con descripción en español. Para validarlos en tu clon antes de cada commit:
+* **Ramas:** GitHub Flow. Todo cambio entra a `main` por pull request desde una rama con nombre en español, por ejemplo `funcionalidad/12-importacion-csv` ([ADR-0004](docs/adr/0004-estrategia-de-ramas.md)).
+* **Commits:** [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/) con descripción en español.
+
+Para validar ambas cosas en tu clon antes de commitear y de pushear:
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-La CI aplica la misma validación y escanea el historial en busca de secretos.
+La CI aplica las mismas validaciones y escanea el historial en busca de secretos.

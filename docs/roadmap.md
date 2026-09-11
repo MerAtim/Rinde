@@ -9,7 +9,8 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * [x] Escaneo de secretos en CI (gitleaks) y Dependabot para las acciones
 * [ ] CI: ruff, mypy, import-linter, pytest, tsc, eslint, vitest, pip-audit, npm audit, escaneo de imágenes
 * [ ] pre-commit con los mismos chequeos que la CI
-* [ ] Protección de `main`: PR obligatorio, CI en verde, historial lineal
+* [x] Protección de `main`: PR obligatorio, CI en verde, historial lineal
+* [x] Estrategia de ramas con nombres en español, validada en hook y en CI (ADR-0004)
 * [ ] CD: al mergear a `main`, build de imágenes, migraciones, despliegue y smoke test automáticos
 * [ ] Tipos TS generados desde OpenAPI
 * [ ] i18n base (es/en) y selector de idioma
