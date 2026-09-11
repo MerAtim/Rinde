@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Hook local: bloquea pushes directos a main y ramas fuera de convención.
+# Git pasa por stdin una línea por referencia:
+#   <ref local> <sha local> <ref remota> <sha remoto>
+set -euo pipefail
+
+raiz="$(git rev-parse --show-toplevel)"
+
+while read -r _ref_local sha_local ref_remota _sha_remoto; do
+  [[ "$ref_remota" == refs/heads/* ]] || continue
+  [[ "$sha_local" =~ ^0+$ ]] && continue # borrado de una rama remota
+
+  rama="${ref_remota#refs/heads/}"
+  if [[ "$rama" == "main" ]]; then
+    echo "main solo recibe cambios por pull request. Creá una rama: git switch -c <tipo>/<descripcion>" >&2
+    exit 1
+  fi
+  "$raiz/scripts/check-branch-name.sh" "$rama"
+done
