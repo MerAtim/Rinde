@@ -1,124 +1,88 @@
-:root {
-  color-scheme: light dark;
-  --color-bg: #f7f7f5;
-  --color-surface: #ffffff;
-  --color-text: #1c1c1a;
-  --color-muted: #5f5f5a;
-  --color-border: #e2e2dc;
-  --color-ok: #1f7a4d;
-  --color-warning: #8a5700;
-  --color-error: #b3261e;
-
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
-  line-height: 1.5;
-  background: var(--color-bg);
-  color: var(--color-text);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #151514;
-    --color-surface: #1f1f1d;
-    --color-text: #ecece8;
-    --color-muted: #a3a39c;
-    --color-border: #33332f;
-    --color-ok: #5fcf92;
-    --color-warning: #f0b44c;
-    --color-error: #f2857c;
-  }
-}
-
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 2px;
-}
+/* Estilos de la pantalla inicial. Todo valor visual sale de los tokens. */
 
 .app-header,
 .app-main {
-  max-width: 48rem;
-  margin: 0 auto;
-  padding-inline: 1rem;
+  max-width: 64rem;
+  margin-inline: auto;
+  padding-inline: var(--rinde-space-4);
 }
 
 .app-header {
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
-  align-items: center;
+  gap: var(--rinde-space-4);
+  align-items: flex-end;
   justify-content: space-between;
-  padding-block: 2rem 1rem;
+  padding-block: var(--rinde-space-8) var(--rinde-space-6);
 }
 
 .app-header h1 {
-  margin: 0;
-  font-size: 2rem;
+  font: 500 clamp(40px, 6vw, 57px) / 1.12 var(--md-ref-typeface-brand);
+  letter-spacing: -0.035em;
 }
 
 .tagline {
-  margin: 0;
-  color: var(--color-muted);
+  margin-top: var(--rinde-space-2);
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 18px/28px var(--md-ref-typeface-plain);
 }
 
 .app-main {
-  padding-bottom: 2rem;
+  padding-bottom: var(--rinde-space-8);
 }
 
 .card {
-  padding: 1.25rem 1.5rem;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: 0.75rem;
+  display: grid;
+  gap: var(--rinde-space-2);
+  padding: var(--rinde-space-5);
+  border-radius: var(--rinde-shape-card);
+  background: var(--md-sys-color-surface-container);
+  box-shadow:
+    var(--md-sys-elevation-level2),
+    inset 0 1px 0 var(--rinde-edge-light);
 }
 
 .card h2 {
-  margin-top: 0;
-  font-size: 1.125rem;
+  color: var(--md-sys-color-on-surface-variant);
+  font: 600 12px/16px var(--md-ref-typeface-plain);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .status {
-  margin: 0;
-  font-weight: 500;
+  font: 500 18px/26px var(--md-ref-typeface-plain);
 }
 
 .status--neutral {
-  color: var(--color-muted);
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 .status--ok {
-  color: var(--color-ok);
+  color: var(--md-sys-color-primary);
 }
 
 .status--warning {
-  color: var(--color-warning);
+  color: var(--rinde-warning);
 }
 
 .status--error {
-  color: var(--color-error);
+  color: var(--md-sys-color-error);
 }
 
 .language-selector {
   display: inline-flex;
-  gap: 0.5rem;
+  gap: var(--rinde-space-2);
   align-items: center;
+  color: var(--md-sys-color-on-surface-variant);
+  font: 600 14px/20px var(--md-ref-typeface-plain);
 }
 
 .language-selector select {
-  padding: 0.25rem 0.5rem;
-  font: inherit;
-  border-radius: 0.375rem;
+  height: 40px;
+  padding-inline: var(--rinde-space-3);
+  border: 0;
+  border-radius: var(--rinde-shape-field);
+  background: var(--md-sys-color-surface-container-high);
+  box-shadow: inset 0 0 0 1px var(--md-sys-color-outline);
+  color: var(--md-sys-color-on-surface);
 }
