@@ -1,0 +1,48 @@
+# Plantilla de nginx: al iniciar, la imagen reemplaza ${API_UPSTREAM} por la
+# variable de entorno del mismo nombre.
+server {
+    listen 8080;
+    server_name _;
+    server_tokens off;
+    root /usr/share/nginx/html;
+
+    gzip on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
+    # Cabeceras de seguridad para todas las respuestas.
+    add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+    add_header Cross-Origin-Opener-Policy "same-origin" always;
+
+    # Chequeo de salud del contenedor.
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # La API se sirve en el mismo origen: el navegador no necesita CORS.
+    location /api/ {
+        proxy_pass ${API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Archivos con hash en el nombre: se pueden cachear por un año.
+    location /assets/ {
+        expires 1y;
+        try_files $uri =404;
+    }
+
+    # Aplicación de una sola página: toda ruta desconocida carga index.html, sin caché.
+    location / {
+        expires -1;
+        try_files $uri /index.html;
+    }
+}
