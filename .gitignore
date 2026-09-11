@@ -1,0 +1,196 @@
+# =============================================================================
+# Rinde: .gitignore
+# Criterio: seguro por defecto. Todo lo que pueda contener secretos o datos
+# financieros se ignora globalmente y solo se permite por excepción explícita.
+# Complemento obligatorio: .dockerignore en cada contexto de build (el
+# .gitignore NO impide que un `COPY . .` meta un .env dentro de una imagen).
+# =============================================================================
+
+# =============================================================================
+# 1. Secretos y variables de entorno
+# =============================================================================
+.env
+.env.*
+*.env
+!.env.example
+!**/.env.example
+
+secrets/
+**/secrets/
+*.secret
+*.secrets
+credentials*.json
+service-account*.json
+client_secret*.json
+
+# Claves y certificados
+*.pem
+*.key
+*.crt
+*.cer
+*.der
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.gpg
+*.asc
+id_rsa*
+id_ed25519*
+id_ecdsa*
+
+# Configuración de gestores de paquetes con tokens de publicación o registro
+.npmrc
+.yarnrc
+.pypirc
+.netrc
+pip.conf
+
+# =============================================================================
+# 2. Datos financieros y personales (nunca al repositorio)
+#    Los fixtures de test son sintéticos o anonimizados y viven en las rutas
+#    permitidas abajo.
+# =============================================================================
+*.csv
+*.tsv
+*.ofx
+*.qfx
+*.qif
+*.xls
+*.xlsx
+*.ods
+# Excepción acotada a formatos de datos: un secreto dentro de fixtures
+# sigue ignorado por la sección 1.
+!backend/tests/fixtures/**/*.csv
+!backend/tests/fixtures/**/*.ofx
+!backend/tests/fixtures/**/*.xlsx
+!frontend/tests/fixtures/**/*.csv
+
+data/
+imports/
+uploads/
+media/
+exports/
+private/
+
+# Dumps y volúmenes de base de datos
+*.dump
+*.backup
+*.bak
+*.sqlite
+*.sqlite3
+*.db
+pgdata/
+postgres-data/
+
+# =============================================================================
+# 3. Python (uv, FastAPI, pytest, ruff, mypy)
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+.venv/
+venv/
+env/
+
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+pip-wheel-metadata/
+
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+junit*.xml
+.hypothesis/
+.tox/
+.nox/
+
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyright/
+.ruff_cache/
+.import_linter_cache/
+
+# =============================================================================
+# 4. Node, Vite, React, TypeScript
+# =============================================================================
+node_modules/
+.pnpm-store/
+.yarn/
+
+frontend/dist/
+frontend/dist-ssr/
+.vite/
+*.tsbuildinfo
+*.local
+
+.eslintcache
+.stylelintcache
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Vitest y Playwright
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+playwright/.auth/
+
+# Clientes generados desde OpenAPI (se regeneran en build y en CI)
+frontend/src/shared/api/generated/
+
+# =============================================================================
+# 5. Docker
+# =============================================================================
+docker-compose.override.yml
+compose.override.yml
+.docker/
+
+# =============================================================================
+# 6. Logs y temporales
+# =============================================================================
+logs/
+*.log
+tmp/
+temp/
+*.tmp
+*.pid
+
+# =============================================================================
+# 7. Editores y sistema operativo
+# =============================================================================
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.iml
+*.swp
+*.swo
+*~
+
+# Windows
+Thumbs.db
+ehthumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+._*
+
+# Linux
+.directory
+.Trash-*
