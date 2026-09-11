@@ -1,8 +1,8 @@
 name: CD
 
 # Despliegue continuo a producción (ADR-0005). Corre al integrar en main.
-# Los pasos de Render y Cloudflare se saltean hasta que existan las variables
-# RINDE_API_ORIGIN y RINDE_WEB_URL en el entorno produccion.
+# Si falta un secreto o una variable del entorno produccion, el paso falla con
+# un mensaje claro: un despliegue nunca se saltea en silencio.
 
 on:
   push:
@@ -83,7 +83,6 @@ jobs:
   api:
     name: Despliegue de la API
     needs: [imagen, migraciones]
-    if: vars.RINDE_API_ORIGIN != ''
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment: produccion
@@ -91,8 +90,10 @@ jobs:
       - name: Pedir a Render que despliegue la imagen escaneada
         env:
           HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+          API: ${{ vars.RINDE_API_ORIGIN }}
           REFERENCIA: ${{ env.IMAGEN }}@${{ needs.imagen.outputs.digest }}
         run: |
+          test -n "$API" || { echo "::error::Falta la variable RINDE_API_ORIGIN en el entorno produccion"; exit 1; }
           test -n "$HOOK" || { echo "::error::Falta el secreto RENDER_DEPLOY_HOOK_URL en el entorno produccion"; exit 1; }
           curl -fsS -X POST --get --data-urlencode "imgURL=$REFERENCIA" "$HOOK" > /dev/null
 
@@ -115,7 +116,6 @@ jobs:
   web:
     name: Despliegue del frontend
     needs: api
-    if: vars.RINDE_API_ORIGIN != '' && vars.RINDE_WEB_URL != ''
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     environment:
@@ -147,12 +147,16 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           API_ORIGIN: ${{ vars.RINDE_API_ORIGIN }}
-        run: npx wrangler deploy --var "API_ORIGIN:$API_ORIGIN"
+        run: |
+          test -n "$CLOUDFLARE_API_TOKEN" || { echo "::error::Falta el secreto CLOUDFLARE_API_TOKEN en el entorno produccion"; exit 1; }
+          test -n "$CLOUDFLARE_ACCOUNT_ID" || { echo "::error::Falta la variable CLOUDFLARE_ACCOUNT_ID en el entorno produccion"; exit 1; }
+          npx wrangler deploy --var "API_ORIGIN:$API_ORIGIN"
 
       - name: Prueba de humo contra la URL pública
         env:
           WEB: ${{ vars.RINDE_WEB_URL }}
         run: |
+          test -n "$WEB" || { echo "::error::Falta la variable RINDE_WEB_URL en el entorno produccion"; exit 1; }
           curl -fsS "$WEB/" | grep -q '<div id="root"></div>'
           curl -fsSI "$WEB/" | grep -qi '^content-security-policy:'
           curl -fsS --retry 5 --retry-delay 10 --retry-all-errors "$WEB/api/health/ready" | jq -e '.status == "ok"'
