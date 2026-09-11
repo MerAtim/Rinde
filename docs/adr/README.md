@@ -8,3 +8,4 @@
 | [0004](0004-estrategia-de-ramas.md) | Estrategia de ramas | Aceptado | 2026-09-11 |
 | [0005](0005-hosting-gratuito.md) | Hosting gratuito con Cloudflare, Render y Neon | Aceptado | 2026-09-11 |
 | [0006](0006-sistema-de-diseno.md) | Sistema de diseño propio sobre Material 3 | Aceptado | 2026-09-11 |
+| [0007](0007-autenticacion.md) | Autenticación con usuario, contraseña y código de recuperación | Aceptado | 2026-09-11 |
