@@ -1,0 +1,9 @@
+# Lista de permitidos: todo queda afuera salvo lo que la imagen necesita.
+# Así nunca entra un .env, un .venv ni un archivo local por accidente.
+**
+!pyproject.toml
+!uv.lock
+!src/
+!alembic.ini
+!migrations/
+**/__pycache__
