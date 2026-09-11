@@ -1,0 +1,18 @@
+{
+  "app": {
+    "title": "Rinde",
+    "tagline": "Does my salary last the month?"
+  },
+  "health": {
+    "heading": "System status",
+    "checking": "Checking status…",
+    "ok": "The API and the database are up.",
+    "unavailable": "The API responds, but the database is unavailable.",
+    "error": "Could not reach the API."
+  },
+  "language": {
+    "label": "Language",
+    "es": "Español",
+    "en": "English"
+  }
+}
