@@ -11,10 +11,10 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * [ ] pre-commit con los mismos chequeos que la CI
 * [x] Protección de `main`: PR obligatorio, CI en verde, historial lineal
 * [x] Estrategia de ramas con nombres en español, validada en hook y en CI (ADR-0004)
-* [ ] CD: al mergear a `main`, build de imágenes, migraciones, despliegue y smoke test automáticos
+* [x] CD: al mergear a `main`, build de imágenes, migraciones, despliegue y smoke test automáticos
 * [x] Tipos TS generados desde OpenAPI, con verificación de desvíos en CI
 * [x] i18n base (es/en) y selector de idioma
-* [ ] Deploy del "hola mundo" a un entorno público
+* [x] Deploy del "hola mundo" a un entorno público: https://rinde.meratim.workers.dev
 
 ## Fase 1: autenticación
 * [ ] Registro/login, argon2id, access token corto + refresh rotativo en cookie httpOnly, CSRF

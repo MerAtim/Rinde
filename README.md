@@ -40,7 +40,9 @@ La aplicación queda en http://localhost:8080 y el estado de la API en http://lo
 
 Se publica automáticamente al integrar en `main` ([ADR-0005](docs/adr/0005-hosting-gratuito.md)): frontend en Cloudflare Workers, API en Render y PostgreSQL en Neon, todo en planes gratuitos. La imagen que se despliega es la misma que pasó el escaneo de vulnerabilidades.
 
-La API se suspende tras 15 minutos sin tráfico: el primer pedido después de una pausa puede tardar alrededor de un minuto.
+**Dirección pública:** https://rinde.meratim.workers.dev
+
+La API corre en una instancia gratuita de Render (0,1 CPU, 512 MB de RAM) que se suspende tras 15 minutos sin tráfico: el primer pedido después de una pausa puede tardar alrededor de un minuto.
 
 ## Decisiones de arquitectura
 
