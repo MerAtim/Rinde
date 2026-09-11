@@ -11,7 +11,7 @@ export interface paths {
       path?: never;
       cookie?: never;
     };
-    /** El proceso está vivo */
+    /** El proceso está vivo y qué versión corre */
     get: operations["live_api_health_live_get"];
     put?: never;
     post?: never;
@@ -51,6 +51,8 @@ export interface components {
        * @constant
        */
       status: "ok";
+      /** Version */
+      version: string;
     };
     /** ReadinessResponse */
     ReadinessResponse: {

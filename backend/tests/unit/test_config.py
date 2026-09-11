@@ -28,3 +28,11 @@ def test_reads_configuration_from_environment(monkeypatch: pytest.MonkeyPatch) -
     assert settings.database_url.get_secret_value() == SECRET_URL
     assert settings.is_production
     get_settings.cache_clear()
+
+
+def test_version_defaults_to_dev_and_reads_environment(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert Settings(database_url=SecretStr(SECRET_URL)).version == "dev"
+
+    monkeypatch.setenv("RINDE_VERSION", "abc123")
+
+    assert Settings(database_url=SecretStr(SECRET_URL)).version == "abc123"

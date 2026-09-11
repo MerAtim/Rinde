@@ -44,6 +44,7 @@ def create_app(
         docs_url=f"{API_PREFIX}/docs" if docs_enabled else None,
         redoc_url=None,
     )
+    app.state.version = settings.version
     app.state.check_readiness = CheckReadiness(database_probe)
     app.include_router(health_router, prefix=API_PREFIX)
     return app

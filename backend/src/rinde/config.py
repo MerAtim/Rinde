@@ -16,6 +16,8 @@ class Settings(BaseSettings):
 
     environment: Literal["development", "test", "production"] = "development"
     database_url: SecretStr
+    # Commit desplegado; lo fija la imagen de producción. Permite verificar qué versión corre.
+    version: str = "dev"
 
     @field_validator("database_url")
     @classmethod

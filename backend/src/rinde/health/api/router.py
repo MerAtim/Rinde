@@ -18,6 +18,7 @@ type ComponentStatus = Literal["ok", "unavailable"]
 
 class LivenessResponse(BaseModel):
     status: Literal["ok"]
+    version: str
 
 
 class ReadinessResponse(BaseModel):
@@ -33,13 +34,21 @@ def get_check_readiness(request: Request) -> CheckReadiness:
     return use_case
 
 
+def get_version(request: Request) -> str:
+    version = request.app.state.version
+    if not isinstance(version, str):
+        msg = "La versión no está configurada en app.state"
+        raise TypeError(msg)
+    return version
+
+
 def _status(ok: bool) -> ComponentStatus:
     return "ok" if ok else "unavailable"
 
 
-@router.get("/live", summary="El proceso está vivo")
-async def live() -> LivenessResponse:
-    return LivenessResponse(status="ok")
+@router.get("/live", summary="El proceso está vivo y qué versión corre")
+async def live(version: Annotated[str, Depends(get_version)]) -> LivenessResponse:
+    return LivenessResponse(status="ok", version=version)
 
 
 @router.get(
