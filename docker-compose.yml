@@ -1,0 +1,73 @@
+name: rinde
+
+# Entorno local completo: base de datos, migraciones, API y frontend.
+# Uso: copiar .env.example a .env, completar y ejecutar `docker compose up --build`.
+# Solo el frontend se publica, y únicamente en la interfaz local (127.0.0.1).
+
+x-hardening: &hardening
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+
+x-api-environment: &api-environment
+  RINDE_ENVIRONMENT: ${RINDE_ENVIRONMENT:-development}
+  RINDE_DATABASE_URL: postgresql+psycopg://rinde:${POSTGRES_PASSWORD:?Definí POSTGRES_PASSWORD en .env}@db:5432/rinde
+
+services:
+  db:
+    image: postgres:18-alpine@sha256:d3e1620b530c944afa6e887d22eb899824da68e19c52024bf98f5220c88a65b2
+    environment:
+      POSTGRES_DB: rinde
+      POSTGRES_USER: rinde
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Definí POSTGRES_PASSWORD en .env}
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rinde -d rinde"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  migrate:
+    build: ./backend
+    image: rinde/api:local
+    command: ["alembic", "upgrade", "head"]
+    environment: *api-environment
+    depends_on:
+      db:
+        condition: service_healthy
+    <<: *hardening
+    restart: "no"
+
+  api:
+    build: ./backend
+    image: rinde/api:local
+    environment: *api-environment
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    <<: *hardening
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
+
+  web:
+    build: ./frontend
+    image: rinde/web:local
+    ports:
+      - "127.0.0.1:${RINDE_WEB_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    <<: *hardening
+    tmpfs:
+      - /tmp:uid=101,gid=101
+      - /var/cache/nginx:uid=101,gid=101
+      - /etc/nginx/conf.d:uid=101,gid=101
+    restart: unless-stopped
+
+volumes:
+  pgdata:
