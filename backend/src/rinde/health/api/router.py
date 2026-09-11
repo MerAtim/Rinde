@@ -46,11 +46,14 @@ def _status(ok: bool) -> ComponentStatus:
     return "ok" if ok else "unavailable"
 
 
+# HEAD se acepta para monitores de disponibilidad; no se publica en el contrato.
+@router.head("/live", include_in_schema=False)
 @router.get("/live", summary="El proceso está vivo y qué versión corre")
 async def live(version: Annotated[str, Depends(get_version)]) -> LivenessResponse:
     return LivenessResponse(status="ok", version=version)
 
 
+@router.head("/ready", include_in_schema=False)
 @router.get(
     "/ready",
     summary="La API puede atender pedidos",
