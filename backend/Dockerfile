@@ -31,6 +31,12 @@ COPY migrations ./migrations
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
+# Commit de origen: /api/health/live lo informa para verificar qué versión corre.
+ARG RINDE_VERSION=dev
+ENV RINDE_VERSION=$RINDE_VERSION
+LABEL org.opencontainers.image.source="https://github.com/MerAtim/Rinde" \
+      org.opencontainers.image.description="API de Rinde" \
+      org.opencontainers.image.revision=$RINDE_VERSION
 USER rinde
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=10s --retries=3 \
