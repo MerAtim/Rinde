@@ -38,7 +38,15 @@ if [[ -n "$(printf '%s\n' "$mensaje" | sed -n '2p')" ]]; then
   errores+=("La segunda línea debe quedar vacía para separar asunto y cuerpo.")
 fi
 
-if printf '%s\n' "$mensaje" | awk 'length($0) > 72 && $0 !~ /https?:\/\//' | grep -q .; then
+# Se cuenta en caracteres con bash (LC_ALL=C.UTF-8): awk cuenta bytes en algunas
+# plataformas y una línea con tildes podría pasar en local y fallar en CI.
+linea_larga=false
+while IFS= read -r linea; do
+  if (( ${#linea} > 72 )) && [[ "$linea" != *http://* && "$linea" != *https://* ]]; then
+    linea_larga=true
+  fi
+done <<< "$mensaje"
+if [[ "$linea_larga" == true ]]; then
   errores+=("Hay líneas del cuerpo con más de 72 caracteres.")
 fi
 
