@@ -125,6 +125,9 @@ jobs:
       - name: Migraciones
         run: uv run alembic upgrade head
 
+      - name: Migraciones al día con el modelo
+        run: uv run alembic check
+
       - name: Tests con cobertura
         run: uv run pytest --cov --cov-report=term-missing
 
