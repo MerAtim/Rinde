@@ -5,7 +5,9 @@ description = "API de Rinde: finanzas personales para Argentina y LatAm."
 requires-python = ">=3.14"
 dependencies = [
     "alembic>=1.19.2",
+    "argon2-cffi>=25.1.0",
     "fastapi>=0.141.1",
+    "httpx>=0.28.1",
     "psycopg[binary]>=3.3.5",
     "pydantic-settings>=2.15.0",
     "sqlalchemy[asyncio]>=2.0.52",
@@ -55,6 +57,8 @@ select = [
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S105", "S106", "PLR2004"]
+# Alembic nombra las migraciones con la fecha al principio: no son módulos importables.
+"migrations/versions/**" = ["N999"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["rinde", "tests"]
@@ -97,11 +101,11 @@ include_external_packages = true
 [[tool.importlinter.contracts]]
 name = "Capas de cada módulo: api e infraestructura dependen de aplicación, nunca al revés"
 type = "layers"
-containers = ["rinde.health"]
+containers = ["rinde.health", "rinde.auth"]
 layers = ["api | infrastructure", "application", "(domain)"]
 
 [[tool.importlinter.contracts]]
 name = "Aplicación y dominio no dependen de frameworks ni de infraestructura"
 type = "forbidden"
-source_modules = ["rinde.health.application"]
-forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic", "httpx"]
+source_modules = ["rinde.health.application", "rinde.auth.application", "rinde.auth.domain"]
+forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic", "httpx", "argon2"]

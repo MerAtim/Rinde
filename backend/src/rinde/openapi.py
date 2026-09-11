@@ -8,10 +8,12 @@ verifica que coincida con el código.
 
 import json
 import sys
+from contextlib import AbstractAsyncContextManager
 from pathlib import Path
 
 from pydantic import SecretStr
 
+from rinde.auth.application.unit import AuthUnit
 from rinde.config import Settings
 from rinde.main import create_app
 
@@ -24,12 +26,22 @@ class _UnusedDatabaseProbe:
         raise AssertionError(msg)
 
 
+class _UnusedAuthFactory:
+    """Exportar el contrato no abre sesiones ni conexiones."""
+
+    def __call__(self) -> AbstractAsyncContextManager[AuthUnit]:  # pragma: no cover
+        msg = "La autenticación no se usa al exportar el contrato"
+        raise AssertionError(msg)
+
+
 def export(path: Path) -> None:
     settings = Settings(
         environment="development",
         database_url=SecretStr("postgresql+psycopg://openapi@localhost/openapi"),
     )
-    app = create_app(settings, database_probe=_UnusedDatabaseProbe())
+    app = create_app(
+        settings, database_probe=_UnusedDatabaseProbe(), auth_factory=_UnusedAuthFactory()
+    )
     contract = json.dumps(app.openapi(), indent=2, ensure_ascii=False)
     # Siempre LF, también en Windows: el archivo se compara byte a byte en CI.
     path.write_text(f"{contract}\n", encoding="utf-8", newline="\n")
