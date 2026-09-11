@@ -1,0 +1,107 @@
+[project]
+name = "rinde"
+version = "0.1.0"
+description = "API de Rinde: finanzas personales para Argentina y LatAm."
+requires-python = ">=3.14"
+dependencies = [
+    "alembic>=1.19.2",
+    "fastapi>=0.141.1",
+    "psycopg[binary]>=3.3.5",
+    "pydantic-settings>=2.15.0",
+    "sqlalchemy[asyncio]>=2.0.52",
+    "uvicorn[standard]>=0.52.4",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.5,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.12.0",
+    "import-linter>=2.15",
+    "mypy>=2.3.1",
+    "pip-audit>=2.10.1",
+    "pytest>=9.1.1",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.16.7",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "E", "W",  # estilo (pycodestyle)
+    "F",       # errores (pyflakes)
+    "I",       # orden de imports
+    "N",       # nombres
+    "UP",      # sintaxis moderna
+    "B",       # errores probables
+    "S",       # seguridad (bandit)
+    "ASYNC",   # errores de código asíncrono
+    "C4",      # comprensiones
+    "SIM",     # simplificaciones
+    "RET",     # returns
+    "PTH",     # pathlib en lugar de os.path
+    "DTZ",     # fechas sin zona horaria
+    "T20",     # print olvidados
+    "ERA",     # código comentado
+    "PT",      # buenas prácticas de pytest
+    "PL",      # pylint
+    "RUF",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "PLR2004"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["rinde", "tests"]
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["src", "tests", "migrations"]
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = ["--import-mode=importlib", "--strict-markers", "--strict-config", "-ra"]
+markers = ["integration: requiere un PostgreSQL real en RINDE_DATABASE_URL"]
+filterwarnings = [
+    "error",
+    # Dependencia externa: starlette.testclient todavía usa un alias que anyio marcó obsoleto.
+    "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning",
+]
+
+[tool.coverage.run]
+source = ["rinde"]
+branch = true
+
+[tool.coverage.report]
+fail_under = 90
+show_missing = true
+skip_covered = true
+
+# Arquitectura verificable (ADR-0001): la CI falla si una capa importa otra que no debe.
+[tool.importlinter]
+root_package = "rinde"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Capas de cada módulo: api e infraestructura dependen de aplicación, nunca al revés"
+type = "layers"
+containers = ["rinde.health"]
+layers = ["api | infrastructure", "application", "(domain)"]
+
+[[tool.importlinter.contracts]]
+name = "Aplicación y dominio no dependen de frameworks ni de infraestructura"
+type = "forbidden"
+source_modules = ["rinde.health.application"]
+forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic", "httpx"]
