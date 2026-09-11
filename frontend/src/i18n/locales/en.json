@@ -29,5 +29,95 @@
   "theme": {
     "toLight": "Switch to light mode",
     "toDark": "Switch to dark mode"
+  },
+  "auth": {
+    "brand": {
+      "label": "About Rinde",
+      "privacy": "No email and no personal data: just a username.",
+      "security": "Passwords handled the way NIST recommends.",
+      "currencies": "Pesos, dollars and installments in one place.",
+      "footnote": "Each square is a day of the month: aqua ones are covered by your salary."
+    },
+    "fields": {
+      "username": "Username",
+      "usernameHelp": "3 to 30 characters: letters, numbers, dot, hyphen or underscore.",
+      "password": "Password",
+      "newPassword": "New password",
+      "passwordHelp": "{{length}} of at least {{min}} characters. A phrase is safer and easier to remember: “my cat eats noodles on tuesdays”.",
+      "recoveryCode": "Recovery code",
+      "recoveryCodeHelp": "20 letters and numbers. You can type it with or without hyphens."
+    },
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "signup": {
+      "title": "Create your account",
+      "subtitle": "No email and no personal data: just a username and a phrase you remember.",
+      "submit": "Create account",
+      "submitting": "Creating account…",
+      "haveAccount": "Already have an account?",
+      "goLogin": "Sign in"
+    },
+    "login": {
+      "title": "Sign in to Rinde",
+      "subtitle": "With your username and password.",
+      "submit": "Sign in",
+      "submitting": "Signing in…",
+      "forgot": "Forgot your password?",
+      "goRecover": "Use your recovery code",
+      "noAccount": "No account yet?",
+      "goSignup": "Create one"
+    },
+    "recover": {
+      "title": "Recover your account",
+      "subtitle": "With the code you saved when you created it. You will choose a new password and every open session will be closed.",
+      "submit": "Change password",
+      "submitting": "Changing password…",
+      "back": "Back to sign in"
+    },
+    "code": {
+      "titleNew": "Save your recovery code",
+      "titleRotated": "Save your new code",
+      "explain": "It is the only way to recover your account if you forget your password. We will not show it again.",
+      "rotatedNote": "Your previous code no longer works.",
+      "label": "Your recovery code",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Could not copy it. Select the code and copy it manually.",
+      "download": "Download",
+      "fileName": "rinde-recovery-code.txt",
+      "fileText": "Rinde recovery code for user {{username}}:\n\n{{code}}\n\nKeep it somewhere safe. It lets you choose a new password if you forget the current one. Every time you use it, Rinde will give you a new one.\n",
+      "confirm": "I saved the code somewhere safe",
+      "continue": "Continue"
+    },
+    "home": {
+      "greeting": "Hi, {{username}}",
+      "logout": "Sign out"
+    },
+    "session": {
+      "loading": "Loading",
+      "waking": "Waking up the server: the first visit of the day can take up to a minute.",
+      "error": "Cannot reach Rinde",
+      "retry": "Try again"
+    },
+    "errors": {
+      "USERNAME_REQUIRED": "Enter your username.",
+      "USERNAME_INVALID": "Use 3 to 30 characters: letters, numbers, dot, hyphen or underscore, no spaces.",
+      "USERNAME_RESERVED": "That name is reserved. Choose another one.",
+      "USERNAME_TAKEN": "That name is already taken. Try another one.",
+      "PASSWORD_REQUIRED": "Enter your password.",
+      "PASSWORD_TOO_SHORT": "It must be at least 15 characters long. Try a phrase.",
+      "PASSWORD_TOO_LONG": "It can be up to 128 characters long.",
+      "PASSWORD_CONTAINS_USERNAME": "It cannot contain your username.",
+      "PASSWORD_TOO_SIMPLE": "It is too repetitive. Use a phrase with different words.",
+      "PASSWORD_COMPROMISED": "That password appeared in data breaches from other sites. Choose another one.",
+      "RECOVERY_CODE_REQUIRED": "Enter your recovery code.",
+      "RECOVERY_CODE_INVALID": "The username or the recovery code is not correct.",
+      "INVALID_CREDENTIALS": "The username or the password is not correct.",
+      "TOO_MANY_ATTEMPTS": "Too many failed attempts. Wait 15 minutes and try again.",
+      "NOT_AUTHENTICATED": "Your session ended. Sign in again.",
+      "CSRF_REJECTED": "We could not validate the request. Reload the page and try again.",
+      "NETWORK_ERROR": "No connection to Rinde. Check your internet and try again.",
+      "UNKNOWN_ERROR": "Something went wrong. Try again in a moment."
+    }
   }
 }

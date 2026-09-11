@@ -1,0 +1,59 @@
+/* Piezas compartidas por los formularios de cuenta. */
+
+.card {
+  display: grid;
+  gap: var(--rinde-space-5);
+  width: min(100%, 26rem);
+}
+
+.heading {
+  display: grid;
+  gap: var(--rinde-space-2);
+}
+
+.title {
+  font: 500 32px/40px var(--md-ref-typeface-brand);
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 16px/24px var(--md-ref-typeface-plain);
+}
+
+.form {
+  display: grid;
+  gap: var(--rinde-space-4);
+}
+
+.submit {
+  display: grid;
+  margin-top: var(--rinde-space-2);
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rinde-space-1);
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 14px/20px var(--md-ref-typeface-plain);
+}
+
+.link {
+  color: var(--md-sys-color-primary);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.link:focus-visible {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}

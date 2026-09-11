@@ -1,0 +1,55 @@
+.screen {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: var(--rinde-space-7) var(--rinde-space-4);
+}
+
+.card {
+  display: grid;
+  gap: var(--rinde-space-5);
+  width: min(100%, 32rem);
+}
+
+.heading {
+  display: grid;
+  gap: var(--rinde-space-2);
+}
+
+.title {
+  font: 500 32px/40px var(--md-ref-typeface-brand);
+  letter-spacing: -0.02em;
+}
+
+.explain {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 16px/24px var(--md-ref-typeface-plain);
+}
+
+/* El elemento firma del sistema: el código es lo único que importa en esta pantalla. */
+.code {
+  padding: var(--rinde-space-5);
+  border-radius: var(--rinde-shape-card);
+  background: var(--md-sys-color-surface-container-high);
+  box-shadow:
+    var(--md-sys-elevation-level3),
+    inset 0 1px 0 var(--rinde-edge-light),
+    inset 0 0 0 1px var(--rinde-signature);
+  color: var(--md-sys-color-on-surface);
+  font: 600 clamp(20px, 5vw, 28px) / 1.3 var(--md-ref-typeface-brand);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  text-align: center;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rinde-space-3);
+}
+
+.continue {
+  display: grid;
+}
