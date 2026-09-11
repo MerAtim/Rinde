@@ -31,7 +31,8 @@ def export(path: Path) -> None:
     )
     app = create_app(settings, database_probe=_UnusedDatabaseProbe())
     contract = json.dumps(app.openapi(), indent=2, ensure_ascii=False)
-    path.write_text(f"{contract}\n", encoding="utf-8")
+    # Siempre LF, también en Windows: el archivo se compara byte a byte en CI.
+    path.write_text(f"{contract}\n", encoding="utf-8", newline="\n")
 
 
 def main() -> None:
