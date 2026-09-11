@@ -1,0 +1,11 @@
+# Lista de permitidos: todo queda afuera salvo lo que el build necesita.
+**
+!package.json
+!package-lock.json
+!index.html
+!vite.config.ts
+!tsconfig.json
+!tsconfig.app.json
+!tsconfig.node.json
+!src/
+!nginx/
