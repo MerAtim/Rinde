@@ -54,6 +54,11 @@ updates:
     commit-message:
       prefix: build
       include: scope
+    ignore:
+      # Solo versiones LTS de Node: el salto mayor se hace a propósito, en CI y en Docker a la vez.
+      - dependency-name: node
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: docker-compose
     directory: /
