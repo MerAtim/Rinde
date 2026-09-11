@@ -1,6 +1,6 @@
 # ADR-0002: Representación de dinero y cotizaciones múltiples
 
-* **Estado:** Propuesto
+* **Estado:** Aceptado
 * **Fecha:** 2026-09-11
 
 ## Contexto
