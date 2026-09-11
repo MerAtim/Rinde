@@ -1,18 +1,33 @@
 {
   "app": {
     "title": "Rinde",
-    "tagline": "Does my salary last the month?"
+    "tagline": "Does my salary last the month?",
+    "intro": "Your accounts, installments and dollars in one place."
   },
   "health": {
     "heading": "System status",
     "checking": "Checking status…",
     "ok": "The API and the database are up.",
     "unavailable": "The API responds, but the database is unavailable.",
-    "error": "Could not reach the API."
+    "error": "Could not reach the API.",
+    "status": {
+      "checking": "Checking",
+      "ok": "Operational",
+      "unavailable": "Degraded",
+      "error": "Offline"
+    }
   },
   "language": {
     "label": "Language",
     "es": "Español",
-    "en": "English"
+    "en": "English",
+    "short": {
+      "es": "ES",
+      "en": "EN"
+    }
+  },
+  "theme": {
+    "toLight": "Switch to light mode",
+    "toDark": "Switch to dark mode"
   }
 }
