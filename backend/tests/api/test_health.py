@@ -21,6 +21,12 @@ def test_live_returns_ok_and_running_version(settings: Settings) -> None:
     assert response.json() == {"status": "ok", "version": "abc123"}
 
 
+def test_health_endpoints_answer_head_requests(settings: Settings) -> None:
+    with _client(settings) as client:
+        assert client.head("/api/health/live").status_code == status.HTTP_200_OK
+        assert client.head("/api/health/ready").status_code == status.HTTP_200_OK
+
+
 def test_ready_returns_ok_when_database_is_reachable(settings: Settings) -> None:
     with _client(settings) as client:
         response = client.get("/api/health/ready")
