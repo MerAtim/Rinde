@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Hook local: valida el mensaje antes de crear el commit.
+# Activación (una vez por clon): git config core.hooksPath .githooks
+exec "$(git rev-parse --show-toplevel)/scripts/check-commit-msg.sh" "$1"
