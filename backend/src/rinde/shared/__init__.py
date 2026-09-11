@@ -1,0 +1,1 @@
+"""Kernel compartido entre módulos."""

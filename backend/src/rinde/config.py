@@ -3,7 +3,7 @@
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _DATABASE_DRIVER = "postgresql+psycopg://"
@@ -18,6 +18,10 @@ class Settings(BaseSettings):
     database_url: SecretStr
     # Commit desplegado; lo fija la imagen de producción. Permite verificar qué versión corre.
     version: str = "dev"
+    # Sesiones (ADR-0007). La cookie lleva Secure salvo en Docker local por HTTP.
+    session_ttl_days: int = Field(default=30, ge=1, le=90)
+    session_cookie_secure: bool = True
+    pwned_passwords_url: str = "https://api.pwnedpasswords.com/range/"
 
     @field_validator("database_url")
     @classmethod

@@ -9,14 +9,16 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
+import rinde.auth.infrastructure.tables  # noqa: F401  (registra las tablas en el MetaData)
 from rinde.config import get_settings
+from rinde.shared.infrastructure.database import metadata
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Se conecta al MetaData del mapeo imperativo cuando existan las primeras tablas.
-target_metadata = None
+# Todas las tablas se registran en este MetaData: `alembic check` compara el modelo con la base.
+target_metadata = metadata
 
 
 def run_migrations_offline() -> None:
