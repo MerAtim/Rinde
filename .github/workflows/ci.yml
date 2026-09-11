@@ -70,3 +70,193 @@ jobs:
 
       - name: Buscar secretos en todo el historial
         run: gitleaks git --redact --verbose --exit-code 1 .
+
+  backend:
+    name: Backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:18-alpine@sha256:d3e1620b530c944afa6e887d22eb899824da68e19c52024bf98f5220c88a65b2
+        env:
+          POSTGRES_DB: rinde_test
+          POSTGRES_USER: rinde
+          POSTGRES_PASSWORD: solo_para_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rinde -d rinde_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      RINDE_ENVIRONMENT: test
+      RINDE_DATABASE_URL: postgresql+psycopg://rinde:solo_para_ci@localhost:5432/rinde_test
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Instalar dependencias
+        run: uv sync --locked
+
+      - name: Formato
+        run: uv run ruff format --check .
+
+      - name: Estilo y seguridad
+        run: uv run ruff check .
+
+      - name: Tipos
+        run: uv run mypy
+
+      - name: Capas de la arquitectura
+        run: uv run lint-imports
+
+      - name: Migraciones
+        run: uv run alembic upgrade head
+
+      - name: Tests con cobertura
+        run: uv run pytest --cov --cov-report=term-missing
+
+      - name: Vulnerabilidades en dependencias
+        run: |
+          uv export --locked --all-groups --no-emit-project --format requirements-txt > "$RUNNER_TEMP/requirements.txt"
+          uv run pip-audit --strict --disable-pip --require-hashes -r "$RUNNER_TEMP/requirements.txt"
+
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Instalar Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Formato
+        run: npm run format:check
+
+      - name: Estilo
+        run: npm run lint
+
+      - name: Tipos
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Vulnerabilidades en dependencias
+        run: npm audit --audit-level=moderate
+
+  contrato:
+    name: Contrato de la API
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Instalar Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Regenerar el contrato OpenAPI
+        working-directory: backend
+        run: |
+          uv sync --locked
+          uv run python -m rinde.openapi openapi.json
+
+      - name: Regenerar los tipos del frontend
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run generate:api
+
+      - name: Verificar que el contrato versionado coincida con el código
+        run: |
+          if ! git diff --exit-code -- backend/openapi.json frontend/src/shared/api/schema.d.ts; then
+            echo "::error::El contrato o los tipos generados no coinciden con el código. Regeneralos y commiteá el resultado."
+            exit 1
+          fi
+
+  contenedores:
+    name: Contenedores
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      POSTGRES_PASSWORD: soloparaci
+      TRIVY_VERSION: 0.74.0
+      TRIVY_SHA256: 2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be4371a
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Construir y levantar el entorno completo
+        run: docker compose up --build --detach --wait --wait-timeout 180
+
+      - name: Prueba de humo a través del frontend
+        run: |
+          curl -fsS http://127.0.0.1:8080/api/health/ready
+          curl -fsS http://127.0.0.1:8080/ | grep -q '<div id="root"></div>'
+          curl -fsSI http://127.0.0.1:8080/ | grep -qi '^content-security-policy:'
+
+      - name: Instalar Trivy verificando el checksum
+        run: |
+          archivo="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+          curl -fsSLo "$archivo" "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${archivo}"
+          echo "${TRIVY_SHA256}  ${archivo}" | sha256sum --check --strict
+          tar -xzf "$archivo" -C "$RUNNER_TEMP" trivy
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Escanear vulnerabilidades de las imágenes
+        run: |
+          for imagen in rinde/api:local rinde/web:local; do
+            trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed --no-progress "$imagen"
+          done
+
+      - name: Mostrar los logs si algo falló
+        if: failure()
+        run: docker compose logs
+
+      - name: Apagar el entorno
+        if: always()
+        run: docker compose down --volumes
