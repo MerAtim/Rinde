@@ -1,0 +1,30 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding-inline: 10px 12px;
+  border-radius: var(--rinde-shape-chip);
+  font: 600 12px/16px var(--md-ref-typeface-plain);
+  white-space: nowrap;
+}
+
+.chip[data-tone="ok"] {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.chip[data-tone="warning"] {
+  background: var(--rinde-warning-container);
+  color: var(--rinde-on-warning-container);
+}
+
+.chip[data-tone="error"] {
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+}
+
+.chip[data-tone="neutral"] {
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface-variant);
+}
