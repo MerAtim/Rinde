@@ -30,6 +30,22 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: bash scripts/check-commit-range.sh "$BASE_SHA" "$HEAD_SHA"
 
+  rama:
+    name: Nombre de rama
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validar el nombre de la rama
+        env:
+          RAMA: ${{ github.head_ref }}
+        run: bash scripts/check-branch-name.sh "$RAMA"
+
   secretos:
     name: Escaneo de secretos
     runs-on: ubuntu-24.04
