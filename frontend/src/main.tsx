@@ -9,7 +9,6 @@ import "@fontsource-variable/google-sans-flex/opsz.css";
 import "./shared/design/tokens.css";
 import "./shared/design/base.css";
 import "./i18n";
-import "./styles.css";
 
 const container = document.getElementById("root");
 if (!container) {

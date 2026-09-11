@@ -1,32 +1,46 @@
 import { useTranslation } from "react-i18next";
 
+import { cx } from "../../shared/ui/cx";
+import type { IconName } from "../../shared/ui/Icon";
+import { StatusChip, type StatusTone } from "../../shared/ui/StatusChip";
+import styles from "./HealthStatus.module.css";
 import { useReadiness } from "./useReadiness";
 
-type Tone = "neutral" | "ok" | "warning" | "error";
-type MessageKey = "health.checking" | "health.ok" | "health.unavailable" | "health.error";
+type HealthState = "checking" | "ok" | "unavailable" | "error";
 
-function describe(query: ReturnType<typeof useReadiness>): { key: MessageKey; tone: Tone } {
+const PRESENTATION: Record<HealthState, { tone: StatusTone; icon: IconName }> = {
+  checking: { tone: "neutral", icon: "schedule" },
+  ok: { tone: "ok", icon: "check-circle" },
+  unavailable: { tone: "warning", icon: "warning" },
+  error: { tone: "error", icon: "error" },
+};
+
+function stateOf(query: ReturnType<typeof useReadiness>): HealthState {
   switch (query.status) {
     case "pending":
-      return { key: "health.checking", tone: "neutral" };
+      return "checking";
     case "error":
-      return { key: "health.error", tone: "error" };
+      return "error";
     case "success":
-      return query.data.status === "ok"
-        ? { key: "health.ok", tone: "ok" }
-        : { key: "health.unavailable", tone: "warning" };
+      return query.data.status === "ok" ? "ok" : "unavailable";
   }
 }
 
 export function HealthStatus() {
   const { t } = useTranslation();
-  const { key, tone } = describe(useReadiness());
+  const state = stateOf(useReadiness());
+  const { tone, icon } = PRESENTATION[state];
 
   return (
-    <section aria-labelledby="health-heading" className="card">
-      <h2 id="health-heading">{t("health.heading")}</h2>
-      <p role="status" className={`status status--${tone}`}>
-        {t(key)}
+    <section aria-labelledby="health-heading" className={cx(styles.card)}>
+      <div className={cx(styles.head)}>
+        <h2 id="health-heading" className={cx("type-label-medium", styles.heading)}>
+          {t("health.heading")}
+        </h2>
+        <StatusChip tone={tone} icon={icon} label={t(`health.status.${state}`)} />
+      </div>
+      <p role="status" className={cx("type-body-large", styles.message)}>
+        {t(`health.${state}`)}
       </p>
     </section>
   );
