@@ -1,0 +1,15 @@
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--rinde-space-3);
+  padding: var(--rinde-space-3) var(--rinde-space-4);
+  border-radius: var(--rinde-shape-field);
+  background: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-on-error-container);
+  font: 500 14px/20px var(--md-ref-typeface-plain);
+}
+
+.alert svg {
+  flex: none;
+  margin-top: 1px;
+}
