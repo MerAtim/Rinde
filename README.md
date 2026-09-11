@@ -51,6 +51,7 @@ Cada decisión importante está registrada con sus alternativas y costos en [doc
 ## Convenciones
 
 * **Ramas:** GitHub Flow. Todo cambio entra a `main` por pull request desde una rama con nombre en español, por ejemplo `funcionalidad/12-importacion-csv` ([ADR-0004](docs/adr/0004-estrategia-de-ramas.md)).
+* **Diseño:** Material 3 con identidad propia, modo oscuro por defecto. Especificación en [docs/design-system.md](docs/design-system.md) ([ADR-0006](docs/adr/0006-sistema-de-diseno.md)).
 * **Commits:** [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/) con descripción en español.
 
 Para validar ambas cosas en tu clon antes de commitear y de pushear:
