@@ -16,9 +16,11 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * [x] i18n base (es/en) y selector de idioma
 * [x] Deploy del "hola mundo" a un entorno público: https://rinde.meratim.workers.dev
 
-## Fase 1: autenticación
-* [ ] Registro/login, argon2id, access token corto + refresh rotativo en cookie httpOnly, CSRF
-* [ ] Rate limiting en login; bloqueo progresivo
+## Fase 1: autenticación (ADR-0007)
+* [x] Backend: registro, inicio y cierre de sesión, recuperación con código; argon2id; sesiones opacas en cookie `__Host-`; CSRF por encabezado propio
+* [x] Límite de intentos fallidos por cuenta (NIST SP 800-63B-4)
+* [ ] Límite por dirección IP y por registros; limpieza periódica de intentos viejos
+* [ ] Frontend: pantallas de registro, inicio de sesión, recuperación y guardado del código
 * [ ] Test de autorización reutilizable (recurso ajeno → 404)
 
 ## Fase 2: cuentas y transacciones
