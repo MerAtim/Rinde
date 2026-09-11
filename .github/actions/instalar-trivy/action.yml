@@ -1,0 +1,18 @@
+name: Instalar Trivy
+description: Instala el binario de Trivy verificando su checksum SHA-256 publicado.
+
+runs:
+  using: composite
+  steps:
+    - name: Descargar, verificar e instalar
+      shell: bash
+      env:
+        TRIVY_VERSION: 0.74.0
+        TRIVY_SHA256: 2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be4371a
+      run: |
+        archivo="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+        cd "$RUNNER_TEMP"
+        curl -fsSLo "$archivo" "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${archivo}"
+        echo "${TRIVY_SHA256}  ${archivo}" | sha256sum --check --strict
+        tar -xzf "$archivo" trivy
+        echo "$RUNNER_TEMP" >> "$GITHUB_PATH"

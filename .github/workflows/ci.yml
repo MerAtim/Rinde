@@ -222,8 +222,6 @@ jobs:
     timeout-minutes: 20
     env:
       POSTGRES_PASSWORD: soloparaci
-      TRIVY_VERSION: 0.74.0
-      TRIVY_SHA256: 2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be4371a
     steps:
       - name: Obtener el código
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -239,13 +237,8 @@ jobs:
           curl -fsS http://127.0.0.1:8080/ | grep -q '<div id="root"></div>'
           curl -fsSI http://127.0.0.1:8080/ | grep -qi '^content-security-policy:'
 
-      - name: Instalar Trivy verificando el checksum
-        run: |
-          archivo="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
-          curl -fsSLo "$archivo" "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${archivo}"
-          echo "${TRIVY_SHA256}  ${archivo}" | sha256sum --check --strict
-          tar -xzf "$archivo" -C "$RUNNER_TEMP" trivy
-          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - name: Instalar Trivy
+        uses: ./.github/actions/instalar-trivy
 
       - name: Escanear vulnerabilidades de las imágenes
         run: |
