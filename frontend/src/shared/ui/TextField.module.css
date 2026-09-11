@@ -57,6 +57,13 @@
   padding-inline-start: 6px;
 }
 
+/* Botón al final: el texto no pasa por debajo de él. */
+.action {
+  display: flex;
+  flex: none;
+  padding-inline-end: var(--rinde-space-1);
+}
+
 .label {
   position: absolute;
   inset-inline-start: var(--rinde-space-4);

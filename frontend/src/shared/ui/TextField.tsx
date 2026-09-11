@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   TextField as AriaTextField,
   type TextFieldProps as AriaTextFieldProps,
@@ -21,6 +22,8 @@ export interface TextFieldProps extends Omit<
   errorMessage?: string;
   /** Se muestra cuando la etiqueta flota; por ejemplo "$". */
   prefix?: string;
+  /** Botón al final del campo; por ejemplo, mostrar la contraseña. */
+  action?: ReactNode;
 }
 
 /** Campo con borde y etiqueta flotante de Material 3. */
@@ -29,6 +32,7 @@ export function TextField({
   description,
   errorMessage,
   prefix,
+  action,
   isInvalid,
   ...props
 }: TextFieldProps) {
@@ -44,6 +48,7 @@ export function TextField({
         ) : null}
         <Input className={cx(styles.input)} placeholder=" " />
         <Label className={cx(styles.label)}>{label}</Label>
+        {action ? <div className={cx(styles.action)}>{action}</div> : null}
       </div>
       {description && !invalid ? (
         <Text slot="description" className={cx(styles.helper)}>
