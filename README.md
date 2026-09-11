@@ -18,6 +18,24 @@ Aplicación web de finanzas personales para Argentina y LatAm. Responde una preg
 * **Frontend:** React, TypeScript, TanStack Query, Zustand, Chart.js.
 * **Infraestructura:** Docker Compose y GitHub Actions.
 
+## Cómo correrlo
+
+Requisito: Docker. Para desarrollar sin contenedores hacen falta además [uv](https://docs.astral.sh/uv/) y Node 22.
+
+```bash
+cp .env.example .env   # completar POSTGRES_PASSWORD
+docker compose up --build
+```
+
+La aplicación queda en http://localhost:8080 y el estado de la API en http://localhost:8080/api/health/ready. Si el puerto 8080 está ocupado, definí otro en `RINDE_WEB_PORT` dentro de `.env`.
+
+### Desarrollo
+
+* **Backend** (`backend/`): `uv sync`, `uv run pytest`, `uv run ruff check .`, `uv run mypy`, `uv run lint-imports`.
+* **Frontend** (`frontend/`): `npm ci`, `npm run dev`, `npm test`, `npm run lint`, `npm run typecheck`.
+* **Base de datos:** no se publica fuera de la red interna de Docker. Para conectarte desde tu máquina, creá un `docker-compose.override.yml` (ignorado por git) que agregue `ports: ["127.0.0.1:<puerto>:5432"]` al servicio `db`.
+* **Contrato de la API:** el backend publica su contrato en `backend/openapi.json` y el frontend genera sus tipos a partir de él. Si cambia un endpoint, regenerar con `uv run python -m rinde.openapi openapi.json` (en `backend/`) y `npm run generate:api` (en `frontend/`). La CI verifica que estén al día.
+
 ## Decisiones de arquitectura
 
 Cada decisión importante está registrada con sus alternativas y costos en [docs/adr](docs/adr/README.md).
