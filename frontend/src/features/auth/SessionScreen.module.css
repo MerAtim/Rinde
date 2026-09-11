@@ -1,0 +1,19 @@
+.screen {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: var(--rinde-space-5) var(--rinde-space-4);
+}
+
+.panel {
+  display: grid;
+  justify-items: center;
+  gap: var(--rinde-space-3);
+  max-width: 32rem;
+  text-align: center;
+}
+
+.hint {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 15px/22px var(--md-ref-typeface-plain);
+}

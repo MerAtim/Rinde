@@ -1,33 +1,25 @@
-import { useTranslation } from "react-i18next";
+import { Navigate, Route, Routes } from "react-router";
 
-import styles from "./App.module.css";
-import { HealthStatus } from "./features/health/HealthStatus";
-import { ThemeToggle } from "./shared/theme/ThemeToggle";
-import { cx } from "./shared/ui/cx";
-import { LanguageSelector } from "./shared/ui/LanguageSelector";
-import { TopAppBar } from "./shared/ui/TopAppBar";
+import { LoginPage } from "./features/auth/LoginPage";
+import { RecoverPage } from "./features/auth/RecoverPage";
+import { RecoveryCodePage } from "./features/auth/RecoveryCodePage";
+import { RedirectIfSession, RequireSession } from "./features/auth/SessionRoutes";
+import { SignupPage } from "./features/auth/SignupPage";
+import { HomePage } from "./features/home/HomePage";
 
 export function App() {
-  const { t } = useTranslation();
-
   return (
-    <>
-      <TopAppBar
-        start={<span className={cx(styles.brand)}>{t("app.title")}</span>}
-        end={
-          <>
-            <LanguageSelector />
-            <ThemeToggle />
-          </>
-        }
-      />
-      <main className={cx(styles.main)}>
-        <section className={cx(styles.hero)}>
-          <h1 className="type-display-large">{t("app.tagline")}</h1>
-          <p className={cx(styles.intro)}>{t("app.intro")}</p>
-        </section>
-        <HealthStatus />
-      </main>
-    </>
+    <Routes>
+      <Route element={<RequireSession />}>
+        <Route index element={<HomePage />} />
+      </Route>
+      <Route element={<RedirectIfSession />}>
+        <Route path="login" element={<LoginPage />} />
+        <Route path="signup" element={<SignupPage />} />
+        <Route path="recover" element={<RecoverPage />} />
+      </Route>
+      <Route path="recovery-code" element={<RecoveryCodePage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 }

@@ -21,7 +21,8 @@
     "react": "^19.3.0",
     "react-aria-components": "^1.21.1",
     "react-dom": "^19.3.0",
-    "react-i18next": "^17.0.13"
+    "react-i18next": "^17.0.13",
+    "react-router": "^7.18.3"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260911.1",

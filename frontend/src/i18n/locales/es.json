@@ -29,5 +29,95 @@
   "theme": {
     "toLight": "Cambiar a modo claro",
     "toDark": "Cambiar a modo oscuro"
+  },
+  "auth": {
+    "brand": {
+      "label": "Sobre Rinde",
+      "privacy": "Sin email ni datos personales: solo un usuario.",
+      "security": "Contraseñas cuidadas como indica el NIST.",
+      "currencies": "Pesos, dólares y cuotas, en un solo lugar.",
+      "footnote": "Las casillas son los días del mes: en aqua, los que cubre tu sueldo."
+    },
+    "fields": {
+      "username": "Nombre de usuario",
+      "usernameHelp": "Entre 3 y 30: letras, números, punto, guion o guion bajo.",
+      "password": "Contraseña",
+      "newPassword": "Contraseña nueva",
+      "passwordHelp": "{{length}} de {{min}} caracteres como mínimo. Una frase es más segura y fácil de recordar: «mi gato come fideos los martes».",
+      "recoveryCode": "Código de recuperación",
+      "recoveryCodeHelp": "Son 20 letras y números. Podés escribirlo con o sin guiones."
+    },
+    "showPassword": "Mostrar la contraseña",
+    "hidePassword": "Ocultar la contraseña",
+    "signup": {
+      "title": "Creá tu cuenta",
+      "subtitle": "Sin email ni datos personales: solo un usuario y una frase que recuerdes.",
+      "submit": "Crear cuenta",
+      "submitting": "Creando la cuenta…",
+      "haveAccount": "¿Ya tenés cuenta?",
+      "goLogin": "Ingresá"
+    },
+    "login": {
+      "title": "Ingresá a Rinde",
+      "subtitle": "Con tu usuario y tu contraseña.",
+      "submit": "Ingresar",
+      "submitting": "Ingresando…",
+      "forgot": "¿Olvidaste la contraseña?",
+      "goRecover": "Usá tu código de recuperación",
+      "noAccount": "¿No tenés cuenta?",
+      "goSignup": "Creá una"
+    },
+    "recover": {
+      "title": "Recuperá tu cuenta",
+      "subtitle": "Con el código que guardaste al crearla. Vas a elegir una contraseña nueva y todas las sesiones abiertas se van a cerrar.",
+      "submit": "Cambiar la contraseña",
+      "submitting": "Cambiando la contraseña…",
+      "back": "Volver a ingresar"
+    },
+    "code": {
+      "titleNew": "Guardá tu código de recuperación",
+      "titleRotated": "Guardá tu código nuevo",
+      "explain": "Es la única forma de recuperar tu cuenta si olvidás la contraseña. No lo vamos a volver a mostrar.",
+      "rotatedNote": "El código anterior ya no sirve.",
+      "label": "Tu código de recuperación",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "copyFailed": "No se pudo copiar. Seleccioná el código y copialo a mano.",
+      "download": "Descargar",
+      "fileName": "rinde-codigo-de-recuperacion.txt",
+      "fileText": "Código de recuperación de Rinde para el usuario {{username}}:\n\n{{code}}\n\nGuardalo en un lugar seguro. Sirve para elegir una contraseña nueva si olvidás la actual. Cada vez que lo uses, Rinde te va a dar uno nuevo.\n",
+      "confirm": "Guardé el código en un lugar seguro",
+      "continue": "Continuar"
+    },
+    "home": {
+      "greeting": "Hola, {{username}}",
+      "logout": "Cerrar sesión"
+    },
+    "session": {
+      "loading": "Cargando",
+      "waking": "Despertando el servidor: la primera visita del día puede tardar hasta un minuto.",
+      "error": "Sin conexión con Rinde",
+      "retry": "Reintentar"
+    },
+    "errors": {
+      "USERNAME_REQUIRED": "Ingresá tu nombre de usuario.",
+      "USERNAME_INVALID": "Usá entre 3 y 30 caracteres: letras, números, punto, guion o guion bajo, sin espacios.",
+      "USERNAME_RESERVED": "Ese nombre está reservado. Elegí otro.",
+      "USERNAME_TAKEN": "Ese nombre ya está en uso. Probá con otro.",
+      "PASSWORD_REQUIRED": "Ingresá tu contraseña.",
+      "PASSWORD_TOO_SHORT": "Tiene que tener al menos 15 caracteres. Probá con una frase.",
+      "PASSWORD_TOO_LONG": "Puede tener hasta 128 caracteres.",
+      "PASSWORD_CONTAINS_USERNAME": "No puede contener tu nombre de usuario.",
+      "PASSWORD_TOO_SIMPLE": "Es demasiado repetitiva. Usá una frase con palabras distintas.",
+      "PASSWORD_COMPROMISED": "Esa contraseña apareció en filtraciones de datos de otros sitios. Elegí otra.",
+      "RECOVERY_CODE_REQUIRED": "Ingresá tu código de recuperación.",
+      "RECOVERY_CODE_INVALID": "El usuario o el código de recuperación no son correctos.",
+      "INVALID_CREDENTIALS": "El usuario o la contraseña no son correctos.",
+      "TOO_MANY_ATTEMPTS": "Demasiados intentos fallidos. Esperá 15 minutos y probá de nuevo.",
+      "NOT_AUTHENTICATED": "Tu sesión terminó. Ingresá de nuevo.",
+      "CSRF_REJECTED": "No pudimos validar el pedido. Recargá la página y probá de nuevo.",
+      "NETWORK_ERROR": "No hay conexión con Rinde. Revisá tu internet y probá de nuevo.",
+      "UNKNOWN_ERROR": "Algo salió mal. Probá de nuevo en un momento."
+    }
   }
 }
