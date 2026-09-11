@@ -1,6 +1,6 @@
 # ADR-0003: Gestión de estado en el frontend
 
-* **Estado:** Propuesto
+* **Estado:** Aceptado
 * **Fecha:** 2026-09-11
 
 ## Contexto
