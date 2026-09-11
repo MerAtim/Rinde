@@ -6,6 +6,8 @@ import { afterEach, beforeEach } from "vitest";
 import i18n from "../i18n";
 
 beforeEach(async () => {
+  localStorage.clear();
+  document.documentElement.dataset.theme = "dark";
   await i18n.changeLanguage("es");
 });
 
