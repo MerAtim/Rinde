@@ -21,6 +21,11 @@ trap 'rm -f "$tmp"' EXIT
 
 fallos=0
 while read -r sha; do
+  # Los commits de bots (Dependabot) usan el formato que define GitHub:
+  # excepción documentada en ADR-0004.
+  if [[ "$(git log -1 --format=%ae "$sha")" == *"[bot]@users.noreply.github.com" ]]; then
+    continue
+  fi
   git log -1 --format=%B "$sha" > "$tmp"
   if ! "$dir/check-commit-msg.sh" "$tmp"; then
     echo "  (commit ${sha})" >&2
