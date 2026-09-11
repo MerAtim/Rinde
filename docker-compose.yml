@@ -12,6 +12,8 @@ x-hardening: &hardening
 x-api-environment: &api-environment
   RINDE_ENVIRONMENT: ${RINDE_ENVIRONMENT:-development}
   RINDE_DATABASE_URL: postgresql+psycopg://rinde:${POSTGRES_PASSWORD:?Definí POSTGRES_PASSWORD en .env}@db:5432/rinde
+  # En Docker local se navega por HTTP: la cookie de sesión no puede llevar Secure.
+  RINDE_SESSION_COOKIE_SECURE: ${RINDE_SESSION_COOKIE_SECURE:-false}
 
 services:
   db:
