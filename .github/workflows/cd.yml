@@ -157,6 +157,6 @@ jobs:
           WEB: ${{ vars.RINDE_WEB_URL }}
         run: |
           test -n "$WEB" || { echo "::error::Falta la variable RINDE_WEB_URL en el entorno produccion"; exit 1; }
-          curl -fsS "$WEB/" | grep -q '<div id="root"></div>'
-          curl -fsSI "$WEB/" | grep -qi '^content-security-policy:'
+          curl -fsS --retry 5 --retry-delay 10 --retry-all-errors "$WEB/" | grep -q '<div id="root"></div>'
+          curl -fsSI --retry 5 --retry-delay 10 --retry-all-errors "$WEB/" | grep -qi '^content-security-policy:'
           curl -fsS --retry 5 --retry-delay 10 --retry-all-errors "$WEB/api/health/ready" | jq -e '.status == "ok"'
