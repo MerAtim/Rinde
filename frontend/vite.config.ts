@@ -8,9 +8,27 @@ export default defineConfig({
     proxy: { "/api": "http://localhost:8000" },
   },
   test: {
-    environment: "jsdom",
-    setupFiles: ["./src/test/setup.ts"],
     restoreMocks: true,
     unstubGlobals: true,
+    // Dos entornos: la app corre en el navegador (jsdom) y el Worker en el servidor (node).
+    projects: [
+      {
+        extends: true,
+        test: {
+          name: "app",
+          include: ["src/**/*.test.{ts,tsx}"],
+          environment: "jsdom",
+          setupFiles: ["./src/test/setup.ts"],
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "worker",
+          include: ["worker/**/*.test.ts"],
+          environment: "node",
+        },
+      },
+    ],
   },
 });

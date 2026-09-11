@@ -17,6 +17,11 @@ server {
     add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
     add_header Cross-Origin-Opener-Policy "same-origin" always;
 
+    # Configuración de Cloudflare copiada por el build: no se publica.
+    location = /_headers {
+        return 404;
+    }
+
     # Chequeo de salud del contenedor.
     location = /healthz {
         access_log off;
