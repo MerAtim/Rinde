@@ -238,7 +238,7 @@ jobs:
         run: |
           curl -fsS http://127.0.0.1:8080/api/health/ready
           curl -fsS http://127.0.0.1:8080/ | grep -q '<div id="root"></div>'
-          curl -fsSI http://127.0.0.1:8080/ | grep -qi '^content-security-policy:'
+          bash scripts/check-csp.sh http://127.0.0.1:8080/
 
       - name: Instalar Trivy
         uses: ./.github/actions/instalar-trivy
