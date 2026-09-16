@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from rinde.auth.application.ports import (
     BreachedPasswordChecker,
+    ClientActivityRepository,
     Clock,
     FailedAttemptRepository,
     PasswordHasher,
@@ -33,5 +34,6 @@ class AuthDependencies:
     users: UserRepository
     sessions: SessionRepository
     failed_attempts: FailedAttemptRepository
+    client_activity: ClientActivityRepository
     transaction: Transaction
     services: AuthServices

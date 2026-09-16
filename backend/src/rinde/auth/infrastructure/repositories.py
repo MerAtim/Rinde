@@ -7,11 +7,16 @@ from sqlalchemy import RowMapping, delete, func, insert, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rinde.auth.application.ports import Session
+from rinde.auth.application.ports import ClientAction, Session
 from rinde.auth.domain.errors import UsernameTakenError
 from rinde.auth.domain.user import User
 from rinde.auth.domain.username import Username
-from rinde.auth.infrastructure.tables import failed_login_attempts, sessions, users
+from rinde.auth.infrastructure.tables import (
+    client_activity,
+    failed_login_attempts,
+    sessions,
+    users,
+)
 
 
 def _to_user(row: RowMapping) -> User:
@@ -128,6 +133,38 @@ class SqlAlchemyFailedAttemptRepository:
     async def clear(self, username: Username) -> None:
         await self._session.execute(
             delete(failed_login_attempts).where(failed_login_attempts.c.username == username.value)
+        )
+
+    async def purge_before(self, cutoff: datetime) -> None:
+        await self._session.execute(
+            delete(failed_login_attempts).where(failed_login_attempts.c.attempted_at < cutoff)
+        )
+
+
+class SqlAlchemyClientActivityRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def count_since(self, action: ClientAction, client: str, since: datetime) -> int:
+        result = await self._session.execute(
+            select(func.count())
+            .select_from(client_activity)
+            .where(
+                client_activity.c.action == action.value,
+                client_activity.c.client == client,
+                client_activity.c.occurred_at >= since,
+            )
+        )
+        return int(result.scalar_one())
+
+    async def record(self, action: ClientAction, client: str, at: datetime) -> None:
+        await self._session.execute(
+            insert(client_activity).values(action=action.value, client=client, occurred_at=at)
+        )
+
+    async def purge_before(self, cutoff: datetime) -> None:
+        await self._session.execute(
+            delete(client_activity).where(client_activity.c.occurred_at < cutoff)
         )
 
 

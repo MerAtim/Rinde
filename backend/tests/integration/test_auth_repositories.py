@@ -7,11 +7,12 @@ from uuid import uuid4
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-from rinde.auth.application.ports import Session
+from rinde.auth.application.ports import ClientAction, Session
 from rinde.auth.domain.errors import UsernameTakenError
 from rinde.auth.domain.user import User
 from rinde.auth.domain.username import Username
 from rinde.auth.infrastructure.repositories import (
+    SqlAlchemyClientActivityRepository,
     SqlAlchemyFailedAttemptRepository,
     SqlAlchemySessionRepository,
     SqlAlchemyUserRepository,
@@ -111,3 +112,36 @@ async def test_failed_attempts_are_counted_inside_the_window(session: AsyncSessi
     assert await attempts.count_since(username, NOW - timedelta(minutes=15)) == 1
     await attempts.clear(username)
     assert await attempts.count_since(username, NOW - timedelta(days=1)) == 0
+
+
+async def test_old_failed_attempts_are_purged(session: AsyncSession) -> None:
+    attempts = SqlAlchemyFailedAttemptRepository(session)
+    username = Username.parse("mechi")
+    await attempts.record(username, NOW - timedelta(hours=2))
+    await attempts.record(username, NOW)
+
+    await attempts.purge_before(NOW - timedelta(minutes=15))
+
+    assert await attempts.count_since(username, NOW - timedelta(days=1)) == 1
+
+
+async def test_client_activity_is_counted_by_action_and_address(
+    session: AsyncSession,
+) -> None:
+    activity = SqlAlchemyClientActivityRepository(session)
+    attacker, someone_else = "203.0.113.7", "2001:db8::1"
+    await activity.record(ClientAction.LOGIN_FAILURE, attacker, NOW - timedelta(minutes=30))
+    await activity.record(ClientAction.LOGIN_FAILURE, attacker, NOW - timedelta(minutes=5))
+    await activity.record(ClientAction.REGISTRATION, attacker, NOW)
+    await activity.record(ClientAction.LOGIN_FAILURE, someone_else, NOW)
+
+    window = NOW - timedelta(minutes=15)
+    assert await activity.count_since(ClientAction.LOGIN_FAILURE, attacker, window) == 1
+    assert await activity.count_since(ClientAction.REGISTRATION, attacker, window) == 1
+    assert await activity.count_since(ClientAction.LOGIN_FAILURE, someone_else, window) == 1
+
+    await activity.purge_before(NOW - timedelta(minutes=15))
+
+    old = NOW - timedelta(days=1)
+    assert await activity.count_since(ClientAction.LOGIN_FAILURE, attacker, old) == 1
+    assert await activity.count_since(ClientAction.REGISTRATION, attacker, old) == 1
