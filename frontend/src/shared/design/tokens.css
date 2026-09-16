@@ -41,7 +41,7 @@
   --md-sys-color-error-container: #93000a;
   --md-sys-color-on-error-container: #ffdad6;
 
-  /* Elemento firma: solo el indicador "¿Te rinde?". */
+  /* Elemento firma: solo el indicador "Días cubiertos" (ADR-0008). */
   --rinde-signature: #33d6c4;
   --rinde-on-signature: #00201c;
 

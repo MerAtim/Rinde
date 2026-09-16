@@ -15,7 +15,7 @@ Material Design 3 como gramática, con voz propia. Decisión y alternativas en [
 
 * Semilla: `#33D6C4` (aqua cian). Esquema: **Tonal Spot** de Material You.
 * Se descartaron Fidelity (`#5BF3E0`, aqua neón que cae en el cliché "fondo oscuro con un solo neón") y Vibrant (`#00DECB`, demasiado saturado).
-* El aqua intenso de la semilla se reserva para un único elemento firma: el indicador "¿Te rinde?". Nunca en botones ni texto.
+* El aqua intenso de la semilla se reserva para un único elemento firma: el indicador "Días cubiertos" (ADR-0008). Nunca en botones ni texto.
 
 ### Superficies (oscuro por defecto)
 
