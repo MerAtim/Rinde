@@ -7,6 +7,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request, Response, status
 
+from rinde.auth.api.client import ClientAddress
 from rinde.auth.api.cookies import SessionCookie, session_cookie
 from rinde.auth.api.dependencies import auth_unit
 from rinde.auth.api.schemas import (
@@ -39,10 +40,14 @@ def _errors(*status_codes: int) -> dict[int | str, dict[str, Any]]:
     summary="Crear una cuenta",
 )
 async def register(
-    payload: Credentials, response: Response, unit: Unit, cookie: SessionCookieDep
+    payload: Credentials,
+    response: Response,
+    unit: Unit,
+    cookie: SessionCookieDep,
+    client: ClientAddress,
 ) -> RegisterResponse:
     registration = await unit.register.execute(
-        payload.username, payload.password.get_secret_value()
+        payload.username, payload.password.get_secret_value(), client
     )
     cookie.set(response, registration.session_token)
     return RegisterResponse(
@@ -59,9 +64,13 @@ async def register(
     summary="Iniciar sesión",
 )
 async def login(
-    payload: Credentials, response: Response, unit: Unit, cookie: SessionCookieDep
+    payload: Credentials,
+    response: Response,
+    unit: Unit,
+    cookie: SessionCookieDep,
+    client: ClientAddress,
 ) -> None:
-    token = await unit.login.execute(payload.username, payload.password.get_secret_value())
+    token = await unit.login.execute(payload.username, payload.password.get_secret_value(), client)
     cookie.set(response, token)
 
 
@@ -88,12 +97,17 @@ async def logout(
     summary="Recuperar la cuenta con el código de recuperación",
 )
 async def recover(
-    payload: RecoverRequest, response: Response, unit: Unit, cookie: SessionCookieDep
+    payload: RecoverRequest,
+    response: Response,
+    unit: Unit,
+    cookie: SessionCookieDep,
+    client: ClientAddress,
 ) -> RecoverResponse:
     recovery = await unit.recover.execute(
         payload.username,
         payload.recovery_code.get_secret_value(),
         payload.new_password.get_secret_value(),
+        client,
     )
     cookie.set(response, recovery.session_token)
     return RecoverResponse(recovery_code=recovery.recovery_code)

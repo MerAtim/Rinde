@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from rinde.auth.application.dependencies import AuthDependencies, AuthServices
-from rinde.auth.application.ports import Session
+from rinde.auth.application.ports import ClientAction, Session
 from rinde.auth.application.unit import AuthUnit, build_auth_unit
 from rinde.auth.domain.errors import UsernameTakenError
 from rinde.auth.domain.user import User
@@ -135,6 +135,25 @@ class InMemoryFailedAttempts:
     async def clear(self, username: Username) -> None:
         self.attempts = [(who, at) for who, at in self.attempts if who != username]
 
+    async def purge_before(self, cutoff: datetime) -> None:
+        self.attempts = [(who, at) for who, at in self.attempts if at >= cutoff]
+
+
+class InMemoryClientActivity:
+    def __init__(self) -> None:
+        self.events: list[tuple[ClientAction, str, datetime]] = []
+
+    async def count_since(self, action: ClientAction, client: str, since: datetime) -> int:
+        return sum(
+            1 for what, who, at in self.events if what == action and who == client and at >= since
+        )
+
+    async def record(self, action: ClientAction, client: str, at: datetime) -> None:
+        self.events.append((action, client, at))
+
+    async def purge_before(self, cutoff: datetime) -> None:
+        self.events = [(what, who, at) for what, who, at in self.events if at >= cutoff]
+
 
 class FakeTransaction:
     def __init__(self) -> None:
@@ -151,6 +170,7 @@ class InMemoryAuthUnitFactory:
         self.users = InMemoryUsers()
         self.sessions = InMemorySessions()
         self.failed_attempts = InMemoryFailedAttempts()
+        self.client_activity = InMemoryClientActivity()
         self.transaction = FakeTransaction()
         self.hasher = FakeHasher()
         self.clock = FakeClock()
@@ -169,6 +189,7 @@ class InMemoryAuthUnitFactory:
                 users=self.users,
                 sessions=self.sessions,
                 failed_attempts=self.failed_attempts,
+                client_activity=self.client_activity,
                 transaction=self.transaction,
                 services=self.services,
             )

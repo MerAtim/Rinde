@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 
 from rinde.auth.application.dependencies import AuthDependencies
+from rinde.auth.application.ports import ClientAction
+from rinde.auth.application.rate_limits import ensure_client_under_limit, record_client_action
 from rinde.auth.application.sessions import SessionIssuer, ensure_not_locked, record_failure
 from rinde.auth.domain.errors import (
     InvalidRecoveryCodeError,
@@ -27,7 +29,9 @@ class RecoverAccount:
         self._deps = deps
         self._issuer = issuer
 
-    async def execute(self, raw_username: str, raw_code: str, new_password: str) -> Recovery:
+    async def execute(
+        self, raw_username: str, raw_code: str, new_password: str, client: str | None = None
+    ) -> Recovery:
         deps = self._deps
         services = deps.services
         hasher = services.hasher
@@ -37,6 +41,7 @@ class RecoverAccount:
         except UsernameInvalidError, UsernameReservedError:
             raise InvalidRecoveryCodeError from None
         await ensure_not_locked(deps, username)
+        await ensure_client_under_limit(deps, ClientAction.LOGIN_FAILURE, client)
         normalized = check_password_policy(new_password, username)
         code = normalize_recovery_code(raw_code)
 
@@ -44,6 +49,7 @@ class RecoverAccount:
         secret_hash = user.recovery_code_hash if user else hasher.dummy_hash
         valid = await hasher.verify(secret_hash, code)
         if user is None or not valid:
+            await record_client_action(deps, ClientAction.LOGIN_FAILURE, client)
             await record_failure(deps, username)
             raise InvalidRecoveryCodeError
         if await services.breaches.is_compromised(normalized):

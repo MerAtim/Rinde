@@ -19,9 +19,10 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 ## Fase 1: autenticación (ADR-0007)
 * [x] Backend: registro, inicio y cierre de sesión, recuperación con código; argon2id; sesiones opacas en cookie `__Host-`; CSRF por encabezado propio
 * [x] Límite de intentos fallidos por cuenta (NIST SP 800-63B-4)
-* [ ] Límite por dirección IP y por registros; limpieza periódica de intentos viejos
+* [x] Límite por dirección de origen y por registros; limpieza de intentos viejos en cada escritura
 * [x] Frontend: pantallas de registro, inicio de sesión, recuperación y guardado del código
-* [ ] Test de autorización reutilizable (recurso ajeno → 404)
+* [ ] Test de autorización reutilizable (recurso ajeno → 404). Necesita un recurso con
+  dueño, que recién aparece con las cuentas: se construye en el primer corte de la fase 2
 
 ## Fase 2: cuentas y transacciones
 * [ ] Cuentas (efectivo, banco, tarjeta, billetera cripto) con moneda propia
@@ -54,4 +55,7 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * [ ] Playwright e2e de los 3 flujos críticos
 
 ## Después (solo si hay tiempo)
+* Secreto compartido entre el Worker y la API: hoy el origen de Render es alcanzable
+  desde internet, así que quien lo llame directo puede inventar la cabecera con la
+  dirección de origen y esquivar ese límite (no el límite por cuenta)
 * MFA TOTP · exportación y borrado de datos del usuario · OpenTelemetry · PWA · notificaciones por email
