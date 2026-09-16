@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from rinde.auth.application.dependencies import AuthDependencies, AuthServices
 from rinde.auth.application.unit import AuthUnit, build_auth_unit
 from rinde.auth.infrastructure.repositories import (
+    SqlAlchemyClientActivityRepository,
     SqlAlchemyFailedAttemptRepository,
     SqlAlchemySessionRepository,
     SqlAlchemyTransaction,
@@ -31,6 +32,7 @@ class SqlAlchemyAuthUnitFactory:
                     users=SqlAlchemyUserRepository(session),
                     sessions=SqlAlchemySessionRepository(session),
                     failed_attempts=SqlAlchemyFailedAttemptRepository(session),
+                    client_activity=SqlAlchemyClientActivityRepository(session),
                     transaction=SqlAlchemyTransaction(session),
                     services=self._services,
                 )

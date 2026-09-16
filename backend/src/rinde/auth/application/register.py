@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from uuid import uuid4
 
 from rinde.auth.application.dependencies import AuthDependencies
+from rinde.auth.application.ports import ClientAction
+from rinde.auth.application.rate_limits import ensure_client_under_limit, record_client_action
 from rinde.auth.application.sessions import SessionIssuer
 from rinde.auth.domain.errors import PasswordCompromisedError, UsernameTakenError
 from rinde.auth.domain.password_policy import check_password_policy
@@ -25,10 +27,13 @@ class RegisterUser:
         self._deps = deps
         self._issuer = issuer
 
-    async def execute(self, raw_username: str, password: str) -> Registration:
+    async def execute(
+        self, raw_username: str, password: str, client: str | None = None
+    ) -> Registration:
         deps = self._deps
         services = deps.services
 
+        await ensure_client_under_limit(deps, ClientAction.REGISTRATION, client)
         username = Username.parse(raw_username)
         if await deps.users.by_username(username) is not None:
             raise UsernameTakenError
@@ -45,6 +50,7 @@ class RegisterUser:
             created_at=services.clock.now(),
         )
         await deps.users.add(user)
+        await record_client_action(deps, ClientAction.REGISTRATION, client)
         token = await self._issuer.issue(user.id)
         await deps.transaction.commit()
         return Registration(
