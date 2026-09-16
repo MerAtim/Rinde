@@ -26,6 +26,12 @@ updates:
         update-types:
           - minor
           - patch
+    ignore:
+      # Mismo criterio que el frontend: los saltos mayores se hacen a propósito.
+      # Las vulnerabilidades siguen cubiertas por pip-audit en cada PR.
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: npm
     directory: /frontend
@@ -40,8 +46,11 @@ updates:
           - minor
           - patch
     ignore:
-      # typescript-eslint y openapi-typescript todavía no soportan TypeScript 6 o superior.
-      - dependency-name: typescript
+      # Las versiones mayores no se proponen solas: un salto mayor puede cambiar
+      # el comportamiento en runtime y la CI en verde no alcanza para darlo por
+      # bueno sin leer las notas de la versión. Se hacen a propósito, uno por vez.
+      # Las vulnerabilidades siguen cubiertas por npm audit en cada PR.
+      - dependency-name: "*"
         update-types:
           - version-update:semver-major
 
