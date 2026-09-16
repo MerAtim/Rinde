@@ -45,6 +45,13 @@ async def ensure_not_locked(deps: AuthDependencies, username: Username) -> None:
 
 
 async def record_failure(deps: AuthDependencies, username: Username) -> None:
-    """Registra el intento fallido y lo confirma antes de responder con el error."""
-    await deps.failed_attempts.record(username, deps.services.clock.now())
+    """Registra el intento fallido y lo confirma antes de responder con el error.
+
+    Aprovecha el paso para borrar los intentos que ya salieron de la ventana:
+    el plan gratuito de Render no tiene programador de tareas, así que la
+    limpieza va donde hay escritura.
+    """
+    now = deps.services.clock.now()
+    await deps.failed_attempts.record(username, now)
+    await deps.failed_attempts.purge_before(now - ATTEMPT_WINDOW)
     await deps.transaction.commit()

@@ -46,6 +46,21 @@ sessions = Table(
     CheckConstraint("expires_at > created_at", name="expires_after_created"),
 )
 
+# Actividad por dirección de origen. Se guarda la dirección en claro porque es
+# lo único que permite contarla, y se borra sola pasada la ventana más larga
+# (una hora): es el dato mínimo, por el tiempo mínimo.
+client_activity = Table(
+    "client_activity",
+    metadata,
+    Column("id", BigInteger, Identity(always=True), primary_key=True),
+    Column("action", String(32), nullable=False),
+    # 45 caracteres: lo que ocupa una IPv6 escrita con una IPv4 adentro.
+    Column("client", String(45), nullable=False),
+    Column("occurred_at", DateTime(timezone=True), nullable=False),
+    Index("ix_client_activity_action_client_occurred_at", "action", "client", "occurred_at"),
+    Index("ix_client_activity_occurred_at", "occurred_at"),
+)
+
 failed_login_attempts = Table(
     "failed_login_attempts",
     metadata,

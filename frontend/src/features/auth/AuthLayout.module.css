@@ -17,7 +17,15 @@
 
 .brandBody {
   display: grid;
+  /* Centrado en el alto sobrante: en pantallas muy altas, si no, queda estirado. */
+  align-content: center;
   gap: var(--rinde-space-6);
+}
+
+/* La nota va pegada a las casillas que explica, no al pie del panel. */
+.runwayGroup {
+  display: grid;
+  gap: var(--rinde-space-2);
 }
 
 .headline {
@@ -97,9 +105,8 @@
   }
 
   .brand {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
     gap: var(--rinde-space-7);
     padding: var(--rinde-space-7);
     background: var(--md-sys-color-surface-container-low);

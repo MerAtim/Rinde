@@ -25,10 +25,13 @@ export function AuthLayout({ children }: { children: ReactNode }) {
         <span className={cx(styles.brandName)}>{t("app.title")}</span>
         <div className={cx(styles.brandBody)}>
           <p className={cx(styles.headline)}>{t("app.tagline")}</p>
-          <div className={cx(styles.runway)} aria-hidden="true">
-            {DAYS.map((day) => (
-              <span key={day} className={cx(styles.cell)} data-state={dayState(day)} />
-            ))}
+          <div className={cx(styles.runwayGroup)}>
+            <div className={cx(styles.runway)} aria-hidden="true">
+              {DAYS.map((day) => (
+                <span key={day} className={cx(styles.cell)} data-state={dayState(day)} />
+              ))}
+            </div>
+            <span className={cx(styles.footnote)}>{t("auth.brand.footnote")}</span>
           </div>
           <ul className={cx(styles.points)}>
             <li>{t("auth.brand.privacy")}</li>
@@ -36,7 +39,6 @@ export function AuthLayout({ children }: { children: ReactNode }) {
             <li>{t("auth.brand.currencies")}</li>
           </ul>
         </div>
-        <span className={cx(styles.footnote)}>{t("auth.brand.footnote")}</span>
       </aside>
       <div className={cx(styles.content)}>
         <header className={cx(styles.toolbar)}>

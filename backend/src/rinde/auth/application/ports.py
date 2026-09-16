@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import datetime
+from enum import StrEnum
 from typing import Protocol
 from uuid import UUID
 
@@ -49,6 +50,27 @@ class FailedAttemptRepository(Protocol):
     async def record(self, username: Username, at: datetime) -> None: ...
 
     async def clear(self, username: Username) -> None: ...
+
+    async def purge_before(self, cutoff: datetime) -> None:
+        """Borra los intentos que ya no cuentan para ninguna ventana."""
+        ...
+
+
+class ClientAction(StrEnum):
+    """Lo que se cuenta por dirección de origen."""
+
+    LOGIN_FAILURE = "login_failure"
+    REGISTRATION = "registration"
+
+
+class ClientActivityRepository(Protocol):
+    """Cuenta acciones por dirección de origen, no por cuenta."""
+
+    async def count_since(self, action: ClientAction, client: str, since: datetime) -> int: ...
+
+    async def record(self, action: ClientAction, client: str, at: datetime) -> None: ...
+
+    async def purge_before(self, cutoff: datetime) -> None: ...
 
 
 class PasswordHasher(Protocol):
