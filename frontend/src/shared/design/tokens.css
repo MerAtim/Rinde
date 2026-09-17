@@ -107,6 +107,9 @@
   --md-sys-motion-duration-medium1: 250ms;
   --md-sys-motion-duration-medium4: 400ms;
   --md-sys-motion-duration-long2: 500ms;
+  /* Skeleton: no aparece antes de 300 ms, así una respuesta rápida no parpadea. */
+  --rinde-skeleton-delay: 300ms;
+  --rinde-skeleton-pulse: 1600ms;
 
   /* Capas de estado (Material 3) */
   --md-sys-state-hover-state-layer-opacity: 0.08;

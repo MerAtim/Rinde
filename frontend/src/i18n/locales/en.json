@@ -125,5 +125,80 @@
       "NETWORK_ERROR": "No connection to Rinde. Check your internet and try again.",
       "UNKNOWN_ERROR": "Something went wrong. Try again in a moment."
     }
+  },
+  "accounts": {
+    "kind": {
+      "cash": "Cash",
+      "bank": "Bank",
+      "credit_card": "Credit card",
+      "crypto_wallet": "Crypto wallet"
+    },
+    "currency": {
+      "ARS": "Argentine pesos (ARS)",
+      "USD": "US dollars (USD)",
+      "BTC": "Bitcoin (BTC)"
+    },
+    "list": {
+      "title": "Accounts",
+      "subtitle": "Every place you keep money: your wallet, your bank, your card.",
+      "open": "Open account",
+      "showArchived": "Show archived",
+      "loading": "Loading accounts…",
+      "error": "We couldn't load your accounts.",
+      "retry": "Try again",
+      "emptyTitle": "You don't have any accounts yet",
+      "emptyBody": "Open one for every place you keep money. Then you'll be able to record its income and expenses.",
+      "emptyAction": "Open your first account",
+      "archived": "Archived",
+      "opened": "You opened “{{name}}”.",
+      "archivedNotice": "You archived “{{name}}”."
+    },
+    "fields": {
+      "name": "Name",
+      "nameHelp": "For example, “Chase checking”. {{length}} of {{max}} characters.",
+      "kind": "Account type",
+      "currency": "Currency",
+      "currencyHelp": "It can't be changed later. Bitcoin only in crypto wallets."
+    },
+    "new": {
+      "title": "Open an account",
+      "subtitle": "If you pick the wrong currency, archive the account and open another one.",
+      "back": "Back to accounts",
+      "submit": "Open account",
+      "submitting": "Opening the account…"
+    },
+    "detail": {
+      "back": "Back to accounts",
+      "loading": "Loading the account…",
+      "error": "We couldn't load the account.",
+      "notFoundTitle": "We couldn't find this account",
+      "notFoundBody": "The link may be incomplete. Look for it in your accounts list.",
+      "openedOn": "Opened on {{date}}",
+      "archivedOn": "Archived on {{date}}",
+      "archivedExplain": "It no longer shows in your list and can't be renamed. Its history is kept.",
+      "renameTitle": "Rename",
+      "rename": "Save name",
+      "renaming": "Saving…",
+      "renamed": "We saved the new name.",
+      "archiveTitle": "Archive the account",
+      "archiveExplain": "Removes it from your list and keeps its history. This can't be undone.",
+      "archive": "Archive account",
+      "confirmTitle": "Archive “{{name}}”?",
+      "confirmBody": "It will no longer show in your list and can't be renamed. Its data is kept, but it can't be reactivated.",
+      "confirm": "Archive",
+      "confirming": "Archiving…",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "ACCOUNT_NAME_REQUIRED": "Enter a name for the account.",
+      "ACCOUNT_NAME_INVALID": "Use up to 60 characters, with no invisible characters.",
+      "ACCOUNT_CURRENCY_NOT_ALLOWED": "Bitcoin can only be kept in a crypto wallet. Pick another currency or change the type.",
+      "ACCOUNT_NOT_FOUND": "We couldn't find this account.",
+      "ACCOUNT_ARCHIVED": "The account is archived and can no longer be renamed.",
+      "NOT_AUTHENTICATED": "Your session ended. Sign in again.",
+      "CSRF_REJECTED": "We couldn't validate the request. Reload the page and try again.",
+      "NETWORK_ERROR": "There's no connection to Rinde. Check your internet and try again.",
+      "UNKNOWN_ERROR": "Something went wrong. Try again in a moment."
+    }
   }
 }

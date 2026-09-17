@@ -2,7 +2,8 @@ import { vi } from "vitest";
 
 import { jsonResponse } from "./render";
 
-type Reply = Response | ((init: RequestInit | undefined) => Response);
+/** Una respuesta fija, o una función; si devuelve una promesa, sirve para probar lo que pasa mientras se espera. */
+type Reply = Response | ((init: RequestInit | undefined) => Response | Promise<Response>);
 
 function pathOf(input: RequestInfo | URL): string {
   if (typeof input === "string") {

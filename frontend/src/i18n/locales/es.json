@@ -125,5 +125,80 @@
       "NETWORK_ERROR": "No hay conexión con Rinde. Revisá tu internet y probá de nuevo.",
       "UNKNOWN_ERROR": "Algo salió mal. Probá de nuevo en un momento."
     }
+  },
+  "accounts": {
+    "kind": {
+      "cash": "Efectivo",
+      "bank": "Banco",
+      "credit_card": "Tarjeta de crédito",
+      "crypto_wallet": "Billetera cripto"
+    },
+    "currency": {
+      "ARS": "Pesos argentinos (ARS)",
+      "USD": "Dólares (USD)",
+      "BTC": "Bitcoin (BTC)"
+    },
+    "list": {
+      "title": "Cuentas",
+      "subtitle": "Cada lugar donde tenés plata: la billetera, el banco, la tarjeta.",
+      "open": "Abrir cuenta",
+      "showArchived": "Mostrar las archivadas",
+      "loading": "Cargando las cuentas…",
+      "error": "No pudimos cargar tus cuentas.",
+      "retry": "Reintentar",
+      "emptyTitle": "Todavía no tenés cuentas",
+      "emptyBody": "Abrí una por cada lugar donde guardás plata. Después vas a poder registrar sus ingresos y gastos.",
+      "emptyAction": "Abrir tu primera cuenta",
+      "archived": "Archivada",
+      "opened": "Abriste la cuenta «{{name}}».",
+      "archivedNotice": "Archivaste la cuenta «{{name}}»."
+    },
+    "fields": {
+      "name": "Nombre",
+      "nameHelp": "Por ejemplo, «Galicia sueldo». {{length}} de {{max}} caracteres.",
+      "kind": "Tipo de cuenta",
+      "currency": "Moneda",
+      "currencyHelp": "No se puede cambiar después. Bitcoin, solo en billeteras cripto."
+    },
+    "new": {
+      "title": "Abrir una cuenta",
+      "subtitle": "Si más adelante te equivocás de moneda, archivás la cuenta y abrís otra.",
+      "back": "Volver a cuentas",
+      "submit": "Abrir cuenta",
+      "submitting": "Abriendo la cuenta…"
+    },
+    "detail": {
+      "back": "Volver a cuentas",
+      "loading": "Cargando la cuenta…",
+      "error": "No pudimos cargar la cuenta.",
+      "notFoundTitle": "No encontramos esta cuenta",
+      "notFoundBody": "Puede que el enlace esté incompleto. Buscala en tu lista de cuentas.",
+      "openedOn": "Abierta el {{date}}",
+      "archivedOn": "Archivada el {{date}}",
+      "archivedExplain": "Ya no aparece en tu lista ni se puede renombrar. Su historia se conserva.",
+      "renameTitle": "Cambiar el nombre",
+      "rename": "Guardar el nombre",
+      "renaming": "Guardando…",
+      "renamed": "Guardamos el nombre nuevo.",
+      "archiveTitle": "Archivar la cuenta",
+      "archiveExplain": "La saca de tu lista y conserva su historia. No se puede deshacer.",
+      "archive": "Archivar la cuenta",
+      "confirmTitle": "¿Archivar «{{name}}»?",
+      "confirmBody": "Deja de aparecer en tu lista y ya no se puede renombrar. Sus datos se conservan, pero no se puede volver a activar.",
+      "confirm": "Archivar",
+      "confirming": "Archivando…",
+      "cancel": "Cancelar"
+    },
+    "errors": {
+      "ACCOUNT_NAME_REQUIRED": "Escribí un nombre para la cuenta.",
+      "ACCOUNT_NAME_INVALID": "Usá hasta 60 caracteres, sin caracteres invisibles.",
+      "ACCOUNT_CURRENCY_NOT_ALLOWED": "Bitcoin solo se puede guardar en una billetera cripto. Elegí otra moneda o cambiá el tipo.",
+      "ACCOUNT_NOT_FOUND": "No encontramos esta cuenta.",
+      "ACCOUNT_ARCHIVED": "La cuenta está archivada y ya no se puede renombrar.",
+      "NOT_AUTHENTICATED": "Tu sesión terminó. Ingresá de nuevo.",
+      "CSRF_REJECTED": "No pudimos validar el pedido. Recargá la página y probá de nuevo.",
+      "NETWORK_ERROR": "No hay conexión con Rinde. Revisá tu internet y probá de nuevo.",
+      "UNKNOWN_ERROR": "Algo salió mal. Probá de nuevo en un momento."
+    }
   }
 }
