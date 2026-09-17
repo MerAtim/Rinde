@@ -21,11 +21,11 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * [x] Límite de intentos fallidos por cuenta (NIST SP 800-63B-4)
 * [x] Límite por dirección de origen y por registros; limpieza de intentos viejos en cada escritura
 * [x] Frontend: pantallas de registro, inicio de sesión, recuperación y guardado del código
-* [ ] Test de autorización reutilizable (recurso ajeno → 404). Necesita un recurso con
-  dueño, que recién aparece con las cuentas: se construye en el primer corte de la fase 2
+* [x] Test de autorización reutilizable (recurso ajeno → 404), construido con las cuentas (ADR-0009)
 
 ## Fase 2: cuentas y transacciones
-* [ ] Cuentas (efectivo, banco, tarjeta, billetera cripto) con moneda propia
+* [x] Kernel de dinero: `Money` y `Currency`
+* [ ] Cuentas (efectivo, banco, tarjeta, billetera cripto) con moneda propia: API lista, falta la pantalla
 * [ ] Ingresos, gastos, transferencias (no cuentan como gasto), categorías
 * [ ] Filtros, paginación por cursor, `Idempotency-Key`, log de auditoría
 
