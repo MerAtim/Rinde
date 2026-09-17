@@ -9,6 +9,11 @@ import httpx
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async_engine
 
+from rinde.accounts.api.errors import accounts_error_handler
+from rinde.accounts.api.router import router as accounts_router
+from rinde.accounts.application.unit import AccountsUnitFactory
+from rinde.accounts.domain.errors import AccountError
+from rinde.accounts.infrastructure.factory import SqlAlchemyAccountsUnitFactory
 from rinde.auth.api.cookies import SessionCookie
 from rinde.auth.api.errors import auth_error_handler
 from rinde.auth.api.identity import identify_user
@@ -39,6 +44,7 @@ def create_app(
     *,
     database_probe: DatabaseProbe | None = None,
     auth_factory: AuthUnitFactory | None = None,
+    accounts_factory: AccountsUnitFactory | None = None,
 ) -> FastAPI:
     """Crea la aplicación.
 
@@ -69,6 +75,11 @@ def create_app(
             ),
         )
 
+    if accounts_factory is None:
+        accounts_factory = SqlAlchemyAccountsUnitFactory(
+            async_sessionmaker(shared_engine(), expire_on_commit=False), SystemClock()
+        )
+
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
@@ -91,6 +102,7 @@ def create_app(
     app.state.check_readiness = CheckReadiness(database_probe)
     app.state.auth_factory = auth_factory
     app.state.identify = identify_user
+    app.state.accounts_factory = accounts_factory
     app.state.session_cookie = SessionCookie(
         name=SECURE_COOKIE_NAME if config.session_cookie_secure else PLAIN_COOKIE_NAME,
         secure=config.session_cookie_secure,
@@ -98,6 +110,8 @@ def create_app(
     )
     app.add_exception_handler(CsrfRejectedError, csrf_error_handler)
     app.add_exception_handler(AuthError, auth_error_handler)
+    app.add_exception_handler(AccountError, accounts_error_handler)
     app.include_router(health_router, prefix=API_PREFIX)
     app.include_router(auth_router, prefix=API_PREFIX)
+    app.include_router(accounts_router, prefix=API_PREFIX)
     return app
