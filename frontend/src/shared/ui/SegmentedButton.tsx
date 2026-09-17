@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useId } from "react";
 import { ToggleButton, ToggleButtonGroup } from "react-aria-components";
 
 import { cx } from "./cx";
@@ -10,10 +10,19 @@ export interface SegmentOption<T extends string> {
   label: ReactNode;
   /** Nombre completo para lectores de pantalla cuando la etiqueta visible es corta. */
   accessibleLabel?: string;
+  /** Una opción que hoy no aplica se muestra deshabilitada, y el porqué va en `description`. */
+  isDisabled?: boolean;
 }
 
 interface SegmentedButtonProps<T extends string> {
   label: string;
+  /**
+   * En un formulario la etiqueta se muestra arriba, como en cualquier campo. En
+   * una barra (idioma, tema) el contexto alcanza y queda solo para lectores.
+   */
+  isLabelVisible?: boolean;
+  /** Aclaración visible debajo del grupo, asociada para lectores de pantalla. */
+  description?: string;
   options: readonly SegmentOption<T>[];
   value: T;
   onChange: (value: T) => void;
@@ -22,13 +31,19 @@ interface SegmentedButtonProps<T extends string> {
 /** Botón segmentado de selección única. El check confirma la elección sin depender del color. */
 export function SegmentedButton<T extends string>({
   label,
+  isLabelVisible = false,
+  description,
   options,
   value,
   onChange,
 }: SegmentedButtonProps<T>) {
-  return (
+  const labelId = useId();
+  const descriptionId = useId();
+
+  const group = (
     <ToggleButtonGroup
-      aria-label={label}
+      {...(isLabelVisible ? { "aria-labelledby": labelId } : { "aria-label": label })}
+      {...(description ? { "aria-describedby": descriptionId } : {})}
       selectionMode="single"
       disallowEmptySelection
       selectedKeys={[value]}
@@ -44,6 +59,7 @@ export function SegmentedButton<T extends string>({
         <ToggleButton
           key={option.id}
           id={option.id}
+          isDisabled={option.isDisabled ?? false}
           {...(option.accessibleLabel ? { "aria-label": option.accessibleLabel } : {})}
           className={cx("state-layer", styles.segment)}
         >
@@ -56,5 +72,24 @@ export function SegmentedButton<T extends string>({
         </ToggleButton>
       ))}
     </ToggleButtonGroup>
+  );
+
+  if (!isLabelVisible && !description) {
+    return group;
+  }
+  return (
+    <div className={cx(styles.field)}>
+      {isLabelVisible ? (
+        <span id={labelId} className={cx(styles.label)}>
+          {label}
+        </span>
+      ) : null}
+      {group}
+      {description ? (
+        <p id={descriptionId} className={cx(styles.description)}>
+          {description}
+        </p>
+      ) : null}
+    </div>
   );
 }
