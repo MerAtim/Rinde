@@ -23,6 +23,7 @@ from rinde.config import Settings, get_settings
 from rinde.health.api.router import router as health_router
 from rinde.health.application.check_readiness import CheckReadiness, DatabaseProbe
 from rinde.health.infrastructure.database_probe import SqlAlchemyDatabaseProbe
+from rinde.shared.api.csrf import CsrfRejectedError, csrf_error_handler
 
 API_PREFIX = "/api"
 # El prefijo __Host- obliga a Secure, Path=/ y sin Domain: la cookie no se comparte con nadie.
@@ -92,6 +93,7 @@ def create_app(
         secure=config.session_cookie_secure,
         max_age_seconds=config.session_ttl_days * SECONDS_PER_DAY,
     )
+    app.add_exception_handler(CsrfRejectedError, csrf_error_handler)
     app.add_exception_handler(AuthError, auth_error_handler)
     app.include_router(health_router, prefix=API_PREFIX)
     app.include_router(auth_router, prefix=API_PREFIX)
