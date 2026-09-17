@@ -10,9 +10,11 @@ import { ThemeToggle } from "../../shared/theme/ThemeToggle";
 import { Alert } from "../../shared/ui/Alert";
 import { Button } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
+import { IconButton } from "../../shared/ui/IconButton";
 import { LanguageSelector } from "../../shared/ui/LanguageSelector";
 import { type Destination, NavigationRail } from "../../shared/ui/NavigationRail";
 import { TopAppBar } from "../../shared/ui/TopAppBar";
+import { useMediaQuery } from "../../shared/ui/useMediaQuery";
 import styles from "./AppShell.module.css";
 
 /** Marco de las pantallas con sesión: barra superior, navegación principal y contenido. */
@@ -20,6 +22,9 @@ export function AppShell() {
   const { t } = useTranslation();
   const location = useLocation();
   const setSession = useSetSession();
+  // En un celular el texto no entra junto al idioma y el tema: queda el ícono,
+  // con el mismo nombre accesible.
+  const isWide = useMediaQuery("(min-width: 600px)");
   const signOut = useMutation({
     mutationFn: logout,
     // Sin sesión, la ruta protegida lleva sola a la pantalla de ingreso.
@@ -41,16 +46,27 @@ export function AppShell() {
           <>
             <LanguageSelector />
             <ThemeToggle />
-            <Button
-              variant="text"
-              icon="logout"
-              isDisabled={signOut.isPending}
-              onPress={() => {
-                signOut.mutate();
-              }}
-            >
-              {t("auth.home.logout")}
-            </Button>
+            {isWide ? (
+              <Button
+                variant="text"
+                icon="logout"
+                isDisabled={signOut.isPending}
+                onPress={() => {
+                  signOut.mutate();
+                }}
+              >
+                {t("auth.home.logout")}
+              </Button>
+            ) : (
+              <IconButton
+                icon="logout"
+                label={t("auth.home.logout")}
+                isDisabled={signOut.isPending}
+                onPress={() => {
+                  signOut.mutate();
+                }}
+              />
+            )}
           </>
         }
       />
