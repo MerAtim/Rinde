@@ -1,4 +1,4 @@
-import { AuthApiError, type AuthErrorCode } from "./api";
+import { type AuthErrorCode, isAuthApiError } from "./api";
 
 export type AuthField = "username" | "password" | "recoveryCode";
 
@@ -21,7 +21,7 @@ export function errorCodeOf(error: unknown): AuthErrorCode | null {
   if (error === null || error === undefined) {
     return null;
   }
-  return error instanceof AuthApiError ? error.code : "UNKNOWN_ERROR";
+  return isAuthApiError(error) ? error.code : "UNKNOWN_ERROR";
 }
 
 export function fieldOf(code: AuthErrorCode): AuthField | "form" {
