@@ -30,6 +30,12 @@
     "toLight": "Cambiar a modo claro",
     "toDark": "Cambiar a modo oscuro"
   },
+  "nav": {
+    "label": "Navegación principal",
+    "home": "Inicio",
+    "accounts": "Cuentas",
+    "loading": "Cargando…"
+  },
   "auth": {
     "brand": {
       "label": "Sobre Rinde",
