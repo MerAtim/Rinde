@@ -3,7 +3,7 @@
 Las acciones que cambian estado exigen el encabezado CSRF.
 """
 
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, Response, status
 
@@ -12,7 +12,6 @@ from rinde.auth.api.cookies import SessionCookie, session_cookie
 from rinde.auth.api.dependencies import auth_unit
 from rinde.auth.api.schemas import (
     Credentials,
-    ErrorResponse,
     MeResponse,
     RecoverRequest,
     RecoverResponse,
@@ -20,6 +19,7 @@ from rinde.auth.api.schemas import (
 )
 from rinde.auth.application.unit import AuthUnit
 from rinde.shared.api.csrf import CSRF
+from rinde.shared.api.schemas import error_responses
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -27,15 +27,11 @@ Unit = Annotated[AuthUnit, Depends(auth_unit)]
 SessionCookieDep = Annotated[SessionCookie, Depends(session_cookie)]
 
 
-def _errors(*status_codes: int) -> dict[int | str, dict[str, Any]]:
-    return {code: {"model": ErrorResponse} for code in status_codes}
-
-
 @router.post(
     "/register",
     status_code=status.HTTP_201_CREATED,
     dependencies=CSRF,
-    responses=_errors(403, 409, 422),
+    responses=error_responses(403, 409, 422),
     summary="Crear una cuenta",
 )
 async def register(
@@ -59,7 +55,7 @@ async def register(
     "/login",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=CSRF,
-    responses=_errors(401, 403, 429),
+    responses=error_responses(401, 403, 429),
     summary="Iniciar sesión",
 )
 async def login(
@@ -77,7 +73,7 @@ async def login(
     "/logout",
     status_code=status.HTTP_204_NO_CONTENT,
     dependencies=CSRF,
-    responses=_errors(403),
+    responses=error_responses(403),
     summary="Cerrar sesión",
 )
 async def logout(
@@ -92,7 +88,7 @@ async def logout(
 @router.post(
     "/recover",
     dependencies=CSRF,
-    responses=_errors(401, 403, 422, 429),
+    responses=error_responses(401, 403, 422, 429),
     summary="Recuperar la cuenta con el código de recuperación",
 )
 async def recover(
@@ -112,7 +108,7 @@ async def recover(
     return RecoverResponse(recovery_code=recovery.recovery_code)
 
 
-@router.get("/me", responses=_errors(401), summary="Cuenta de la sesión actual")
+@router.get("/me", responses=error_responses(401), summary="Cuenta de la sesión actual")
 async def me(request: Request, unit: Unit, cookie: SessionCookieDep) -> MeResponse:
     user = await unit.authenticate.execute(cookie.read(request))
     return MeResponse(username=user.username.value)

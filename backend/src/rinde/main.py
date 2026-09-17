@@ -19,12 +19,13 @@ from rinde.auth.domain.errors import AuthError
 from rinde.auth.infrastructure.argon2_hasher import Argon2PasswordHasher
 from rinde.auth.infrastructure.factory import SqlAlchemyAuthUnitFactory
 from rinde.auth.infrastructure.pwned_passwords import PwnedPasswordsChecker
-from rinde.auth.infrastructure.system import SecureRandomSecrets, SystemClock
+from rinde.auth.infrastructure.system import SecureRandomSecrets
 from rinde.config import Settings, get_settings
 from rinde.health.api.router import router as health_router
 from rinde.health.application.check_readiness import CheckReadiness, DatabaseProbe
 from rinde.health.infrastructure.database_probe import SqlAlchemyDatabaseProbe
 from rinde.shared.api.csrf import CsrfRejectedError, csrf_error_handler
+from rinde.shared.infrastructure.clock import SystemClock
 
 API_PREFIX = "/api"
 # El prefijo __Host- obliga a Secure, Path=/ y sin Domain: la cookie no se comparte con nadie.

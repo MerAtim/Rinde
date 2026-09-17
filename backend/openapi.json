@@ -436,7 +436,8 @@
         "required": [
           "code"
         ],
-        "title": "ErrorResponse"
+        "title": "ErrorResponse",
+        "description": "Toda respuesta de error: un código estable, nunca un mensaje traducido ni una traza."
       },
       "HTTPValidationError": {
         "properties": {

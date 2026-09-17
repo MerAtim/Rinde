@@ -139,7 +139,10 @@ export interface components {
        */
       password: string;
     };
-    /** ErrorResponse */
+    /**
+     * ErrorResponse
+     * @description Toda respuesta de error: un código estable, nunca un mensaje traducido ni una traza.
+     */
     ErrorResponse: {
       /** Code */
       code: string;
