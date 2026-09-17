@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, async_sessionmaker, create_async
 
 from rinde.auth.api.cookies import SessionCookie
 from rinde.auth.api.errors import auth_error_handler
+from rinde.auth.api.identity import identify_user
 from rinde.auth.api.router import router as auth_router
 from rinde.auth.application.dependencies import AuthServices
 from rinde.auth.application.unit import AuthUnitFactory
@@ -88,6 +89,7 @@ def create_app(
     app.state.version = config.version
     app.state.check_readiness = CheckReadiness(database_probe)
     app.state.auth_factory = auth_factory
+    app.state.identify = identify_user
     app.state.session_cookie = SessionCookie(
         name=SECURE_COOKIE_NAME if config.session_cookie_secure else PLAIN_COOKIE_NAME,
         secure=config.session_cookie_secure,
