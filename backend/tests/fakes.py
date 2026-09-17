@@ -6,6 +6,9 @@ from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
+from rinde.accounts.application.unit import AccountsUnit, build_accounts_unit
+from rinde.accounts.application.use_cases import AccountsDependencies
+from rinde.accounts.domain.account import Account
 from rinde.auth.application.dependencies import AuthDependencies, AuthServices
 from rinde.auth.application.ports import ClientAction, Session
 from rinde.auth.application.unit import AuthUnit, build_auth_unit
@@ -192,5 +195,47 @@ class InMemoryAuthUnitFactory:
                 client_activity=self.client_activity,
                 transaction=self.transaction,
                 services=self.services,
+            )
+        )
+
+
+class InMemoryAccounts:
+    def __init__(self) -> None:
+        self.rows: dict[UUID, Account] = {}
+
+    async def add(self, account: Account) -> None:
+        self.rows[account.id] = account
+
+    async def get(self, account_id: UUID, owner_id: UUID) -> Account | None:
+        account = self.rows.get(account_id)
+        return account if account and account.owner_id == owner_id else None
+
+    async def list_for_owner(self, owner_id: UUID, *, include_archived: bool) -> list[Account]:
+        return sorted(
+            (
+                account
+                for account in self.rows.values()
+                if account.owner_id == owner_id and (include_archived or not account.is_archived)
+            ),
+            key=lambda account: (account.created_at, account.id),
+        )
+
+    async def save(self, account: Account) -> None:
+        self.rows[account.id] = account
+
+
+class InMemoryAccountsUnitFactory:
+    """Estado compartido entre pedidos, como si fuera la base de datos."""
+
+    def __init__(self, clock: FakeClock | None = None) -> None:
+        self.accounts = InMemoryAccounts()
+        self.transaction = FakeTransaction()
+        self.clock = clock or FakeClock()
+
+    @asynccontextmanager
+    async def __call__(self) -> AsyncIterator[AccountsUnit]:
+        yield build_accounts_unit(
+            AccountsDependencies(
+                accounts=self.accounts, transaction=self.transaction, clock=self.clock
             )
         )
