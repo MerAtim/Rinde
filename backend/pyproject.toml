@@ -108,5 +108,16 @@ layers = ["api | infrastructure", "application", "(domain)"]
 [[tool.importlinter.contracts]]
 name = "Aplicación y dominio no dependen de frameworks ni de infraestructura"
 type = "forbidden"
-source_modules = ["rinde.health.application", "rinde.auth.application", "rinde.auth.domain"]
+source_modules = [
+    "rinde.health.application",
+    "rinde.auth.application",
+    "rinde.auth.domain",
+    "rinde.shared.domain",
+]
 forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic", "httpx", "argon2"]
+
+[[tool.importlinter.contracts]]
+name = "El kernel compartido no depende de ningún módulo: todos dependen de él"
+type = "forbidden"
+source_modules = ["rinde.shared"]
+forbidden_modules = ["rinde.auth", "rinde.health"]
