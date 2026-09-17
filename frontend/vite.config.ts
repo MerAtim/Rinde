@@ -5,6 +5,12 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   // svgr convierte cada ícono en un componente: solo se empaquetan los que se importan.
   plugins: [react(), svgr()],
+  build: {
+    // Vite incrusta como data: los recursos chicos, y la CSP (font-src 'self')
+    // bloquea una fuente incrustada: las tipografías siempre van como archivo
+    // (ADR-0010). El resto conserva el límite por omisión.
+    assetsInlineLimit: (filePath) => (/\.woff2?$/.test(filePath) ? false : undefined),
+  },
   server: {
     // En desarrollo, /api va al backend local: mismo origen que en producción, sin CORS.
     proxy: { "/api": "http://localhost:8000" },
