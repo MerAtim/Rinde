@@ -1,14 +1,8 @@
-"""Reloj y generador de secretos del sistema operativo."""
+"""Generador de secretos del sistema operativo."""
 
 import secrets
-from datetime import UTC, datetime
 
 from rinde.auth.domain.recovery_code import ALPHABET, LENGTH
-
-
-class SystemClock:
-    def now(self) -> datetime:
-        return datetime.now(UTC)
 
 
 class SecureRandomSecrets:

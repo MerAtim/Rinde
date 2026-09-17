@@ -32,7 +32,3 @@ class RecoverResponse(BaseModel):
 
 class MeResponse(BaseModel):
     username: str
-
-
-class ErrorResponse(BaseModel):
-    code: str
