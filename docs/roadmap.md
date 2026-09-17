@@ -25,7 +25,7 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 
 ## Fase 2: cuentas y transacciones
 * [x] Kernel de dinero: `Money` y `Currency`
-* [ ] Cuentas (efectivo, banco, tarjeta, billetera cripto) con moneda propia: API lista, falta la pantalla
+* [x] Cuentas (efectivo, banco, tarjeta, billetera cripto) con moneda propia: API y pantallas (lista, alta, detalle con renombrar y archivar)
 * [ ] Ingresos, gastos, transferencias (no cuentan como gasto), categorías
 * [ ] Filtros, paginación por cursor, `Idempotency-Key`, log de auditoría
 
