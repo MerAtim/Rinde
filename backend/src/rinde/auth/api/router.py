@@ -18,14 +18,13 @@ from rinde.auth.api.schemas import (
     RecoverResponse,
     RegisterResponse,
 )
-from rinde.auth.api.security import require_csrf_header
 from rinde.auth.application.unit import AuthUnit
+from rinde.shared.api.csrf import CSRF
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 Unit = Annotated[AuthUnit, Depends(auth_unit)]
 SessionCookieDep = Annotated[SessionCookie, Depends(session_cookie)]
-CSRF = [Depends(require_csrf_header)]
 
 
 def _errors(*status_codes: int) -> dict[int | str, dict[str, Any]]:

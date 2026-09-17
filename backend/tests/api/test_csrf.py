@@ -1,6 +1,6 @@
 """Candado de CSRF: ninguna ruta que cambie estado puede quedarse sin el encabezado.
 
-El `Depends(require_csrf_header)` se agrega a mano en cada endpoint (ADR-0007),
+El `dependencies=CSRF` se agrega a mano en cada endpoint (ADR-0007),
 así que la defensa depende de que nadie se olvide. Este test recorre la
 aplicación real en lugar de una lista escrita a mano: un endpoint nuevo que se
 olvide de pedirlo falla acá y no llega a producción.

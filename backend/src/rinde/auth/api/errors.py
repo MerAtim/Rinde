@@ -3,7 +3,6 @@
 from fastapi import Request, status
 from fastapi.responses import JSONResponse
 
-from rinde.auth.api.security import CsrfRejectedError
 from rinde.auth.domain.errors import (
     AuthError,
     InvalidCredentialsError,
@@ -21,7 +20,6 @@ _STATUS_BY_ERROR: tuple[tuple[type[AuthError], int], ...] = (
     (InvalidRecoveryCodeError, status.HTTP_401_UNAUTHORIZED),
     (NotAuthenticatedError, status.HTTP_401_UNAUTHORIZED),
     (TooManyAttemptsError, status.HTTP_429_TOO_MANY_REQUESTS),
-    (CsrfRejectedError, status.HTTP_403_FORBIDDEN),
 )
 
 
