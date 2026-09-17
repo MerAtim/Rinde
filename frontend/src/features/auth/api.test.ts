@@ -2,7 +2,8 @@ import { describe, expect, it, vi } from "vitest";
 
 import { mockApi } from "../../test/api";
 import { jsonResponse } from "../../test/render";
-import { AuthApiError, fetchSession, login, register } from "./api";
+import { ApiRequestError } from "../../shared/api/http";
+import { fetchSession, login, register } from "./api";
 
 describe("API de autenticación", () => {
   it("envía el encabezado CSRF y los datos como JSON", async () => {
@@ -40,7 +41,7 @@ describe("API de autenticación", () => {
   it("informa la falta de conexión", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
 
-    await expect(login("mechi", "x")).rejects.toBeInstanceOf(AuthApiError);
+    await expect(login("mechi", "x")).rejects.toBeInstanceOf(ApiRequestError);
     await expect(login("mechi", "x")).rejects.toMatchObject({ code: "NETWORK_ERROR" });
   });
 
