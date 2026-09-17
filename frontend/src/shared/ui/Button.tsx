@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Button as AriaButton, type ButtonProps as AriaButtonProps } from "react-aria-components";
+import { Link, type LinkProps } from "react-router";
 
 import styles from "./Button.module.css";
 import { cx } from "./cx";
@@ -26,5 +27,24 @@ export function Button({ variant = "filled", icon, children, ...props }: ButtonP
       {icon ? <Icon name={icon} size={18} /> : null}
       {children}
     </AriaButton>
+  );
+}
+
+export interface LinkButtonProps extends Omit<LinkProps, "className" | "style" | "children"> {
+  variant?: ButtonVariant;
+  icon?: IconName;
+  children: ReactNode;
+}
+
+/** Se ve como un botón pero lleva a otra pantalla: es un enlace, y así lo anuncia el lector. */
+export function LinkButton({ variant = "filled", icon, children, ...props }: LinkButtonProps) {
+  return (
+    <Link
+      {...props}
+      className={cx("state-layer", styles.button, styles[variant], icon && styles.withIcon)}
+    >
+      {icon ? <Icon name={icon} size={18} /> : null}
+      {children}
+    </Link>
   );
 }

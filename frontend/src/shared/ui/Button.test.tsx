@@ -1,9 +1,10 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter, Route, Routes } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
 import { expectNoA11yViolations } from "../../test/a11y";
-import { Button, type ButtonVariant } from "./Button";
+import { Button, type ButtonVariant, LinkButton } from "./Button";
 
 const VARIANTS: ButtonVariant[] = ["filled", "tonal", "outlined", "text"];
 
@@ -50,5 +51,28 @@ describe("Button", () => {
     );
 
     await expectNoA11yViolations(container);
+  });
+
+  it("con forma de botón, navega como un enlace", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <Routes>
+          <Route
+            index
+            element={
+              <LinkButton to="/accounts/new" icon="add">
+                Abrir cuenta
+              </LinkButton>
+            }
+          />
+          <Route path="accounts/new" element={<h1>Nueva cuenta</h1>} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole("link", { name: "Abrir cuenta" }));
+
+    expect(screen.getByRole("heading", { name: "Nueva cuenta" })).toBeInTheDocument();
   });
 });
