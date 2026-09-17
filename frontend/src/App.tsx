@@ -6,12 +6,15 @@ import { RecoveryCodePage } from "./features/auth/RecoveryCodePage";
 import { RedirectIfSession, RequireSession } from "./features/auth/SessionRoutes";
 import { SignupPage } from "./features/auth/SignupPage";
 import { HomePage } from "./features/home/HomePage";
+import { AppShell } from "./features/shell/AppShell";
 
 export function App() {
   return (
     <Routes>
       <Route element={<RequireSession />}>
-        <Route index element={<HomePage />} />
+        <Route element={<AppShell />}>
+          <Route index element={<HomePage />} />
+        </Route>
       </Route>
       <Route element={<RedirectIfSession />}>
         <Route path="login" element={<LoginPage />} />
