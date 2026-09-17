@@ -10,13 +10,15 @@
   font: 600 14px/20px var(--md-ref-typeface-plain);
   letter-spacing: 0.01em;
   white-space: nowrap;
+  text-decoration: none;
   cursor: pointer;
   outline: none;
   -webkit-tap-highlight-color: transparent;
   transition: box-shadow var(--md-sys-motion-duration-short3) var(--md-sys-motion-easing-standard);
 }
 
-.button[data-focus-visible] {
+.button[data-focus-visible],
+.button:focus-visible {
   outline: 3px solid var(--md-sys-color-primary);
   outline-offset: 2px;
 }
@@ -35,7 +37,8 @@
   color: var(--md-sys-color-on-primary);
 }
 
-.filled[data-hovered] {
+.filled[data-hovered],
+a.filled:hover {
   box-shadow: var(--md-sys-elevation-level1);
 }
 
