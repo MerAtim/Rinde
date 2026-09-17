@@ -1,0 +1,67 @@
+.group {
+  display: grid;
+  gap: var(--rinde-space-2);
+}
+
+.legend {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 600 14px/20px var(--md-ref-typeface-plain);
+  letter-spacing: 0.01em;
+}
+
+.options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--rinde-space-2);
+}
+
+.card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--rinde-space-3);
+  min-height: 56px;
+  padding-inline: var(--rinde-space-4) var(--rinde-space-3);
+  border-radius: var(--rinde-shape-fab);
+  box-shadow: inset 0 0 0 1px var(--md-sys-color-outline);
+  color: var(--md-sys-color-on-surface-variant);
+  cursor: pointer;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    background-color var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-standard),
+    box-shadow var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-standard);
+}
+
+.label {
+  color: var(--md-sys-color-on-surface);
+  font: 500 15px/20px var(--md-ref-typeface-plain);
+}
+
+.check {
+  display: grid;
+  place-items: center;
+  width: 18px;
+}
+
+.card[data-selected] {
+  background: var(--md-sys-color-secondary-container);
+  box-shadow: none;
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.card[data-selected] .label {
+  color: var(--md-sys-color-on-secondary-container);
+  font-weight: 600;
+}
+
+.card[data-focus-visible] {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+@media (min-width: 840px) {
+  .options {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
