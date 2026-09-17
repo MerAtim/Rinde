@@ -1,0 +1,91 @@
+/* Pantallas chicas: barra inferior fija. */
+.rail {
+  position: fixed;
+  inset: auto 0 0;
+  z-index: 10;
+  background: var(--md-sys-color-surface-container-low);
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.list {
+  display: flex;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list > li {
+  flex: 1;
+}
+
+.item {
+  display: grid;
+  justify-items: center;
+  gap: var(--rinde-space-1);
+  padding-block: var(--rinde-space-3) var(--rinde-space-4);
+  color: var(--md-sys-color-on-surface-variant);
+  text-decoration: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.indicator {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 32px;
+  border-radius: var(--rinde-shape-full);
+  transition: background-color var(--md-sys-motion-duration-medium1)
+    var(--md-sys-motion-easing-standard);
+}
+
+.label {
+  font: 500 12px/16px var(--md-ref-typeface-plain);
+  letter-spacing: 0.04em;
+}
+
+.item:hover .indicator::before {
+  opacity: var(--md-sys-state-hover-state-layer-opacity);
+}
+
+.item:focus-visible .indicator {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.item[aria-current="page"] {
+  color: var(--md-sys-color-on-surface);
+}
+
+.item[aria-current="page"] .indicator {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.item[aria-current="page"] .label {
+  font-weight: 700;
+}
+
+/* Desde 600 px (ventana mediana de Material 3): rail vertical al costado. */
+@media (min-width: 600px) {
+  .rail {
+    position: sticky;
+    inset: auto;
+    top: 72px;
+    align-self: start;
+    width: 88px;
+    padding-block: var(--rinde-space-5);
+    background: transparent;
+    border-top: 0;
+  }
+
+  .list {
+    flex-direction: column;
+    gap: var(--rinde-space-3);
+  }
+
+  .item {
+    padding-block: var(--rinde-space-1);
+  }
+}
