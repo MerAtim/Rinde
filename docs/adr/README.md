@@ -10,3 +10,4 @@
 | [0006](0006-sistema-de-diseno.md) | Sistema de diseño propio sobre Material 3 | Aceptado | 2026-09-11 |
 | [0007](0007-autenticacion.md) | Autenticación con usuario, contraseña y código de recuperación | Aceptado | 2026-09-11 |
 | [0008](0008-nombre-del-proyecto.md) | Nombre del proyecto y elemento firma | Aceptado | 2026-09-16 |
+| [0009](0009-modelo-de-cuentas.md) | Modelo de cuentas | Aceptado | 2026-09-17 |
