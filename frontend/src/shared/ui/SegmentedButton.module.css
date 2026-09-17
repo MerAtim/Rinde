@@ -36,7 +36,31 @@
   color: var(--md-sys-color-on-secondary-container);
 }
 
+.segment[data-disabled] {
+  color: var(--md-sys-color-on-surface);
+  cursor: default;
+  opacity: 0.38;
+}
+
 .segment[data-focus-visible] {
   outline: 3px solid var(--md-sys-color-primary);
   outline-offset: -3px;
+}
+
+.field {
+  display: grid;
+  gap: var(--rinde-space-2);
+  justify-items: start;
+}
+
+.label {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 600 14px/20px var(--md-ref-typeface-plain);
+  letter-spacing: 0.01em;
+}
+
+.description {
+  padding-inline: var(--rinde-space-4);
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 12px/16px var(--md-ref-typeface-plain);
 }
