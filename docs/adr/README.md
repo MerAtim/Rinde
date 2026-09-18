@@ -12,3 +12,4 @@
 | [0008](0008-nombre-del-proyecto.md) | Nombre del proyecto y elemento firma | Aceptado | 2026-09-16 |
 | [0009](0009-modelo-de-cuentas.md) | Modelo de cuentas | Aceptado | 2026-09-17 |
 | [0010](0010-excepciones-de-la-csp.md) | Excepciones puntuales de la CSP | Aceptado | 2026-09-17 |
+| [0011](0011-modelo-de-movimientos.md) | Modelo de movimientos | Aceptado | 2026-09-18 |
