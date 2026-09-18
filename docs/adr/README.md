@@ -13,3 +13,4 @@
 | [0009](0009-modelo-de-cuentas.md) | Modelo de cuentas | Aceptado | 2026-09-17 |
 | [0010](0010-excepciones-de-la-csp.md) | Excepciones puntuales de la CSP | Aceptado | 2026-09-17 |
 | [0011](0011-modelo-de-movimientos.md) | Modelo de movimientos | Aceptado | 2026-09-18 |
+| [0012](0012-chequeos-locales-y-en-ci.md) | Chequeos locales y su relación con la CI | Aceptado | 2026-09-18 |
