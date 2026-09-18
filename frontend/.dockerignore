@@ -1,4 +1,9 @@
 # Lista de permitidos: todo queda afuera salvo lo que el build necesita.
+#
+# Las pruebas de extremo a extremo no entran: la imagen compila la app, no los
+# tests (ADR-0013). Por eso su tsconfig vive dentro de `e2e/` y la solucion raiz
+# no lo referencia. Si lo referenciara, `vite build` fallaria justo aca buscando
+# un archivo que no esta en el contexto.
 **
 !package.json
 !package-lock.json
