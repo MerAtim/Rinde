@@ -1,0 +1,27 @@
+.amount {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rinde-space-1);
+  white-space: nowrap;
+}
+
+.row {
+  font: 600 15px/20px var(--md-ref-typeface-brand);
+}
+
+.hero {
+  font: 500 28px/36px var(--md-ref-typeface-brand);
+  letter-spacing: -0.02em;
+}
+
+.amount[data-tone="income"] {
+  color: var(--rinde-income);
+}
+
+.amount[data-tone="expense"] {
+  color: var(--rinde-expense);
+}
+
+.amount[data-tone="neutral"] {
+  color: var(--md-sys-color-on-surface);
+}

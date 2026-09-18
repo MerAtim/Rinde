@@ -1,0 +1,83 @@
+/* Barra de aviso con acción: aparece abajo y se va sola (docs/design-system.md). */
+.snackbar {
+  position: fixed;
+  inset-inline: var(--rinde-space-4);
+  /* Por encima de la barra de navegación inferior en pantallas chicas. */
+  bottom: calc(var(--rinde-space-8) + var(--rinde-space-5) + env(safe-area-inset-bottom));
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rinde-space-3);
+  width: min(100% - 2 * var(--rinde-space-4), 36rem);
+  margin-inline: auto;
+  padding: var(--rinde-space-3) var(--rinde-space-3) var(--rinde-space-3) var(--rinde-space-4);
+  border-radius: var(--rinde-shape-field);
+  background: var(--md-sys-color-inverse-surface);
+  color: var(--md-sys-color-inverse-on-surface);
+  box-shadow: var(--md-sys-elevation-level3);
+  animation: rise var(--md-sys-motion-duration-medium4)
+    var(--md-sys-motion-easing-emphasized-decelerate);
+}
+
+.message {
+  font: 400 14px/20px var(--md-ref-typeface-plain);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--rinde-space-1);
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rinde-space-2);
+  height: 36px;
+  padding-inline: var(--rinde-space-3);
+  border: 0;
+  border-radius: var(--rinde-shape-full);
+  background: transparent;
+  color: var(--md-sys-color-inverse-primary);
+  font: 600 14px/20px var(--md-ref-typeface-plain);
+  cursor: pointer;
+  outline: none;
+}
+
+.action[data-focus-visible] {
+  outline: 3px solid var(--md-sys-color-inverse-primary);
+  outline-offset: 2px;
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--rinde-shape-full);
+  background: transparent;
+  color: var(--md-sys-color-inverse-on-surface);
+  cursor: pointer;
+  outline: none;
+}
+
+.close[data-focus-visible] {
+  outline: 3px solid var(--md-sys-color-inverse-primary);
+  outline-offset: 2px;
+}
+
+@media (min-width: 600px) {
+  .snackbar {
+    bottom: var(--rinde-space-5);
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(var(--rinde-space-4));
+  }
+}

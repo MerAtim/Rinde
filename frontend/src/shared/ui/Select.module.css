@@ -1,0 +1,117 @@
+.field {
+  display: grid;
+  gap: var(--rinde-space-1);
+  max-width: 360px;
+}
+
+.label {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 600 14px/20px var(--md-ref-typeface-plain);
+  letter-spacing: 0.01em;
+}
+
+.trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rinde-space-3);
+  height: 56px;
+  padding-inline: var(--rinde-space-4) var(--rinde-space-3);
+  border: 0;
+  border-radius: var(--rinde-shape-field);
+  box-shadow: inset 0 0 0 1px var(--md-sys-color-outline);
+  background: transparent;
+  color: var(--md-sys-color-on-surface);
+  font: 400 16px/24px var(--md-ref-typeface-plain);
+  text-align: start;
+  cursor: pointer;
+  outline: none;
+}
+
+.trigger svg {
+  flex: none;
+  color: var(--md-sys-color-on-surface-variant);
+  transform: rotate(90deg);
+}
+
+.trigger[data-focus-visible] {
+  box-shadow: inset 0 0 0 2px var(--md-sys-color-primary);
+}
+
+.field[data-invalid] .trigger {
+  box-shadow: inset 0 0 0 2px var(--md-sys-color-error);
+}
+
+.value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placeholder {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.helper {
+  padding-inline: var(--rinde-space-4);
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 12px/16px var(--md-ref-typeface-plain);
+}
+
+.error {
+  display: flex;
+  gap: var(--rinde-space-1);
+  align-items: center;
+  color: var(--md-sys-color-error);
+}
+
+.popover {
+  width: var(--trigger-width);
+  max-height: 18rem;
+  overflow: auto;
+  border-radius: var(--rinde-shape-field);
+  background: var(--md-sys-color-surface-container-highest);
+  box-shadow:
+    inset 0 1px 0 var(--rinde-edge-light),
+    var(--md-sys-elevation-level3);
+}
+
+.popover[data-entering] {
+  animation: fade var(--md-sys-motion-duration-short4) var(--md-sys-motion-easing-standard);
+}
+
+.list {
+  display: grid;
+  padding: var(--rinde-space-2);
+  outline: none;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rinde-space-3);
+  min-height: 44px;
+  padding-inline: var(--rinde-space-3);
+  border-radius: var(--rinde-shape-chip);
+  color: var(--md-sys-color-on-surface);
+  font: 400 15px/20px var(--md-ref-typeface-plain);
+  cursor: pointer;
+  outline: none;
+}
+
+.option[data-focus-visible] {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: -3px;
+}
+
+.option[data-selected] {
+  color: var(--md-sys-color-on-secondary-container);
+  background: var(--md-sys-color-secondary-container);
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}

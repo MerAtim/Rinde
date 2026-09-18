@@ -17,6 +17,14 @@ import HomeFill from "@material-symbols/svg-400/rounded/home-fill.svg?react";
 import Inventory2 from "@material-symbols/svg-400/rounded/inventory_2.svg?react";
 import LightMode from "@material-symbols/svg-400/rounded/light_mode.svg?react";
 import Logout from "@material-symbols/svg-400/rounded/logout.svg?react";
+import Close from "@material-symbols/svg-400/rounded/close.svg?react";
+import Delete from "@material-symbols/svg-400/rounded/delete.svg?react";
+import Edit from "@material-symbols/svg-400/rounded/edit.svg?react";
+import NorthEast from "@material-symbols/svg-400/rounded/north_east.svg?react";
+import ReceiptLong from "@material-symbols/svg-400/rounded/receipt_long.svg?react";
+import ReceiptLongFill from "@material-symbols/svg-400/rounded/receipt_long-fill.svg?react";
+import SouthWest from "@material-symbols/svg-400/rounded/south_west.svg?react";
+import Undo from "@material-symbols/svg-400/rounded/undo.svg?react";
 import Payments from "@material-symbols/svg-400/rounded/payments.svg?react";
 import ScheduleFill from "@material-symbols/svg-400/rounded/schedule-fill.svg?react";
 import Visibility from "@material-symbols/svg-400/rounded/visibility.svg?react";
@@ -33,20 +41,28 @@ const ICONS = {
   bitcoin: CurrencyBitcoin,
   cash: Payments,
   check: Check,
+  close: Close,
   "check-circle": CheckCircleFill,
   "chevron-right": ChevronRight,
   "content-copy": ContentCopy,
   "credit-card": CreditCard,
+  delete: Delete,
   "dark-mode": DarkMode,
   download: Download,
+  edit: Edit,
   error: ErrorFill,
   home: Home,
   "home-fill": HomeFill,
   "light-mode": LightMode,
   logout: Logout,
+  "movement-in": NorthEast,
+  "movement-out": SouthWest,
+  movements: ReceiptLong,
+  "movements-fill": ReceiptLongFill,
   schedule: ScheduleFill,
   visibility: Visibility,
   "visibility-off": VisibilityOff,
+  undo: Undo,
   wallet: AccountBalanceWallet,
   "wallet-fill": AccountBalanceWalletFill,
   warning: WarningFill,
