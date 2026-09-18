@@ -6,9 +6,12 @@ import { Button, LinkButton } from "../../shared/ui/Button";
 import { Checkbox } from "../../shared/ui/Checkbox";
 import { cx } from "../../shared/ui/cx";
 import { Icon } from "../../shared/ui/Icon";
+import { MoneyAmount } from "../../shared/ui/MoneyAmount";
 import { StatusChip } from "../../shared/ui/StatusChip";
 import styles from "./Accounts.module.css";
+import type { Balance } from "../transactions/api";
 import type { Account } from "./api";
+import { balancesById, useBalances } from "../transactions/useTransactions";
 import { KIND_ICON } from "./presentation";
 import { useAccounts } from "./useAccounts";
 
@@ -20,6 +23,8 @@ export function AccountsPage() {
   const [params, setParams] = useSearchParams();
   const includeArchived = params.get(ARCHIVED_PARAM) === "1";
   const accounts = useAccounts(includeArchived);
+  // El saldo lo calcula el módulo de movimientos (ADR-0011): es otro pedido.
+  const balances = balancesById(useBalances().data);
   const isEmpty = accounts.isSuccess && accounts.data.length === 0;
 
   return (
@@ -73,7 +78,7 @@ export function AccountsPage() {
         <ul className={cx(styles.list)}>
           {accounts.data.map((account) => (
             <li key={account.id}>
-              <AccountRow account={account} />
+              <AccountRow account={account} balance={balances.get(account.id)} />
             </li>
           ))}
         </ul>
@@ -82,10 +87,9 @@ export function AccountsPage() {
   );
 }
 
-function AccountRow({ account }: { account: Account }) {
+function AccountRow({ account, balance }: { account: Account; balance: Balance | undefined }) {
   const { t } = useTranslation();
 
-  // Sin saldo por ahora: se calcula con los movimientos (ADR-0009), que todavía no existen.
   return (
     <Link to={`/accounts/${account.id}`} className={cx("state-layer", styles.row)}>
       <span className={cx(styles.avatar)}>
@@ -101,7 +105,8 @@ function AccountRow({ account }: { account: Account }) {
         </span>
       </span>
       <span className={cx(styles.currency)}>
-        <span aria-hidden="true">{account.currency}</span>
+        {/* Sin movimientos todavía, el saldo es cero en la moneda de la cuenta. */}
+        <MoneyAmount amount={balance?.amount ?? "0"} currency={account.currency} />
         <span className="visually-hidden">{t(`accounts.currency.${account.currency}`)}</span>
       </span>
       <span className={cx(styles.chevron)}>

@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 
@@ -6,6 +6,7 @@ import { App } from "../../App";
 import { expectNoA11yViolations } from "../../test/a11y";
 import { mockApi } from "../../test/api";
 import { jsonResponse, renderWithProviders } from "../../test/render";
+import { aBalance, aPage, aTransaction, EXPENSE_CATEGORY } from "../transactions/fixtures";
 import type { Account } from "./api";
 import { anAccount } from "./fixtures";
 
@@ -13,6 +14,10 @@ const SESSION = { "GET /api/auth/me": jsonResponse(200, { username: "mechi" }) }
 const ACCOUNT = anAccount();
 const DETAIL = `/api/accounts/${ACCOUNT.id}`;
 const ROUTE = `/accounts/${ACCOUNT.id}`;
+const BALANCES = "GET /api/transactions/balances";
+/** El detalle pide los últimos cinco movimientos de esta cuenta. */
+const MOVEMENTS = `GET /api/transactions?account_id=${ACCOUNT.id}&limit=5`;
+const CATEGORIES = "GET /api/categories";
 
 /** Una respuesta que el test libera cuando quiere, para ver la pantalla mientras espera. */
 function deferred() {
@@ -39,6 +44,75 @@ describe("Detalle de una cuenta", () => {
     expect(await screen.findByRole("heading", { name: "Galicia sueldo" })).toBeInTheDocument();
     expect(screen.getByText("Banco · Pesos argentinos (ARS)")).toBeInTheDocument();
     expect(screen.getByText("Abierta el 17 de septiembre de 2026")).toBeInTheDocument();
+  });
+
+  it("muestra el saldo y los últimos movimientos, sin repetir la cuenta", async () => {
+    mockApi({
+      ...SESSION,
+      [`GET ${DETAIL}`]: jsonResponse(200, ACCOUNT),
+      [BALANCES]: jsonResponse(200, [aBalance()]),
+      [MOVEMENTS]: jsonResponse(200, aPage([aTransaction()])),
+      [CATEGORIES]: jsonResponse(200, [EXPENSE_CATEGORY]),
+    });
+    renderWithProviders(<App />, { route: ROUTE });
+
+    const money = await screen.findByRole("region", { name: "Saldo" });
+    expect(await within(money).findByText(/84\.699,50/)).toBeInTheDocument();
+
+    const movement = await screen.findByText("Coto");
+    const row = movement.closest("li");
+    expect(row).toHaveTextContent("15.300,50");
+    // Ya se sabe de qué cuenta es: la fila no repite el nombre.
+    expect(row).not.toHaveTextContent("Galicia sueldo");
+
+    expect(screen.getByRole("link", { name: "Ver todos los movimientos" })).toHaveAttribute(
+      "href",
+      `/transactions?account=${ACCOUNT.id}`,
+    );
+    expect(screen.getByRole("link", { name: "Registrar movimiento" })).toHaveAttribute(
+      "href",
+      `/transactions/new?account=${ACCOUNT.id}`,
+    );
+  });
+
+  it("sin movimientos, el saldo es cero y no ofrece verlos todos", async () => {
+    mockApi({
+      ...SESSION,
+      [`GET ${DETAIL}`]: jsonResponse(200, ACCOUNT),
+      [BALANCES]: jsonResponse(200, []),
+      [MOVEMENTS]: jsonResponse(200, aPage([])),
+      [CATEGORIES]: jsonResponse(200, []),
+    });
+    renderWithProviders(<App />, { route: ROUTE });
+
+    expect(
+      await screen.findByText("Todavía no registraste movimientos en esta cuenta."),
+    ).toBeInTheDocument();
+    const money = screen.getByRole("region", { name: "Saldo" });
+    expect(within(money).getByText(/0,00/)).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: "Ver todos los movimientos" }),
+    ).not.toBeInTheDocument();
+    // El acceso para registrar el primero sigue estando.
+    expect(screen.getByRole("link", { name: "Registrar movimiento" })).toBeInTheDocument();
+  });
+
+  it("una cuenta archivada muestra su saldo pero no deja registrar", async () => {
+    mockApi({
+      ...SESSION,
+      [`GET ${DETAIL}`]: jsonResponse(200, { ...ACCOUNT, archived_at: "2026-09-18T10:00:00Z" }),
+      [BALANCES]: jsonResponse(200, [aBalance()]),
+      [MOVEMENTS]: jsonResponse(200, aPage([aTransaction()])),
+      [CATEGORIES]: jsonResponse(200, [EXPENSE_CATEGORY]),
+    });
+    renderWithProviders(<App />, { route: ROUTE });
+
+    const money = await screen.findByRole("region", { name: "Saldo" });
+    expect(await within(money).findByText(/84\.699,50/)).toBeInTheDocument();
+    expect(
+      await screen.findByRole("link", { name: "Ver todos los movimientos" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Registrar movimiento" })).not.toBeInTheDocument();
   });
 
   it("renombra al instante, sin esperar al servidor", async () => {
@@ -162,10 +236,17 @@ describe("Detalle de una cuenta", () => {
   });
 
   it("no tiene problemas de accesibilidad", async () => {
-    mockApi({ ...SESSION, [`GET ${DETAIL}`]: jsonResponse(200, ACCOUNT) });
+    mockApi({
+      ...SESSION,
+      [`GET ${DETAIL}`]: jsonResponse(200, ACCOUNT),
+      [BALANCES]: jsonResponse(200, [aBalance()]),
+      [MOVEMENTS]: jsonResponse(200, aPage([aTransaction()])),
+      [CATEGORIES]: jsonResponse(200, [EXPENSE_CATEGORY]),
+    });
     const { container } = renderWithProviders(<App />, { route: ROUTE });
 
     await screen.findByRole("heading", { name: "Galicia sueldo" });
+    await screen.findByText("Coto");
 
     await expectNoA11yViolations(container);
   });
