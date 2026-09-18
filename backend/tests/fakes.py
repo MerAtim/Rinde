@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from rinde.accounts.application.unit import AccountsUnit, build_accounts_unit
-from rinde.accounts.application.use_cases import AccountsDependencies
+from rinde.accounts.application.use_cases import AccountsDependencies, GetAccount
 from rinde.accounts.domain.account import Account
 from rinde.auth.application.dependencies import AuthDependencies, AuthServices
 from rinde.auth.application.ports import ClientAction, Session
@@ -15,6 +15,15 @@ from rinde.auth.application.unit import AuthUnit, build_auth_unit
 from rinde.auth.domain.errors import UsernameTakenError
 from rinde.auth.domain.user import User
 from rinde.auth.domain.username import Username
+from rinde.transactions.application.dependencies import TransactionsDependencies
+from rinde.transactions.application.unit import TransactionsUnit, build_transactions_unit
+from rinde.transactions.infrastructure.accounts_gateway import AccountsApplicationGateway
+from tests.unit.transactions.fakes import (
+    FakeAuditLog,
+    FakeCategoryRepository,
+    FakeIdempotencyStore,
+    FakeTransactionRepository,
+)
 
 
 class FakeDatabaseProbe:
@@ -237,5 +246,44 @@ class InMemoryAccountsUnitFactory:
         yield build_accounts_unit(
             AccountsDependencies(
                 accounts=self.accounts, transaction=self.transaction, clock=self.clock
+            )
+        )
+
+
+class InMemoryTransactionsUnitFactory:
+    """Estado compartido entre pedidos, como si fuera la base de datos.
+
+    Las cuentas las ve por el mismo adaptador que en producción, así los tests
+    de API prueban también ese camino.
+    """
+
+    def __init__(self, accounts: InMemoryAccounts, clock: FakeClock | None = None) -> None:
+        self.transactions = FakeTransactionRepository()
+        self.categories = FakeCategoryRepository()
+        self.idempotency = FakeIdempotencyStore()
+        self.audit = FakeAuditLog()
+        self.transaction = FakeTransaction()
+        self.clock = clock or FakeClock()
+        self._accounts = accounts
+
+    @asynccontextmanager
+    async def __call__(self) -> AsyncIterator[TransactionsUnit]:
+        yield build_transactions_unit(
+            TransactionsDependencies(
+                transactions=self.transactions,
+                categories=self.categories,
+                accounts=AccountsApplicationGateway(
+                    GetAccount(
+                        AccountsDependencies(
+                            accounts=self._accounts,
+                            transaction=self.transaction,
+                            clock=self.clock,
+                        )
+                    )
+                ),
+                idempotency=self.idempotency,
+                audit=self.audit,
+                transaction=self.transaction,
+                clock=self.clock,
             )
         )
