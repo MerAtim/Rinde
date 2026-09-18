@@ -1,11 +1,22 @@
 #!/usr/bin/env bash
-# Hook local: bloquea pushes directos a main y ramas fuera de convención.
-# Git pasa por stdin una línea por referencia:
-#   <ref local> <sha local> <ref remota> <sha remoto>
+# Hook local: última puerta antes de que algo salga de la máquina.
+# Activación (una vez por clon): git config core.hooksPath .githooks
+#
+# Dos cosas, en este orden:
+#   1. Reglas de rama: main solo por pull request, y nombres según ADR-0004.
+#   2. Los mismos chequeos de código que corre la CI, con los mismos scripts.
+#
+# Acá va lo caro, no en pre-commit: se paga una vez por push y no una vez por
+# commit, que es lo que hace que la gente termine usando --no-verify (ADR-0012).
+#
+# Para saltearlo a sabiendas: git push --no-verify
 set -euo pipefail
 
 raiz="$(git rev-parse --show-toplevel)"
 
+# Git pasa por stdin una línea por referencia:
+#   <ref local> <sha local> <ref remota> <sha remoto>
+hay_cambios=0
 while read -r _ref_local sha_local ref_remota _sha_remoto; do
   [[ "$ref_remota" == refs/heads/* ]] || continue
   [[ "$sha_local" =~ ^0+$ ]] && continue # borrado de una rama remota
@@ -16,4 +27,13 @@ while read -r _ref_local sha_local ref_remota _sha_remoto; do
     exit 1
   fi
   "$raiz/scripts/check-branch-name.sh" "$rama"
+  hay_cambios=1
 done
+
+# Un push que solo borra ramas no necesita chequear código.
+((hay_cambios)) || exit 0
+
+echo "== pre-push: chequeos de código (los mismos que la CI)"
+"$raiz/scripts/check-backend.sh" all
+"$raiz/scripts/check-frontend.sh" all
+"$raiz/scripts/check-contract.sh"
