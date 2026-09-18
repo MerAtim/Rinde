@@ -1,6 +1,5 @@
 """La cuenta: dónde está la plata, en qué moneda y de quién es (ADR-0009)."""
 
-import unicodedata
 from dataclasses import dataclass, replace
 from datetime import datetime
 from enum import StrEnum
@@ -13,6 +12,7 @@ from rinde.accounts.domain.errors import (
     AccountNameInvalidError,
 )
 from rinde.shared.domain.money import Currency
+from rinde.shared.domain.text import is_clean, normalize
 
 
 class AccountKind(StrEnum):
@@ -31,13 +31,8 @@ class AccountName:
 
     @classmethod
     def parse(cls, raw: str) -> AccountName:
-        # NFC para que "Nación" escrito de dos formas distintas sea el mismo texto.
-        value = unicodedata.normalize("NFC", raw).strip()
-        if not 1 <= len(value) <= cls.MAX_LENGTH:
-            raise AccountNameInvalidError
-        # Los caracteres de control o invisibles no se ven en pantalla y permiten
-        # dos nombres que parecen iguales y no lo son.
-        if any(unicodedata.category(char) in {"Cc", "Cf"} for char in value):
+        value = normalize(raw)
+        if not 1 <= len(value) <= cls.MAX_LENGTH or not is_clean(value):
             raise AccountNameInvalidError
         return cls(value)
 
