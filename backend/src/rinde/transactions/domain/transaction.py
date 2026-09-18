@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, replace
 from datetime import date, datetime, timedelta
+from enum import StrEnum
 from typing import ClassVar
 from uuid import UUID
 
@@ -20,6 +21,15 @@ from rinde.transactions.domain.errors import (
 # La fecha la elige la persona y su reloj puede ir adelantado del UTC del servidor.
 # Un día de tolerancia evita rechazar un gasto de esta noche en Buenos Aires.
 _FUTURE_TOLERANCE = timedelta(days=1)
+
+
+class AuditAction(StrEnum):
+    """Lo que le pasó a un movimiento, tal como queda en el log (ADR-0011)."""
+
+    REGISTERED = "registered"
+    EDITED = "edited"
+    DELETED = "deleted"
+    RESTORED = "restored"
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,10 +53,12 @@ class Description:
 
 @dataclass(frozen=True, slots=True)
 class TargetAccount:
-    """Lo único que movimientos necesita saber de una cuenta: cuál es y en qué moneda."""
+    """Lo que movimientos necesita saber de una cuenta: cuál es, en qué moneda
+    y si sigue activa."""
 
     id: UUID
     currency: Currency
+    is_archived: bool = False
 
 
 @dataclass(frozen=True, slots=True)

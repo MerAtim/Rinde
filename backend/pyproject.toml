@@ -102,7 +102,7 @@ include_external_packages = true
 [[tool.importlinter.contracts]]
 name = "Capas de cada módulo: api e infraestructura dependen de aplicación, nunca al revés"
 type = "layers"
-containers = ["rinde.health", "rinde.auth", "rinde.accounts"]
+containers = ["rinde.health", "rinde.auth", "rinde.accounts", "rinde.transactions"]
 layers = ["api | infrastructure", "application", "(domain)"]
 
 [[tool.importlinter.contracts]]
@@ -114,6 +114,8 @@ source_modules = [
     "rinde.auth.domain",
     "rinde.accounts.application",
     "rinde.accounts.domain",
+    "rinde.transactions.application",
+    "rinde.transactions.domain",
     "rinde.shared.domain",
 ]
 forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic", "httpx", "argon2"]
@@ -122,10 +124,27 @@ forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic"
 name = "El kernel compartido no depende de ningún módulo: todos dependen de él"
 type = "forbidden"
 source_modules = ["rinde.shared"]
-forbidden_modules = ["rinde.auth", "rinde.health", "rinde.accounts"]
+forbidden_modules = ["rinde.auth", "rinde.health", "rinde.accounts", "rinde.transactions"]
 
 [[tool.importlinter.contracts]]
 name = "Cuentas no depende de auth: la identidad llega por el kernel compartido"
 type = "forbidden"
 source_modules = ["rinde.accounts"]
 forbidden_modules = ["rinde.auth"]
+
+[[tool.importlinter.contracts]]
+name = "Movimientos usa cuentas solo por su capa de aplicación, y no conoce auth"
+type = "forbidden"
+source_modules = ["rinde.transactions"]
+forbidden_modules = [
+    "rinde.auth",
+    "rinde.accounts.api",
+    "rinde.accounts.domain",
+    "rinde.accounts.infrastructure",
+]
+
+[[tool.importlinter.contracts]]
+name = "Cuentas no depende de movimientos: el saldo se pide al módulo que lo calcula"
+type = "forbidden"
+source_modules = ["rinde.accounts"]
+forbidden_modules = ["rinde.transactions"]
