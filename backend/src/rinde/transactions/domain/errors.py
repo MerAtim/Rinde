@@ -37,6 +37,28 @@ class TransactionDeletedError(TransactionError):
     code = "TRANSACTION_DELETED"
 
 
+class TransactionAccountNotFoundError(TransactionError):
+    """La cuenta del movimiento no existe o es de otra persona: mismo código que en cuentas."""
+
+    code = "ACCOUNT_NOT_FOUND"
+
+
+class TransactionAccountArchivedError(TransactionError):
+    """En una cuenta archivada no se registran movimientos nuevos (ADR-0009)."""
+
+    code = "ACCOUNT_ARCHIVED"
+
+
+class IdempotencyKeyReusedError(TransactionError):
+    """La misma clave con otro contenido: quien la manda tiene un error, no un reintento."""
+
+    code = "IDEMPOTENCY_KEY_REUSED"
+
+
+class CursorInvalidError(TransactionError):
+    code = "CURSOR_INVALID"
+
+
 class CategoryError(DomainError):
     code = "CATEGORY_ERROR"
 
