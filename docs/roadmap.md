@@ -8,7 +8,10 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * [x] Validación de mensajes de commit: hook local `commit-msg` y job de CI con el mismo script
 * [x] Escaneo de secretos en CI (gitleaks) y Dependabot para las acciones
 * [x] CI: ruff, mypy, import-linter, pytest, tsc, eslint, vitest, pip-audit, npm audit, escaneo de imágenes
-* [ ] pre-commit con los mismos chequeos que la CI
+* [x] Hooks locales con los mismos scripts que la CI: `pre-commit` rápido sobre lo
+  que cambió y `pre-push` con todos los chequeos de código (ADR-0012)
+* [x] Base de datos de tests declarada en `docker-compose.yml` (perfil `test`), para
+  que los tests de integración y `alembic check` salgan del repositorio
 * [x] Protección de `main`: PR obligatorio, CI en verde, historial lineal
 * [x] Estrategia de ramas con nombres en español, validada en hook y en CI (ADR-0004)
 * [x] CD: al mergear a `main`, build de imágenes, migraciones, despliegue y smoke test automáticos

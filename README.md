@@ -54,10 +54,46 @@ Cada decisión importante está registrada con sus alternativas y costos en [doc
 * **Diseño:** Material 3 con identidad propia, modo oscuro por defecto. Especificación en [docs/design-system.md](docs/design-system.md) ([ADR-0006](docs/adr/0006-sistema-de-diseno.md)).
 * **Commits:** [Conventional Commits](https://www.conventionalcommits.org/es/v1.0.0/) con descripción en español.
 
-Para validar ambas cosas en tu clon antes de commitear y de pushear:
+## Chequeos locales
+
+Los hooks del repositorio corren los mismos scripts que la CI, para que no puedan
+divergir ([ADR-0012](docs/adr/0012-chequeos-locales-y-en-ci.md)). Se activan una
+sola vez por clon:
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-La CI aplica las mismas validaciones y escanea el historial en busca de secretos.
+Qué hace cada uno:
+
+* `commit-msg`: valida el mensaje del commit.
+* `pre-commit`: formato y estilo sobre los archivos que cambiaron, y frena
+  cualquier archivo de entorno que no sea `.env.example`. Tarda segundos.
+* `pre-push`: bloquea el push directo a `main`, valida el nombre de la rama y
+  corre todos los chequeos de código: `scripts/check-backend.sh`,
+  `scripts/check-frontend.sh` y `scripts/check-contract.sh`.
+
+Los scripts también se pueden correr a mano, enteros o de a un chequeo:
+
+```bash
+scripts/check-backend.sh          # format, lint, types, layers, migrations, tests
+scripts/check-frontend.sh types   # solo uno
+scripts/check-contract.sh
+```
+
+El chequeo de migraciones y los tests de integración necesitan un PostgreSQL de
+verdad. Está declarado en el compose bajo el perfil `test`, así que no se levanta
+con `docker compose up`:
+
+```bash
+docker compose --profile test up --detach --wait test-db
+export RINDE_DATABASE_URL=postgresql+psycopg://rinde:solo_para_tests@127.0.0.1:55432/rinde_test
+```
+
+En Windows va `127.0.0.1` y no `localhost`: `localhost` resuelve primero a IPv6 y
+el puerto se publica solo en IPv4, así que la conexión no falla, se cuelga.
+
+Los chequeos de dependencias (`pip-audit`, `npm audit`), el escaneo de imágenes y
+el de secretos corren solo en la CI: su resultado cambia sin que cambie el código
+y no sirven como puerta local ([ADR-0012](docs/adr/0012-chequeos-locales-y-en-ci.md),
+decisión 3).
