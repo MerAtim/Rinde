@@ -174,6 +174,23 @@ jobs:
       - name: Build
         run: bash ../scripts/check-frontend.sh build
 
+      # El navegador se baja en cada corrida: es una descarga, no una accion de
+      # terceros que haya que fijar por SHA.
+      - name: Instalar el navegador de Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Pruebas de extremo a extremo
+        run: bash ../scripts/check-frontend.sh e2e
+
+      # El informe solo importa cuando algo falla: si no, no se sube nada.
+      - name: Guardar el informe si fallaron
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7
+
       - name: Vulnerabilidades en dependencias
         run: npm audit --audit-level=moderate
 
