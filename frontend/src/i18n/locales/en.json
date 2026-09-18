@@ -41,7 +41,8 @@
     "label": "Main navigation",
     "home": "Home",
     "accounts": "Accounts",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "transactions": "Transactions"
   },
   "auth": {
     "brand": {
@@ -194,7 +195,10 @@
       "confirmBody": "It will no longer show in your list and can't be renamed. Its data is kept, but it can't be reactivated.",
       "confirm": "Archive",
       "confirming": "Archiving…",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "balance": "Balance",
+      "noMovements": "You haven't recorded any transactions in this account yet.",
+      "allMovements": "See all transactions"
     },
     "errors": {
       "ACCOUNT_NAME_REQUIRED": "Enter a name for the account.",
@@ -206,6 +210,94 @@
       "CSRF_REJECTED": "We couldn't validate the request. Reload the page and try again.",
       "NETWORK_ERROR": "There's no connection to Rinde. Check your internet and try again.",
       "UNKNOWN_ERROR": "Something went wrong. Try again in a moment."
+    }
+  },
+  "transactions": {
+    "kind": {
+      "expense": "Expense",
+      "income": "Income"
+    },
+    "list": {
+      "title": "Transactions",
+      "subtitle": "Everything that came in and went out of your accounts.",
+      "add": "Add transaction",
+      "loading": "Loading transactions…",
+      "error": "We couldn't load your transactions.",
+      "retry": "Try again",
+      "more": "Show more",
+      "loadingMore": "Loading…",
+      "emptyTitle": "You haven't recorded any transactions yet",
+      "emptyBody": "Record an expense or an income and you'll see your balances up to date.",
+      "emptyAction": "Record the first one",
+      "edit": "Edit",
+      "delete": "Delete",
+      "deleted": "You deleted the transaction.",
+      "undo": "Undo",
+      "restored": "We brought it back.",
+      "registered": "You recorded the transaction.",
+      "saved": "We saved the transaction."
+    },
+    "form": {
+      "titleNew": "Record a transaction",
+      "titleEdit": "Edit the transaction",
+      "subtitleNew": "Record an expense or an income in one of your accounts.",
+      "subtitleEdit": "The account can't be changed: moving money between accounts is another operation.",
+      "back": "Back to transactions",
+      "account": "Account",
+      "accountPlaceholder": "Pick an account",
+      "amount": "Amount",
+      "amountHelp": "In {{currency}}, with no sign: the type says if it comes in or out.",
+      "kind": "Type",
+      "category": "Category",
+      "categoryPlaceholder": "Pick a category",
+      "date": "Date",
+      "dateHelp": "When it happened, which isn't always when you record it.",
+      "description": "Description (optional)",
+      "descriptionHelp": "For example, dinner with workmates.",
+      "submitNew": "Record",
+      "submitEdit": "Save changes",
+      "submitting": "Saving…",
+      "noAccountsTitle": "Open an account first",
+      "noAccountsBody": "A transaction always goes through an account. Open your first one and come back.",
+      "noAccountsAction": "Open an account"
+    },
+    "errors": {
+      "AMOUNT_REQUIRED": "Enter an amount.",
+      "AMOUNT_INVALID": "Enter an amount in numbers, for example 15300.50.",
+      "AMOUNT_TOO_PRECISE": "That currency takes fewer decimals.",
+      "TRANSACTION_AMOUNT_NOT_POSITIVE": "The amount has to be greater than zero: the type says if it comes in or out.",
+      "TRANSACTION_CURRENCY_MISMATCH": "The amount doesn't match the account's currency.",
+      "DATE_REQUIRED": "Pick a date.",
+      "TRANSACTION_DATE_IN_FUTURE": "The date can't be in the future.",
+      "TRANSACTION_DESCRIPTION_INVALID": "Use up to 120 characters, with no invisible characters.",
+      "TRANSACTION_NOT_FOUND": "We couldn't find this transaction.",
+      "TRANSACTION_DELETED": "This transaction is deleted.",
+      "CATEGORY_REQUIRED": "Pick a category.",
+      "CATEGORY_NOT_FOUND": "We couldn't find that category.",
+      "CATEGORY_NAME_INVALID": "Use up to 40 characters, with no invisible characters.",
+      "CATEGORY_KIND_MISMATCH": "That category is of the other type. Pick one from the list.",
+      "CATEGORY_IN_USE": "It has transactions: it can't be deleted.",
+      "CATEGORY_NAME_TAKEN": "You already have a category with that name.",
+      "ACCOUNT_NOT_FOUND": "We couldn't find that account.",
+      "ACCOUNT_ARCHIVED": "That account is archived: it doesn't take new transactions.",
+      "IDEMPOTENCY_KEY_REUSED": "That request was already sent with different data. Reload and try again.",
+      "CURSOR_INVALID": "We couldn't continue the list. Reload the page.",
+      "NOT_AUTHENTICATED": "Your session ended. Sign in again.",
+      "CSRF_REJECTED": "We couldn't validate the request. Reload the page and try again.",
+      "NETWORK_ERROR": "There's no connection to Rinde. Check your internet and try again.",
+      "UNKNOWN_ERROR": "Something went wrong. Try again in a moment."
+    },
+    "seed": {
+      "supermercado": "Groceries",
+      "alquiler": "Rent",
+      "servicios": "Utilities",
+      "transporte": "Transport",
+      "salidas": "Going out",
+      "salud": "Health",
+      "otros": "Other",
+      "sueldo": "Salary",
+      "freelance": "Freelance",
+      "otros-ingresos": "Other income"
     }
   }
 }
