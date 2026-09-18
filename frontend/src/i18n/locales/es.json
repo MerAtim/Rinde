@@ -4,6 +4,13 @@
     "tagline": "¿Me rinde el sueldo?",
     "intro": "Tus cuentas, tus cuotas y tus dólares en un solo lugar."
   },
+  "common": {
+    "dismiss": "Cerrar el aviso"
+  },
+  "money": {
+    "income": "Ingreso",
+    "expense": "Gasto"
+  },
   "health": {
     "heading": "Estado del sistema",
     "checking": "Consultando el estado…",

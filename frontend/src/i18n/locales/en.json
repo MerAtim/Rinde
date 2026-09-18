@@ -4,6 +4,13 @@
     "tagline": "Does my salary last the month?",
     "intro": "Your accounts, installments and dollars in one place."
   },
+  "common": {
+    "dismiss": "Dismiss"
+  },
+  "money": {
+    "income": "Income",
+    "expense": "Expense"
+  },
   "health": {
     "heading": "System status",
     "checking": "Checking status…",

@@ -56,12 +56,20 @@ export function createApiClient<Code extends string>(serverCodes: readonly Code[
     return send(path, { headers: { Accept: "application/json" }, ...(signal ? { signal } : {}) });
   }
 
-  function write(method: "POST" | "PATCH", path: string, body?: object): Promise<Response> {
+  function write(
+    method: "POST" | "PATCH" | "DELETE",
+    path: string,
+    body?: object,
+    headers: Record<string, string> = {},
+  ): Promise<Response> {
     return send(path, {
       method,
-      headers: body
-        ? { ...CSRF_HEADER, Accept: "application/json", "Content-Type": "application/json" }
-        : { ...CSRF_HEADER, Accept: "application/json" },
+      headers: {
+        ...CSRF_HEADER,
+        Accept: "application/json",
+        ...(body ? { "Content-Type": "application/json" } : {}),
+        ...headers,
+      },
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
   }
@@ -77,7 +85,9 @@ export function createApiClient<Code extends string>(serverCodes: readonly Code[
   return {
     isError,
     get,
-    post: (path: string, body?: object) => write("POST", path, body),
+    post: (path: string, body?: object, headers?: Record<string, string>) =>
+      write("POST", path, body, headers),
     patch: (path: string, body: object) => write("PATCH", path, body),
+    delete: (path: string) => write("DELETE", path),
   };
 }
