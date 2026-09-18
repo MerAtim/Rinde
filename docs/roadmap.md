@@ -28,6 +28,11 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * [x] Cuentas (efectivo, banco, tarjeta, billetera cripto) con moneda propia: API y pantallas (lista, alta, detalle con renombrar y archivar)
 * [ ] Ingresos, gastos, transferencias (no cuentan como gasto), categorías
 * [ ] Filtros, paginación por cursor, `Idempotency-Key`, log de auditoría
+* [ ] Tipo de cuenta billetera virtual (Mercado Pago, Ualá, Naranja X), después de
+  los movimientos: hoy hay que cargarlas como efectivo. Admite pesos y dólares, no
+  Bitcoin, que sigue solo en billeteras cripto (ADR-0009, decisión 4). Sumar un
+  valor al tipo de cuenta toca dominio, migración con la restricción de la base,
+  contrato y pantallas
 
 ## Fase 3: cotizaciones (ADR-0002)
 * [ ] Puerto `RateProvider` + adaptadores + fallback + caché + histórico propio
