@@ -9,11 +9,20 @@ import { Button, LinkButton } from "../../shared/ui/Button";
 import { ConfirmDialog } from "../../shared/ui/ConfirmDialog";
 import { cx } from "../../shared/ui/cx";
 import { Icon } from "../../shared/ui/Icon";
+import { MoneyAmount } from "../../shared/ui/MoneyAmount";
 import { StatusChip } from "../../shared/ui/StatusChip";
 import { TextField } from "../../shared/ui/TextField";
 import styles from "./Accounts.module.css";
 import { type Account, type AccountErrorCode, isAccountsApiError } from "./api";
 import { errorCodeOf, fieldOf, validateName } from "./errors";
+import { TransactionsWithUndo } from "../transactions/TransactionsPage";
+import {
+  balancesById,
+  flatten,
+  useBalances,
+  useCategories,
+  useTransactions,
+} from "../transactions/useTransactions";
 import { KIND_ICON } from "./presentation";
 import { useAccount, useArchiveAccount, useRenameAccount } from "./useAccounts";
 
@@ -89,6 +98,7 @@ function AccountDetail({ account }: { account: Account }) {
           </p>
         </div>
       </header>
+      <AccountMoney account={account} />
       {account.archived_at ? (
         <section className={cx(styles.section)}>
           <div>
@@ -108,6 +118,46 @@ function AccountDetail({ account }: { account: Account }) {
         </>
       )}
     </>
+  );
+}
+
+/** Saldo de la cuenta y sus últimos movimientos. */
+function AccountMoney({ account }: { account: Account }) {
+  const { t } = useTranslation();
+  const balance = balancesById(useBalances().data).get(account.id);
+  const movements = useTransactions({ accountId: account.id, limit: 5 });
+  const categories = useCategories();
+  const rows = flatten(movements.data);
+
+  return (
+    <section className={cx(styles.section)} aria-labelledby="account-money">
+      <h2 id="account-money" className={cx(styles.sectionTitle)}>
+        {t("accounts.detail.balance")}
+      </h2>
+      {/* Sin movimientos, el saldo es cero en la moneda de la cuenta. */}
+      <MoneyAmount amount={balance?.amount ?? "0"} currency={account.currency} size="hero" />
+      <TransactionsWithUndo
+        transactions={rows}
+        categories={categories.data ?? []}
+        accounts={[account]}
+        showAccount={false}
+      />
+      {movements.isSuccess && rows.length === 0 ? (
+        <p className={cx(styles.sectionBody)}>{t("accounts.detail.noMovements")}</p>
+      ) : null}
+      <div className={cx(styles.actions)}>
+        {account.archived_at ? null : (
+          <LinkButton to={`/transactions/new?account=${account.id}`} icon="add">
+            {t("transactions.list.add")}
+          </LinkButton>
+        )}
+        {rows.length > 0 ? (
+          <LinkButton to={`/transactions?account=${account.id}`} variant="text">
+            {t("accounts.detail.allMovements")}
+          </LinkButton>
+        ) : null}
+      </div>
+    </section>
   );
 }
 

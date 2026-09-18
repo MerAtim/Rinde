@@ -6,6 +6,7 @@ import { App } from "../../App";
 import { expectNoA11yViolations } from "../../test/a11y";
 import { mockApi } from "../../test/api";
 import { jsonResponse, renderWithProviders } from "../../test/render";
+import { aBalance } from "../transactions/fixtures";
 import { anAccount } from "./fixtures";
 
 const SESSION = { "GET /api/auth/me": jsonResponse(200, { username: "mechi" }) };
@@ -34,6 +35,22 @@ describe("Cuentas", () => {
     expect(galicia).toHaveTextContent("Banco");
     expect(galicia).toHaveAccessibleName(/Pesos argentinos \(ARS\)/);
     expect(screen.getByRole("link", { name: /Lemon/ })).toHaveTextContent("Billetera cripto");
+  });
+
+  it("muestra el saldo de cada cuenta en su propia moneda", async () => {
+    mockApi({
+      ...SESSION,
+      "GET /api/accounts": jsonResponse(200, [GALICIA, LEMON]),
+      "GET /api/transactions/balances": jsonResponse(200, [aBalance()]),
+    });
+    renderWithProviders(<App />, { route: "/accounts" });
+
+    const galicia = await screen.findByRole("link", { name: /Galicia sueldo/ });
+    expect(await within(galicia).findByText(/84\.699,50/)).toBeInTheDocument();
+    // Sin movimientos, la cuenta muestra cero: Bitcoin con sus ocho decimales.
+    expect(
+      within(screen.getByRole("link", { name: /Lemon/ })).getByText(/0,00000000/),
+    ).toBeInTheDocument();
   });
 
   it("muestra las archivadas cuando se pide", async () => {
