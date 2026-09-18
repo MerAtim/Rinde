@@ -24,7 +24,12 @@ from fastapi.testclient import TestClient
 
 from rinde.config import Settings
 from rinde.main import create_app
-from tests.fakes import FakeDatabaseProbe, InMemoryAccountsUnitFactory, InMemoryAuthUnitFactory
+from tests.fakes import (
+    FakeDatabaseProbe,
+    InMemoryAccountsUnitFactory,
+    InMemoryAuthUnitFactory,
+    InMemoryTransactionsUnitFactory,
+)
 
 CSRF = {"X-Requested-With": "rinde"}
 PASSPHRASE = "mi gato come fideos los martes"
@@ -46,7 +51,36 @@ PUBLIC_ROUTES = {
 def _open_account(client: TestClient) -> str:
     response = client.post(
         "/api/accounts",
-        json={"name": "Cuenta de la dueña", "kind": "bank", "currency": "ARS"},
+        json={"name": f"Cuenta {uuid4().hex[:8]}", "kind": "bank", "currency": "ARS"},
+        headers=CSRF,
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    identifier: str = response.json()["id"]
+    return identifier
+
+
+def _create_category(client: TestClient) -> str:
+    # Nombre único: dos categorías del mismo tipo no pueden llamarse igual.
+    response = client.post(
+        "/api/categories",
+        json={"name": f"Categoría {uuid4().hex[:8]}", "kind": "expense"},
+        headers=CSRF,
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    identifier: str = response.json()["id"]
+    return identifier
+
+
+def _register_transaction(client: TestClient) -> str:
+    response = client.post(
+        "/api/transactions",
+        json={
+            "account_id": _open_account(client),
+            "kind": "expense",
+            "amount": "1500.00",
+            "category_id": _create_category(client),
+            "occurred_on": "2026-09-11",
+        },
         headers=CSRF,
     )
     assert response.status_code == status.HTTP_201_CREATED
@@ -57,22 +91,33 @@ def _open_account(client: TestClient) -> str:
 # Cómo crear, con la sesión activa, un recurso para cada parámetro de camino.
 OWNED_RESOURCES: dict[str, Callable[[TestClient], str]] = {
     "account_id": _open_account,
+    "category_id": _create_category,
+    "transaction_id": _register_transaction,
 }
 
 # Un cuerpo válido para cada ruta con identificador que lo pide. Con un cuerpo
 # inválido la respuesta sería 422 antes de mirar el dueño, y el test no probaría nada.
 VALID_BODIES: dict[tuple[str, str], dict[str, Any]] = {
     ("PATCH", "/api/accounts/{account_id}"): {"name": "Nombre de la intrusa"},
+    ("PATCH", "/api/categories/{category_id}"): {"name": "Categoría de la intrusa"},
+    ("PATCH", "/api/transactions/{transaction_id}"): {
+        "kind": "expense",
+        "amount": "9999.00",
+        "category_id": str(uuid4()),
+        "occurred_on": "2026-09-11",
+    },
 }
 
 
 @pytest.fixture
 def app(settings: Settings) -> FastAPI:
+    accounts_factory = InMemoryAccountsUnitFactory()
     return create_app(
         settings,
         database_probe=FakeDatabaseProbe(reachable=True),
         auth_factory=InMemoryAuthUnitFactory(),
-        accounts_factory=InMemoryAccountsUnitFactory(),
+        accounts_factory=accounts_factory,
+        transactions_factory=InMemoryTransactionsUnitFactory(accounts_factory.accounts),
     )
 
 
