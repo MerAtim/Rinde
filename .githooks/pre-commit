@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Hook local: chequeos rápidos sobre lo que está por commitearse.
+# Activación (una vez por clon): git config core.hooksPath .githooks
+#
+# Acá va solo lo que tarda segundos, y únicamente sobre los archivos que
+# cambiaron: formato, estilo y un freno para los archivos de entorno. Lo caro
+# (tipos, tests, contrato) corre entero en pre-push (ADR-0012).
+#
+# Limitación conocida: las herramientas leen los archivos del directorio de
+# trabajo, no la versión exacta que quedó en el índice. Si commiteás una parte
+# de un archivo, se revisa el archivo entero. El chequeo que manda es el de
+# pre-push, y sobre todo el de la CI.
+#
+# Para saltearlo a sabiendas: git commit --no-verify
+set -euo pipefail
+
+raiz="$(git rev-parse --show-toplevel)"
+mapfile -t archivos < <(git diff --cached --name-only --diff-filter=ACMR)
+((${#archivos[@]})) || exit 0
+
+# 1. Ningún archivo de entorno entra al repositorio. Solo el de ejemplo.
+secretos=()
+for archivo in "${archivos[@]}"; do
+  case "${archivo##*/}" in
+    .env | .env.*)
+      [[ "$archivo" == *.example ]] || secretos+=("$archivo")
+      ;;
+  esac
+done
+if ((${#secretos[@]})); then
+  {
+    echo "Estos archivos no van al repositorio:"
+    printf '  * %s\n' "${secretos[@]}"
+    echo "Los secretos viajan por variables de entorno; al repo va solo .env.example."
+    echo "Sacalos del commit con: git restore --staged <archivo>"
+  } >&2
+  exit 1
+fi
+
+# 2. Backend: formato y estilo, solo sobre los .py que cambiaron.
+python=()
+for archivo in "${archivos[@]}"; do
+  if [[ "$archivo" == backend/*.py ]]; then python+=("${archivo#backend/}"); fi
+done
+if ((${#python[@]})); then
+  echo "== pre-commit: backend (${#python[@]} archivos)"
+  cd "$raiz/backend"
+  PYTHONIOENCODING=utf-8 uv run ruff format --check -- "${python[@]}"
+  PYTHONIOENCODING=utf-8 uv run ruff check -- "${python[@]}"
+  cd "$raiz"
+fi
+
+# 3. Frontend: formato sobre todo lo que Prettier entienda, estilo sobre el código.
+frontend=()
+for archivo in "${archivos[@]}"; do
+  if [[ "$archivo" == frontend/* ]]; then frontend+=("${archivo#frontend/}"); fi
+done
+if ((${#frontend[@]})); then
+  echo "== pre-commit: frontend (${#frontend[@]} archivos)"
+  cd "$raiz/frontend"
+  npx prettier --check --ignore-unknown -- "${frontend[@]}"
+  codigo=()
+  for archivo in "${frontend[@]}"; do
+    case "$archivo" in
+      *.ts | *.tsx | *.js | *.jsx) codigo+=("$archivo") ;;
+    esac
+  done
+  if ((${#codigo[@]})); then
+    npx eslint --no-warn-ignored -- "${codigo[@]}"
+  fi
+  cd "$raiz"
+fi
+
+exit 0
