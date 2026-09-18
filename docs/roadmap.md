@@ -26,8 +26,11 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 ## Fase 2: cuentas y transacciones
 * [x] Kernel de dinero: `Money` y `Currency`
 * [x] Cuentas (efectivo, banco, tarjeta, billetera cripto) con moneda propia: API y pantallas (lista, alta, detalle con renombrar y archivar)
-* [ ] Ingresos, gastos, transferencias (no cuentan como gasto), categorías
-* [ ] Filtros, paginación por cursor, `Idempotency-Key`, log de auditoría
+* [x] Ingresos y gastos con categorías propias y sembradas, y saldo por cuenta
+* [ ] Transferencias entre cuentas propias (no cuentan como gasto), con el monto de
+  cada lado cuando cambian de moneda
+* [x] Paginación por cursor, `Idempotency-Key` y log de auditoría append-only
+* [ ] Filtros por categoría y por texto en la lista de movimientos
 * [ ] Tipo de cuenta billetera virtual (Mercado Pago, Ualá, Naranja X), después de
   los movimientos: hoy hay que cargarlas como efectivo. Admite pesos y dólares, no
   Bitcoin, que sigue solo en billeteras cripto (ADR-0009, decisión 4). Sumar un
