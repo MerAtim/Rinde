@@ -81,6 +81,16 @@ scripts/check-frontend.sh types   # solo uno
 scripts/check-contract.sh
 ```
 
+Las pruebas de extremo a extremo corren en un navegador de verdad, contra el
+build de producción ([ADR-0013](docs/adr/0013-pruebas-de-extremo-a-extremo.md)).
+El navegador se baja una sola vez por clon:
+
+```bash
+cd frontend && npx playwright install chromium
+```
+
+Para omitirlas a sabiendas: `RINDE_SKIP_E2E=1`.
+
 El chequeo de migraciones y los tests de integración necesitan un PostgreSQL de
 verdad. Está declarado en el compose bajo el perfil `test`, así que no se levanta
 con `docker compose up`:
