@@ -155,9 +155,9 @@ class FakeIdempotencyStore:
         self.rows: dict[tuple[UUID, str], tuple[str, UUID, datetime]] = {}
 
     async def remember(
-        self, owner_id: UUID, key: str, fingerprint: str, transaction_id: UUID
+        self, owner_id: UUID, key: str, fingerprint: str, transaction_id: UUID, at: datetime
     ) -> None:
-        self.rows[(owner_id, key)] = (fingerprint, transaction_id, datetime.now(UTC))
+        self.rows[(owner_id, key)] = (fingerprint, transaction_id, at)
 
     async def recall(self, owner_id: UUID, key: str) -> tuple[str, UUID] | None:
         found = self.rows.get((owner_id, key))

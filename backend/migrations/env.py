@@ -10,7 +10,8 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 import rinde.accounts.infrastructure.tables
-import rinde.auth.infrastructure.tables  # noqa: F401  (registra las tablas en el MetaData)
+import rinde.auth.infrastructure.tables
+import rinde.transactions.infrastructure.tables  # noqa: F401  (registra las tablas en el MetaData)
 from rinde.config import get_settings
 from rinde.shared.infrastructure.database import metadata
 

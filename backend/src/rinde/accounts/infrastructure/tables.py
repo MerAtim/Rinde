@@ -4,7 +4,17 @@ Las reglas del dominio se repiten como restricciones de la base: si algún día
 alguien escribe una fila sin pasar por el dominio, la base la rechaza igual.
 """
 
-from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Index, String, Table, Uuid
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    DateTime,
+    ForeignKey,
+    Index,
+    String,
+    Table,
+    UniqueConstraint,
+    Uuid,
+)
 
 from rinde.shared.infrastructure.database import metadata
 
@@ -28,5 +38,12 @@ accounts = Table(
     CheckConstraint(
         "archived_at IS NULL OR archived_at >= created_at", name="archived_after_created"
     ),
+    # Para que un movimiento pueda apuntar a (cuenta, dueño, moneda) y la base
+    # garantice que hereda la moneda de su cuenta (ADR-0011).
+    #
+    # El nombre va completo, a diferencia de los CHECK de arriba: la convención de
+    # "uq" no incluye %(constraint_name)s, así que un nombre propio se usa tal cual
+    # y tiene que coincidir con el de la migración, o `alembic check` falla.
+    UniqueConstraint("id", "owner_id", "currency", name="uq_accounts_id_owner_id_currency"),
     Index("ix_accounts_owner_id_created_at", "owner_id", "created_at"),
 )
