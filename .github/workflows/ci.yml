@@ -110,26 +110,25 @@ jobs:
       - name: Instalar dependencias
         run: uv sync --locked
 
+      # Cada paso llama al mismo script que corre el hook pre-push: si divergen,
+      # vuelve a pasar lo de siempre, que en una máquina esté verde y acá no.
       - name: Formato
-        run: uv run ruff format --check .
+        run: bash ../scripts/check-backend.sh format
 
       - name: Estilo y seguridad
-        run: uv run ruff check .
+        run: bash ../scripts/check-backend.sh lint
 
       - name: Tipos
-        run: uv run mypy
+        run: bash ../scripts/check-backend.sh types
 
       - name: Capas de la arquitectura
-        run: uv run lint-imports
+        run: bash ../scripts/check-backend.sh layers
 
-      - name: Migraciones
-        run: uv run alembic upgrade head
-
-      - name: Migraciones al día con el modelo
-        run: uv run alembic check
+      - name: Migraciones y su alineación con el modelo
+        run: bash ../scripts/check-backend.sh migrations
 
       - name: Tests con cobertura
-        run: uv run pytest --cov --cov-report=term-missing
+        run: bash ../scripts/check-backend.sh tests
 
       - name: Vulnerabilidades en dependencias
         run: |
@@ -159,20 +158,21 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      # Mismo script que el hook pre-push, por el mismo motivo que en el backend.
       - name: Formato
-        run: npm run format:check
+        run: bash ../scripts/check-frontend.sh format
 
       - name: Estilo
-        run: npm run lint
+        run: bash ../scripts/check-frontend.sh lint
 
       - name: Tipos
-        run: npm run typecheck
+        run: bash ../scripts/check-frontend.sh types
 
       - name: Tests
-        run: npm test
+        run: bash ../scripts/check-frontend.sh tests
 
       - name: Build
-        run: npm run build
+        run: bash ../scripts/check-frontend.sh build
 
       - name: Vulnerabilidades en dependencias
         run: npm audit --audit-level=moderate
@@ -200,24 +200,15 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Regenerar el contrato OpenAPI
-        working-directory: backend
+      - name: Instalar dependencias
         run: |
-          uv sync --locked
-          uv run python -m rinde.openapi openapi.json
+          (cd backend && uv sync --locked)
+          (cd frontend && npm ci)
 
-      - name: Regenerar los tipos del frontend
-        working-directory: frontend
-        run: |
-          npm ci
-          npm run generate:api
-
+      # Mismo script que el hook pre-push: regenera el contrato y los tipos, y
+      # falla si lo versionado no coincide con el código.
       - name: Verificar que el contrato versionado coincida con el código
-        run: |
-          if ! git diff --exit-code -- backend/openapi.json frontend/src/shared/api/schema.d.ts; then
-            echo "::error::El contrato o los tipos generados no coinciden con el código. Regeneralos y commiteá el resultado."
-            exit 1
-          fi
+        run: bash scripts/check-contract.sh
 
   contenedores:
     name: Contenedores
