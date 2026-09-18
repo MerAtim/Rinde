@@ -78,6 +78,11 @@ export async function fetchTransactions(
   return (await response.json()) as TransactionPage;
 }
 
+export async function fetchTransaction(id: string, signal: AbortSignal): Promise<Transaction> {
+  const response = await api.get(`/api/transactions/${encodeURIComponent(id)}`, signal);
+  return (await response.json()) as Transaction;
+}
+
 export async function fetchBalances(signal: AbortSignal): Promise<Balance[]> {
   const response = await api.get("/api/transactions/balances", signal);
   return (await response.json()) as Balance[];

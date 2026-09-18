@@ -41,7 +41,8 @@
     "label": "Navegación principal",
     "home": "Inicio",
     "accounts": "Cuentas",
-    "loading": "Cargando…"
+    "loading": "Cargando…",
+    "transactions": "Movimientos"
   },
   "auth": {
     "brand": {
@@ -194,7 +195,10 @@
       "confirmBody": "Deja de aparecer en tu lista y ya no se puede renombrar. Sus datos se conservan, pero no se puede volver a activar.",
       "confirm": "Archivar",
       "confirming": "Archivando…",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "balance": "Saldo",
+      "noMovements": "Todavía no registraste movimientos en esta cuenta.",
+      "allMovements": "Ver todos los movimientos"
     },
     "errors": {
       "ACCOUNT_NAME_REQUIRED": "Escribí un nombre para la cuenta.",
@@ -206,6 +210,94 @@
       "CSRF_REJECTED": "No pudimos validar el pedido. Recargá la página y probá de nuevo.",
       "NETWORK_ERROR": "No hay conexión con Rinde. Revisá tu internet y probá de nuevo.",
       "UNKNOWN_ERROR": "Algo salió mal. Probá de nuevo en un momento."
+    }
+  },
+  "transactions": {
+    "kind": {
+      "expense": "Gasto",
+      "income": "Ingreso"
+    },
+    "list": {
+      "title": "Movimientos",
+      "subtitle": "Todo lo que entró y salió de tus cuentas.",
+      "add": "Registrar movimiento",
+      "loading": "Cargando los movimientos…",
+      "error": "No pudimos cargar tus movimientos.",
+      "retry": "Reintentar",
+      "more": "Ver más",
+      "loadingMore": "Cargando…",
+      "emptyTitle": "Todavía no registraste movimientos",
+      "emptyBody": "Anotá un gasto o un ingreso y vas a ver el saldo de tus cuentas al día.",
+      "emptyAction": "Registrar el primero",
+      "edit": "Editar",
+      "delete": "Borrar",
+      "deleted": "Borraste el movimiento.",
+      "undo": "Deshacer",
+      "restored": "Lo recuperamos.",
+      "registered": "Registraste el movimiento.",
+      "saved": "Guardamos el movimiento."
+    },
+    "form": {
+      "titleNew": "Registrar un movimiento",
+      "titleEdit": "Editar el movimiento",
+      "subtitleNew": "Anotá un gasto o un ingreso en una de tus cuentas.",
+      "subtitleEdit": "La cuenta no se cambia: mover plata de cuenta es otra operación.",
+      "back": "Volver a movimientos",
+      "account": "Cuenta",
+      "accountPlaceholder": "Elegí una cuenta",
+      "amount": "Monto",
+      "amountHelp": "En {{currency}}, sin el signo: el tipo dice si entra o sale.",
+      "kind": "Tipo",
+      "category": "Categoría",
+      "categoryPlaceholder": "Elegí una categoría",
+      "date": "Fecha",
+      "dateHelp": "Cuándo pasó, que no siempre es cuándo lo anotás.",
+      "description": "Descripción (opcional)",
+      "descriptionHelp": "Por ejemplo, «asado con los del trabajo».",
+      "submitNew": "Registrar",
+      "submitEdit": "Guardar los cambios",
+      "submitting": "Guardando…",
+      "noAccountsTitle": "Primero abrí una cuenta",
+      "noAccountsBody": "Un movimiento siempre pasa por una cuenta. Abrí la primera y volvé.",
+      "noAccountsAction": "Abrir una cuenta"
+    },
+    "errors": {
+      "AMOUNT_REQUIRED": "Escribí un monto.",
+      "AMOUNT_INVALID": "Escribí un monto con números, por ejemplo 15300,50.",
+      "AMOUNT_TOO_PRECISE": "Esa moneda admite menos decimales.",
+      "TRANSACTION_AMOUNT_NOT_POSITIVE": "El monto tiene que ser mayor que cero: el tipo dice si entra o sale.",
+      "TRANSACTION_CURRENCY_MISMATCH": "El monto no corresponde a la moneda de la cuenta.",
+      "DATE_REQUIRED": "Elegí una fecha.",
+      "TRANSACTION_DATE_IN_FUTURE": "La fecha no puede ser futura.",
+      "TRANSACTION_DESCRIPTION_INVALID": "Usá hasta 120 caracteres, sin caracteres invisibles.",
+      "TRANSACTION_NOT_FOUND": "No encontramos este movimiento.",
+      "TRANSACTION_DELETED": "Este movimiento está borrado.",
+      "CATEGORY_REQUIRED": "Elegí una categoría.",
+      "CATEGORY_NOT_FOUND": "No encontramos esa categoría.",
+      "CATEGORY_NAME_INVALID": "Usá hasta 40 caracteres, sin caracteres invisibles.",
+      "CATEGORY_KIND_MISMATCH": "Esa categoría es del otro tipo. Elegí una de la lista.",
+      "CATEGORY_IN_USE": "Tiene movimientos: no se puede borrar.",
+      "CATEGORY_NAME_TAKEN": "Ya tenés una categoría con ese nombre.",
+      "ACCOUNT_NOT_FOUND": "No encontramos esa cuenta.",
+      "ACCOUNT_ARCHIVED": "Esa cuenta está archivada: no admite movimientos nuevos.",
+      "IDEMPOTENCY_KEY_REUSED": "Ese pedido ya se había enviado con otros datos. Recargá y probá de nuevo.",
+      "CURSOR_INVALID": "No pudimos seguir la lista. Recargá la página.",
+      "NOT_AUTHENTICATED": "Tu sesión terminó. Ingresá de nuevo.",
+      "CSRF_REJECTED": "No pudimos validar el pedido. Recargá la página y probá de nuevo.",
+      "NETWORK_ERROR": "No hay conexión con Rinde. Revisá tu internet y probá de nuevo.",
+      "UNKNOWN_ERROR": "Algo salió mal. Probá de nuevo en un momento."
+    },
+    "seed": {
+      "supermercado": "Supermercado",
+      "alquiler": "Alquiler",
+      "servicios": "Servicios",
+      "transporte": "Transporte",
+      "salidas": "Salidas",
+      "salud": "Salud",
+      "otros": "Otros",
+      "sueldo": "Sueldo",
+      "freelance": "Trabajos propios",
+      "otros-ingresos": "Otros ingresos"
     }
   }
 }

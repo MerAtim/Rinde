@@ -22,6 +22,21 @@ const NewAccountPage = lazy(() =>
 const AccountPage = lazy(() =>
   import("./features/accounts/AccountPage").then((module) => ({ default: module.AccountPage })),
 );
+const TransactionsPage = lazy(() =>
+  import("./features/transactions/TransactionsPage").then((module) => ({
+    default: module.TransactionsPage,
+  })),
+);
+const NewTransactionPage = lazy(() =>
+  import("./features/transactions/NewTransactionPage").then((module) => ({
+    default: module.NewTransactionPage,
+  })),
+);
+const EditTransactionPage = lazy(() =>
+  import("./features/transactions/EditTransactionPage").then((module) => ({
+    default: module.EditTransactionPage,
+  })),
+);
 
 export function App() {
   return (
@@ -32,6 +47,9 @@ export function App() {
           <Route path="accounts" element={<AccountsPage />} />
           <Route path="accounts/new" element={<NewAccountPage />} />
           <Route path="accounts/:accountId" element={<AccountPage />} />
+          <Route path="transactions" element={<TransactionsPage />} />
+          <Route path="transactions/new" element={<NewTransactionPage />} />
+          <Route path="transactions/:transactionId" element={<EditTransactionPage />} />
         </Route>
       </Route>
       <Route element={<RedirectIfSession />}>

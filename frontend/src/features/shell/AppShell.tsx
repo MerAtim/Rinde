@@ -36,6 +36,12 @@ export function AppShell() {
   const destinations: Destination[] = [
     { to: "/", label: t("nav.home"), icon: "home", activeIcon: "home-fill", end: true },
     { to: "/accounts", label: t("nav.accounts"), icon: "wallet", activeIcon: "wallet-fill" },
+    {
+      to: "/transactions",
+      label: t("nav.transactions"),
+      icon: "movements",
+      activeIcon: "movements-fill",
+    },
   ];
 
   return (
