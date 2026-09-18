@@ -1,14 +1,7 @@
-.brand {
-  font: 600 22px/28px var(--md-ref-typeface-brand);
-  letter-spacing: -0.03em;
-}
-
-.main {
+.page {
   display: grid;
   gap: var(--rinde-space-7);
-  max-width: 64rem;
-  margin-inline: auto;
-  padding: var(--rinde-space-8) var(--rinde-space-4);
+  padding-block: var(--rinde-space-5);
 }
 
 .hero {

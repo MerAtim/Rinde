@@ -105,6 +105,8 @@ Seis niveles (`--md-sys-elevation-level0` a `level5`): cada uno sube un escalón
 | `--md-sys-motion-duration-medium1` | 250 ms | Selección |
 | `--md-sys-motion-duration-medium4` | 400 ms | Entradas |
 | `--md-sys-motion-duration-long2` | 500 ms | Cambio de pantalla |
+| `--rinde-skeleton-delay` | 300 ms | Espera antes de mostrar un skeleton |
+| `--rinde-skeleton-pulse` | 1600 ms | Pulso de opacidad del skeleton |
 
 Las salidas duran menos que las entradas: el usuario ya decidió irse.
 

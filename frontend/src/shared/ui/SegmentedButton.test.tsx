@@ -32,6 +32,29 @@ describe("SegmentedButton", () => {
     expect(screen.getByRole("radio", { name: "Pesos" })).toBeChecked();
   });
 
+  it("no deja elegir una opción deshabilitada y explica por qué", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <SegmentedButton
+        label="Moneda"
+        isLabelVisible
+        description="Bitcoin solo en billeteras cripto."
+        options={[...OPTIONS, { id: "btc", label: "BTC", isDisabled: true }]}
+        value="ars"
+        onChange={onChange}
+      />,
+    );
+
+    await user.click(screen.getByRole("radio", { name: "BTC" }));
+
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByText("Moneda")).toBeVisible();
+    expect(screen.getByRole("radiogroup", { name: "Moneda" })).toHaveAccessibleDescription(
+      "Bitcoin solo en billeteras cripto.",
+    );
+  });
+
   it("no tiene problemas de accesibilidad", async () => {
     const { container } = render(
       <SegmentedButton label="Moneda" options={OPTIONS} value="ars" onChange={vi.fn()} />,

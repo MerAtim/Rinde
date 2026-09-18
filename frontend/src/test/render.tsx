@@ -1,18 +1,18 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { render } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { MemoryRouter } from "react-router";
+
+import { createQueryClient } from "../queryClient";
 
 interface RenderOptions {
   /** Ruta inicial, para probar pantallas y redirecciones. */
   route?: string;
 }
 
-/** Renderiza con un QueryClient nuevo sin reintentos y un router en memoria. */
+/** Renderiza con el cliente de datos de la app, sin reintentos, y un router en memoria. */
 export function renderWithProviders(ui: ReactElement, { route = "/" }: RenderOptions = {}) {
-  const client = new QueryClient({
-    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
+  const client = createQueryClient({ queries: { retry: false }, mutations: { retry: false } });
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[route]}>{ui}</MemoryRouter>

@@ -25,7 +25,7 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 
 ## Fase 2: cuentas y transacciones
 * [x] Kernel de dinero: `Money` y `Currency`
-* [ ] Cuentas (efectivo, banco, tarjeta, billetera cripto) con moneda propia: API lista, falta la pantalla
+* [x] Cuentas (efectivo, banco, tarjeta, billetera cripto) con moneda propia: API y pantallas (lista, alta, detalle con renombrar y archivar)
 * [ ] Ingresos, gastos, transferencias (no cuentan como gasto), categorías
 * [ ] Filtros, paginación por cursor, `Idempotency-Key`, log de auditoría
 
@@ -58,4 +58,8 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * Secreto compartido entre el Worker y la API: hoy el origen de Render es alcanzable
   desde internet, así que quien lo llame directo puede inventar la cabecera con la
   dirección de origen y esquivar ese límite (no el límite por cuenta)
+* Ingreso con Google y Microsoft por OpenID Connect (código con PKCE, validado en el
+  backend), con la misma sesión en cookie. Requiere un ADR que reemplace a ADR-0007
+  (hoy sin email ni datos personales), dominio propio para las URL de retorno y
+  vinculación solo desde una sesión abierta, nunca por coincidencia de email
 * MFA TOTP · exportación y borrado de datos del usuario · OpenTelemetry · PWA · notificaciones por email
