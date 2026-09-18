@@ -133,15 +133,16 @@ source_modules = ["rinde.accounts"]
 forbidden_modules = ["rinde.auth"]
 
 [[tool.importlinter.contracts]]
-name = "Movimientos usa cuentas solo por su capa de aplicación, y no conoce auth"
+name = "Solo el adaptador de movimientos conoce cuentas: su dominio y su aplicación, no"
+type = "forbidden"
+source_modules = ["rinde.transactions.application", "rinde.transactions.domain"]
+forbidden_modules = ["rinde.accounts", "rinde.auth"]
+
+[[tool.importlinter.contracts]]
+name = "Movimientos llega a cuentas por su capa de aplicación, nunca por la API ni la base"
 type = "forbidden"
 source_modules = ["rinde.transactions"]
-forbidden_modules = [
-    "rinde.auth",
-    "rinde.accounts.api",
-    "rinde.accounts.domain",
-    "rinde.accounts.infrastructure",
-]
+forbidden_modules = ["rinde.auth", "rinde.accounts.api", "rinde.accounts.infrastructure"]
 
 [[tool.importlinter.contracts]]
 name = "Cuentas no depende de movimientos: el saldo se pide al módulo que lo calcula"

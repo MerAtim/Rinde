@@ -92,7 +92,7 @@ class AccountGateway(Protocol):
 
 class IdempotencyStore(Protocol):
     async def remember(
-        self, owner_id: UUID, key: str, fingerprint: str, transaction_id: UUID
+        self, owner_id: UUID, key: str, fingerprint: str, transaction_id: UUID, at: datetime
     ) -> None: ...
 
     async def recall(self, owner_id: UUID, key: str) -> tuple[str, UUID] | None:

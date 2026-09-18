@@ -124,7 +124,7 @@ class RegisterTransaction:
         await deps.audit.record(AuditAction.REGISTERED, transaction, now)
         if idempotency_key is not None:
             await deps.idempotency.remember(
-                owner_id, idempotency_key, data.fingerprint, transaction.id
+                owner_id, idempotency_key, data.fingerprint, transaction.id, now
             )
             await deps.idempotency.forget_expired(now - IDEMPOTENCY_TTL)
         await deps.transaction.commit()
