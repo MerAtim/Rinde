@@ -31,6 +31,30 @@ services:
       retries: 10
     restart: unless-stopped
 
+  # Base solo para los tests de integración y para `alembic check`, que
+  # necesitan un PostgreSQL de verdad. No se levanta con `docker compose up`:
+  # hay que pedirla por su perfil, porque no hace falta para usar la app.
+  #   docker compose --profile test up --detach --wait test-db
+  # La contraseña es fija y está a la vista a propósito: la base no guarda nada
+  # que importe y solo escucha en la interfaz local.
+  test-db:
+    profiles: [test]
+    image: postgres:18-alpine@sha256:d3e1620b530c944afa6e887d22eb899824da68e19c52024bf98f5220c88a65b2
+    environment:
+      POSTGRES_DB: rinde_test
+      POSTGRES_USER: rinde
+      POSTGRES_PASSWORD: solo_para_tests
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - pgdata-test:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rinde -d rinde_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   migrate:
     build: ./backend
     image: rinde/api:local
@@ -73,3 +97,4 @@ services:
 
 volumes:
   pgdata:
+  pgdata-test:
