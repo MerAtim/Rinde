@@ -115,6 +115,68 @@ describe("Detalle de una cuenta", () => {
     expect(screen.queryByRole("link", { name: "Registrar movimiento" })).not.toBeInTheDocument();
   });
 
+  it("muestra las transferencias de la cuenta, vistas desde ella", async () => {
+    const OTRA = anAccount({ id: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d", name: "Efectivo" });
+    mockApi({
+      ...SESSION,
+      [`GET ${DETAIL}`]: jsonResponse(200, ACCOUNT),
+      [BALANCES]: jsonResponse(200, []),
+      [MOVEMENTS]: jsonResponse(200, aPage([])),
+      [CATEGORIES]: jsonResponse(200, []),
+      "GET /api/accounts?include_archived=true": jsonResponse(200, [ACCOUNT, OTRA]),
+      [`GET /api/transfers?account_id=${ACCOUNT.id}&limit=5`]: jsonResponse(200, {
+        items: [
+          {
+            id: "3f1a2b3c-4d5e-4f60-8a1b-2c3d4e5f6a7b",
+            from_account_id: ACCOUNT.id,
+            sent: "50000.00",
+            currency_out: "ARS",
+            to_account_id: OTRA.id,
+            received: "50000.00",
+            currency_in: "ARS",
+            occurred_on: "2026-09-18",
+            description: null,
+            created_at: "2026-09-18T13:00:00Z",
+            updated_at: "2026-09-18T13:00:00Z",
+            deleted_at: null,
+          },
+        ],
+        next_cursor: null,
+      }),
+    });
+    renderWithProviders(<App />, { route: ROUTE });
+
+    const seccion = await screen.findByRole("region", { name: "Transferencias" });
+    // Vista desde esta cuenta, la plata salió: monto en rojo con la palabra "Gasto".
+    expect(await within(seccion).findByText("Hacia Efectivo")).toBeInTheDocument();
+    expect(within(seccion).getByText("Gasto")).toBeInTheDocument();
+    expect(seccion).toHaveTextContent("50.000,00");
+  });
+
+  it("sin transferencias lo dice y ofrece hacer una", async () => {
+    mockApi({
+      ...SESSION,
+      [`GET ${DETAIL}`]: jsonResponse(200, ACCOUNT),
+      [BALANCES]: jsonResponse(200, []),
+      [MOVEMENTS]: jsonResponse(200, aPage([])),
+      [CATEGORIES]: jsonResponse(200, []),
+      "GET /api/accounts?include_archived=true": jsonResponse(200, [ACCOUNT]),
+      [`GET /api/transfers?account_id=${ACCOUNT.id}&limit=5`]: jsonResponse(200, {
+        items: [],
+        next_cursor: null,
+      }),
+    });
+    renderWithProviders(<App />, { route: ROUTE });
+
+    expect(
+      await screen.findByText("Todavía no transferiste nada desde o hacia esta cuenta."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Transferir" })).toHaveAttribute(
+      "href",
+      `/transfers/new?account=${ACCOUNT.id}`,
+    );
+  });
+
   it("renombra al instante, sin esperar al servidor", async () => {
     let current: Account = ACCOUNT;
     const pending = deferred();

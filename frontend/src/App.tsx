@@ -32,6 +32,11 @@ const NewTransactionPage = lazy(() =>
     default: module.NewTransactionPage,
   })),
 );
+const NewTransferPage = lazy(() =>
+  import("./features/transfers/NewTransferPage").then((module) => ({
+    default: module.NewTransferPage,
+  })),
+);
 const EditTransactionPage = lazy(() =>
   import("./features/transactions/EditTransactionPage").then((module) => ({
     default: module.EditTransactionPage,
@@ -50,6 +55,7 @@ export function App() {
           <Route path="transactions" element={<TransactionsPage />} />
           <Route path="transactions/new" element={<NewTransactionPage />} />
           <Route path="transactions/:transactionId" element={<EditTransactionPage />} />
+          <Route path="transfers/new" element={<NewTransferPage />} />
         </Route>
       </Route>
       <Route element={<RedirectIfSession />}>

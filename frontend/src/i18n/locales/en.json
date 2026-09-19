@@ -299,5 +299,66 @@
       "freelance": "Freelance",
       "otros-ingresos": "Other income"
     }
+  },
+  "transfers": {
+    "registered": "Transfer recorded.",
+    "deleted": "Transfer deleted.",
+    "restored": "Brought it back.",
+    "form": {
+      "back": "Back to accounts",
+      "title": "Transfer between accounts",
+      "subtitle": "Moving money between your accounts is neither an expense nor income.",
+      "from": "From",
+      "to": "To",
+      "accountPlaceholder": "Pick an account",
+      "amount": "Amount",
+      "amountHelp": "In {{currency}}, with a decimal separator for cents",
+      "sent": "Sent",
+      "received": "Received",
+      "receivedHelp": "In {{currency}}: what actually arrived, at the rate you got",
+      "date": "Date",
+      "dateHelp": "When it happened, which is not always today",
+      "description": "Description",
+      "descriptionHelp": "Optional",
+      "submit": "Transfer",
+      "submitting": "Transferring…",
+      "notEnoughTitle": "You need two accounts",
+      "notEnoughBody": "A transfer moves money from one account to another, so you need at least two.",
+      "notEnoughAction": "Open another account"
+    },
+    "detail": {
+      "title": "Transfers",
+      "none": "Nothing has been transferred to or from this account yet.",
+      "add": "Transfer",
+      "incoming": "In",
+      "outgoing": "Out",
+      "from": "From {{name}}",
+      "to": "To {{name}}",
+      "delete": "Delete",
+      "undo": "Undo"
+    },
+    "errors": {
+      "SENT_REQUIRED": "Enter how much is sent.",
+      "RECEIVED_REQUIRED": "Enter how much arrives.",
+      "ACCOUNTS_REQUIRED": "Pick the source and the destination account.",
+      "DATE_REQUIRED": "Pick the date.",
+      "TRANSFER_SAME_ACCOUNT": "Source and destination must be different accounts.",
+      "TRANSFER_AMOUNT_NOT_POSITIVE": "The amount must be greater than zero.",
+      "TRANSFER_CURRENCY_MISMATCH": "The amount is not in its account's currency.",
+      "TRANSFER_DATE_IN_FUTURE": "The date cannot be in the future.",
+      "TRANSFER_NOT_FOUND": "We could not find this transfer.",
+      "TRANSFER_DELETED": "This transfer is deleted.",
+      "TRANSACTION_DESCRIPTION_INVALID": "Use up to 120 characters, without invisible characters.",
+      "ACCOUNT_NOT_FOUND": "We could not find one of the accounts.",
+      "ACCOUNT_ARCHIVED": "An archived account neither sends nor receives.",
+      "IDEMPOTENCY_KEY_REUSED": "That request was already used with different data. Try again.",
+      "AMOUNT_INVALID": "Enter a valid amount, for example 15300.50.",
+      "AMOUNT_TOO_PRECISE": "That currency does not allow so many decimals.",
+      "CURSOR_INVALID": "We could not continue the list. Reload the page.",
+      "UNKNOWN_ERROR": "We could not complete the transfer. Try again.",
+      "NETWORK_ERROR": "We could not connect. Check your connection.",
+      "CSRF_REJECTED": "Reload the page and try again.",
+      "NOT_AUTHENTICATED": "Your session expired. Sign in again."
+    }
   }
 }
