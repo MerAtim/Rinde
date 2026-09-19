@@ -15,3 +15,4 @@
 | [0011](0011-modelo-de-movimientos.md) | Modelo de movimientos | Aceptado | 2026-09-18 |
 | [0012](0012-chequeos-locales-y-en-ci.md) | Chequeos locales y su relación con la CI | Aceptado | 2026-09-18 |
 | [0013](0013-pruebas-de-extremo-a-extremo.md) | Pruebas de extremo a extremo | Aceptado | 2026-09-18 |
+| [0014](0014-modelo-de-transferencias.md) | Modelo de transferencias | Aceptado | 2026-09-19 |
