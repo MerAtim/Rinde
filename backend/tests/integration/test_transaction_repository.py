@@ -14,7 +14,11 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from rinde.accounts.infrastructure.tables import accounts
 from rinde.auth.infrastructure.tables import users
 from rinde.shared.domain.money import Currency, Money
-from rinde.transactions.application.ports import TransactionFilters
+from rinde.transactions.application.ports import (
+    IdempotentResource,
+    RememberedKey,
+    TransactionFilters,
+)
 from rinde.transactions.domain.category import Category, CategoryName, TransactionKind
 from rinde.transactions.domain.transaction import (
     AuditAction,
@@ -347,9 +351,11 @@ async def test_an_idempotency_key_remembers_its_movement(session: AsyncSession) 
     await SqlAlchemyTransactionRepository(session).add(movement)
     store = SqlAlchemyIdempotencyStore(session)
 
-    await store.remember(owner_id, "clave-1", "huella", movement.id, NOW)
+    recordada = RememberedKey("huella", IdempotentResource.TRANSACTION, movement.id)
 
-    assert await store.recall(owner_id, "clave-1") == ("huella", movement.id)
+    await store.remember(owner_id, "clave-1", recordada, NOW)
+
+    assert await store.recall(owner_id, "clave-1") == recordada
     assert await store.recall(owner_id, "otra") is None
 
     await store.forget_expired(NOW + timedelta(days=1))

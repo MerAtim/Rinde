@@ -10,6 +10,8 @@ from rinde.transactions.application.ports import (
     DatabaseTransaction,
     IdempotencyStore,
     TransactionRepository,
+    TransferAuditLog,
+    TransferRepository,
 )
 
 
@@ -18,9 +20,11 @@ class TransactionsDependencies:
     """Todo lo de un pedido comparte la misma transacción de base."""
 
     transactions: TransactionRepository
+    transfers: TransferRepository
     categories: CategoryRepository
     accounts: AccountGateway
     idempotency: IdempotencyStore
     audit: AuditLog
+    transfer_audit: TransferAuditLog
     transaction: DatabaseTransaction
     clock: Clock

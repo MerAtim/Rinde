@@ -13,12 +13,18 @@ from rinde.transactions.application.categories import (
 from rinde.transactions.application.dependencies import TransactionsDependencies
 from rinde.transactions.application.use_cases import (
     DeleteTransaction,
+    DeleteTransfer,
     EditTransaction,
+    EditTransfer,
     GetTransaction,
+    GetTransfer,
     ListBalances,
     ListTransactions,
+    ListTransfers,
     RegisterTransaction,
+    RegisterTransfer,
     RestoreTransaction,
+    RestoreTransfer,
 )
 
 
@@ -31,6 +37,12 @@ class TransactionsUnit:
     get: GetTransaction
     list: ListTransactions
     balances: ListBalances
+    register_transfer: RegisterTransfer
+    edit_transfer: EditTransfer
+    delete_transfer: DeleteTransfer
+    restore_transfer: RestoreTransfer
+    get_transfer: GetTransfer
+    list_transfers: ListTransfers
     categories: ListCategories
     create_category: CreateCategory
     rename_category: RenameCategory
@@ -52,6 +64,12 @@ def build_transactions_unit(deps: TransactionsDependencies) -> TransactionsUnit:
         get=GetTransaction(deps),
         list=ListTransactions(deps),
         balances=ListBalances(deps),
+        register_transfer=RegisterTransfer(deps),
+        edit_transfer=EditTransfer(deps),
+        delete_transfer=DeleteTransfer(deps),
+        restore_transfer=RestoreTransfer(deps),
+        get_transfer=GetTransfer(deps),
+        list_transfers=ListTransfers(deps),
         categories=ListCategories(deps),
         create_category=CreateCategory(deps),
         rename_category=RenameCategory(deps),
