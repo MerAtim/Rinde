@@ -24,6 +24,7 @@ import NorthEast from "@material-symbols/svg-400/rounded/north_east.svg?react";
 import ReceiptLong from "@material-symbols/svg-400/rounded/receipt_long.svg?react";
 import ReceiptLongFill from "@material-symbols/svg-400/rounded/receipt_long-fill.svg?react";
 import SouthWest from "@material-symbols/svg-400/rounded/south_west.svg?react";
+import SwapHoriz from "@material-symbols/svg-400/rounded/swap_horiz.svg?react";
 import Undo from "@material-symbols/svg-400/rounded/undo.svg?react";
 import Payments from "@material-symbols/svg-400/rounded/payments.svg?react";
 import ScheduleFill from "@material-symbols/svg-400/rounded/schedule-fill.svg?react";
@@ -60,6 +61,7 @@ const ICONS = {
   movements: ReceiptLong,
   "movements-fill": ReceiptLongFill,
   schedule: ScheduleFill,
+  swap: SwapHoriz,
   visibility: Visibility,
   "visibility-off": VisibilityOff,
   undo: Undo,

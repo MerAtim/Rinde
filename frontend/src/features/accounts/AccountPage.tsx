@@ -16,6 +16,7 @@ import styles from "./Accounts.module.css";
 import { type Account, type AccountErrorCode, isAccountsApiError } from "./api";
 import { errorCodeOf, fieldOf, validateName } from "./errors";
 import { TransactionsWithUndo } from "../transactions/TransactionsPage";
+import { AccountTransfers } from "../transfers/AccountTransfers";
 import {
   balancesById,
   flatten,
@@ -24,7 +25,7 @@ import {
   useTransactions,
 } from "../transactions/useTransactions";
 import { KIND_ICON } from "./presentation";
-import { useAccount, useArchiveAccount, useRenameAccount } from "./useAccounts";
+import { useAccount, useAccounts, useArchiveAccount, useRenameAccount } from "./useAccounts";
 
 /**
  * Una cuenta ajena responde igual que una inexistente (ADR-0009), y un
@@ -99,6 +100,7 @@ function AccountDetail({ account }: { account: Account }) {
         </div>
       </header>
       <AccountMoney account={account} />
+      <AccountTransfersSection account={account} />
       {account.archived_at ? (
         <section className={cx(styles.section)}>
           <div>
@@ -159,6 +161,13 @@ function AccountMoney({ account }: { account: Account }) {
       </div>
     </section>
   );
+}
+
+/** Las transferencias necesitan el nombre de la otra cuenta, no solo su id. */
+function AccountTransfersSection({ account }: { account: Account }) {
+  // Las archivadas también: una transferencia vieja puede apuntar a una de ellas.
+  const accounts = useAccounts(true);
+  return <AccountTransfers account={account} accounts={accounts.data ?? []} />;
 }
 
 function RenameSection({ account }: { account: Account }) {

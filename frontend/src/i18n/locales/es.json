@@ -299,5 +299,66 @@
       "freelance": "Trabajos propios",
       "otros-ingresos": "Otros ingresos"
     }
+  },
+  "transfers": {
+    "registered": "Registraste la transferencia.",
+    "deleted": "Borraste la transferencia.",
+    "restored": "La recuperamos.",
+    "form": {
+      "back": "Volver a cuentas",
+      "title": "Transferir entre cuentas",
+      "subtitle": "Mover plata de una cuenta a otra no es un gasto ni un ingreso.",
+      "from": "Desde",
+      "to": "Hacia",
+      "accountPlaceholder": "Elegí una cuenta",
+      "amount": "Monto",
+      "amountHelp": "En {{currency}}, con coma para los centavos",
+      "sent": "Sale",
+      "received": "Entra",
+      "receivedHelp": "En {{currency}}: lo que realmente entró, con la tasa que te dieron",
+      "date": "Fecha",
+      "dateHelp": "Cuándo se hizo, que no siempre es hoy",
+      "description": "Descripción",
+      "descriptionHelp": "Opcional",
+      "submit": "Transferir",
+      "submitting": "Transfiriendo…",
+      "notEnoughTitle": "Necesitás dos cuentas",
+      "notEnoughBody": "Una transferencia mueve plata de una cuenta a otra, así que hacen falta al menos dos.",
+      "notEnoughAction": "Abrir otra cuenta"
+    },
+    "detail": {
+      "title": "Transferencias",
+      "none": "Todavía no transferiste nada desde o hacia esta cuenta.",
+      "add": "Transferir",
+      "incoming": "Entró",
+      "outgoing": "Salió",
+      "from": "Desde {{name}}",
+      "to": "Hacia {{name}}",
+      "delete": "Borrar",
+      "undo": "Deshacer"
+    },
+    "errors": {
+      "SENT_REQUIRED": "Escribí cuánto sale.",
+      "RECEIVED_REQUIRED": "Escribí cuánto entra.",
+      "ACCOUNTS_REQUIRED": "Elegí la cuenta de origen y la de destino.",
+      "DATE_REQUIRED": "Elegí la fecha.",
+      "TRANSFER_SAME_ACCOUNT": "El origen y el destino tienen que ser cuentas distintas.",
+      "TRANSFER_AMOUNT_NOT_POSITIVE": "El monto tiene que ser mayor que cero.",
+      "TRANSFER_CURRENCY_MISMATCH": "El monto no está en la moneda de su cuenta.",
+      "TRANSFER_DATE_IN_FUTURE": "La fecha no puede ser futura.",
+      "TRANSFER_NOT_FOUND": "No encontramos esta transferencia.",
+      "TRANSFER_DELETED": "Esta transferencia está borrada.",
+      "TRANSACTION_DESCRIPTION_INVALID": "Usá hasta 120 caracteres, sin caracteres invisibles.",
+      "ACCOUNT_NOT_FOUND": "No encontramos una de las cuentas.",
+      "ACCOUNT_ARCHIVED": "Una cuenta archivada no envía ni recibe.",
+      "IDEMPOTENCY_KEY_REUSED": "Ese pedido ya se usó con otros datos. Probá de nuevo.",
+      "AMOUNT_INVALID": "Escribí un monto válido, por ejemplo 15300,50.",
+      "AMOUNT_TOO_PRECISE": "Esa moneda no admite tantos decimales.",
+      "CURSOR_INVALID": "No pudimos seguir la lista. Volvé a cargar la página.",
+      "UNKNOWN_ERROR": "No pudimos completar la transferencia. Probá de nuevo.",
+      "NETWORK_ERROR": "No pudimos conectarnos. Revisá tu conexión.",
+      "CSRF_REJECTED": "Recargá la página y probá otra vez.",
+      "NOT_AUTHENTICATED": "Tu sesión venció. Volvé a ingresar."
+    }
   }
 }
