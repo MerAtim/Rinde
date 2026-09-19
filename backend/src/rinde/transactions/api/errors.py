@@ -12,6 +12,7 @@ from rinde.transactions.domain.errors import (
     TransactionAccountArchivedError,
     TransactionAccountNotFoundError,
     TransactionNotFoundError,
+    TransferNotFoundError,
 )
 
 # Todo lo que no figure acá es un dato inválido: 422, como la validación de FastAPI.
@@ -19,6 +20,7 @@ _STATUS_BY_ERROR: tuple[tuple[type[DomainError], int], ...] = (
     (TransactionNotFoundError, status.HTTP_404_NOT_FOUND),
     (TransactionAccountNotFoundError, status.HTTP_404_NOT_FOUND),
     (CategoryNotFoundError, status.HTTP_404_NOT_FOUND),
+    (TransferNotFoundError, status.HTTP_404_NOT_FOUND),
     (TransactionAccountArchivedError, status.HTTP_409_CONFLICT),
     (CategoryInUseError, status.HTTP_409_CONFLICT),
     (CategoryNameTakenError, status.HTTP_409_CONFLICT),

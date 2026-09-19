@@ -88,11 +88,29 @@ def _register_transaction(client: TestClient) -> str:
     return identifier
 
 
+def _register_transfer(client: TestClient) -> str:
+    response = client.post(
+        "/api/transfers",
+        json={
+            "from_account_id": _open_account(client),
+            "to_account_id": _open_account(client),
+            "sent": "1000.00",
+            "received": "1000.00",
+            "occurred_on": "2026-09-11",
+        },
+        headers=CSRF,
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    identifier: str = response.json()["id"]
+    return identifier
+
+
 # Cómo crear, con la sesión activa, un recurso para cada parámetro de camino.
 OWNED_RESOURCES: dict[str, Callable[[TestClient], str]] = {
     "account_id": _open_account,
     "category_id": _create_category,
     "transaction_id": _register_transaction,
+    "transfer_id": _register_transfer,
 }
 
 # Un cuerpo válido para cada ruta con identificador que lo pide. Con un cuerpo
@@ -104,6 +122,13 @@ VALID_BODIES: dict[tuple[str, str], dict[str, Any]] = {
         "kind": "expense",
         "amount": "9999.00",
         "category_id": str(uuid4()),
+        "occurred_on": "2026-09-11",
+    },
+    ("PATCH", "/api/transfers/{transfer_id}"): {
+        "from_account_id": str(uuid4()),
+        "to_account_id": str(uuid4()),
+        "sent": "9999.00",
+        "received": "9999.00",
         "occurred_on": "2026-09-11",
     },
 }
