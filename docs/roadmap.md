@@ -12,6 +12,8 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
   que cambió y `pre-push` con todos los chequeos de código (ADR-0012)
 * [x] Base de datos de tests declarada en `docker-compose.yml` (perfil `test`), para
   que los tests de integración y `alembic check` salgan del repositorio
+* [x] Pruebas de extremo a extremo en navegador (Playwright) sobre el build de
+  producción, con la invariante de que la navegación no se recorta (ADR-0013)
 * [x] Protección de `main`: PR obligatorio, CI en verde, historial lineal
 * [x] Estrategia de ramas con nombres en español, validada en hook y en CI (ADR-0004)
 * [x] CD: al mergear a `main`, build de imágenes, migraciones, despliegue y smoke test automáticos
@@ -63,7 +65,9 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 ## Fase 8: portfolio
 * [ ] Cuenta demo con datos sembrados realistas (sin registro)
 * [ ] README: arquitectura, diagrama, ADRs, capturas, cómo correrlo, métricas reales
-* [ ] Playwright e2e de los 3 flujos críticos
+* [ ] Playwright e2e de los 3 flujos críticos contra el entorno completo. El
+  andamiaje ya existe y corre en CI desde la fase 0: se adelantó porque es el
+  único tipo de prueba que ve el maquetado (ADR-0013)
 
 ## Después (solo si hay tiempo)
 * Secreto compartido entre el Worker y la API: hoy el origen de Render es alcanzable
