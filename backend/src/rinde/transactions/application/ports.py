@@ -7,12 +7,14 @@ usuario autenticado. Y ningún listado devuelve movimientos borrados (ADR-0011).
 
 from dataclasses import dataclass
 from datetime import date, datetime
+from enum import StrEnum
 from typing import Protocol
 from uuid import UUID
 
 from rinde.shared.domain.money import Money
 from rinde.transactions.domain.category import Category, TransactionKind
 from rinde.transactions.domain.transaction import AuditAction, TargetAccount, Transaction
+from rinde.transactions.domain.transfer import Transfer
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,6 +31,25 @@ class Page:
     """Una porción de la lista, con la marca para pedir la siguiente."""
 
     items: list[Transaction]
+    next_cursor: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class TransferFilters:
+    """Lo que la lista puede acotar.
+
+    `account_id` alcanza a la cuenta esté de un lado o del otro: quien mira una
+    cuenta quiere ver tanto lo que le entró como lo que le salió.
+    """
+
+    account_id: UUID | None = None
+    since: date | None = None
+    until: date | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class TransferPage:
+    items: list[Transfer]
     next_cursor: str | None
 
 
@@ -90,22 +111,69 @@ class AccountGateway(Protocol):
         ...
 
 
+class IdempotentResource(StrEnum):
+    """Qué creó una clave de idempotencia.
+
+    Se guarda en lugar de deducirlo: la misma clave usada para un movimiento y
+    para una transferencia tiene que fallar de forma evidente, no depender de
+    que las huellas casualmente no coincidan.
+    """
+
+    TRANSACTION = "transaction"
+    TRANSFER = "transfer"
+
+
+@dataclass(frozen=True, slots=True)
+class RememberedKey:
+    """Lo que dejó una clave ya usada: qué pedido era y qué creó."""
+
+    fingerprint: str
+    resource: IdempotentResource
+    resource_id: UUID
+
+
 class IdempotencyStore(Protocol):
     async def remember(
-        self, owner_id: UUID, key: str, fingerprint: str, transaction_id: UUID, at: datetime
+        self, owner_id: UUID, key: str, remembered: RememberedKey, at: datetime
     ) -> None: ...
 
-    async def recall(self, owner_id: UUID, key: str) -> tuple[str, UUID] | None:
-        """La huella y el movimiento que creó esa clave, si ya se usó."""
+    async def recall(self, owner_id: UUID, key: str) -> RememberedKey | None:
+        """Lo que creó esa clave, si ya se usó."""
         ...
 
     async def forget_expired(self, before: datetime) -> None: ...
+
+
+class TransferRepository(Protocol):
+    async def add(self, transfer: Transfer) -> None: ...
+
+    async def get(self, transfer_id: UUID, owner_id: UUID) -> Transfer | None:
+        """Devuelve también la borrada: hace falta para deshacer."""
+        ...
+
+    async def page_for_owner(
+        self, owner_id: UUID, filters: TransferFilters, *, cursor: str | None, limit: int
+    ) -> TransferPage:
+        """De la más reciente a la más vieja, sin las borradas."""
+        ...
+
+    async def balances_for_owner(self, owner_id: UUID) -> list[AccountBalance]:
+        """Lo que cada cuenta recibió menos lo que envió, sin las borradas."""
+        ...
+
+    async def save(self, transfer: Transfer) -> None: ...
 
 
 class AuditLog(Protocol):
     """Append-only: solo se agrega (ADR-0011). La base rechaza actualizar y borrar."""
 
     async def record(self, action: AuditAction, transaction: Transaction, at: datetime) -> None: ...
+
+
+class TransferAuditLog(Protocol):
+    """Append-only, igual que el de movimientos (ADR-0014, decisión 4)."""
+
+    async def record(self, action: AuditAction, transfer: Transfer, at: datetime) -> None: ...
 
 
 class Clock(Protocol):

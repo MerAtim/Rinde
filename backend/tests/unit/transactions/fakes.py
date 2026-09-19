@@ -10,10 +10,18 @@ from uuid import UUID
 from rinde.shared.domain.money import Currency, Money
 from rinde.transactions.application.dependencies import TransactionsDependencies
 from rinde.transactions.application.pagination import Cursor
-from rinde.transactions.application.ports import AccountBalance, Page, TransactionFilters
+from rinde.transactions.application.ports import (
+    AccountBalance,
+    Page,
+    RememberedKey,
+    TransactionFilters,
+    TransferFilters,
+    TransferPage,
+)
 from rinde.transactions.application.unit import TransactionsUnit, build_transactions_unit
 from rinde.transactions.domain.category import Category, TransactionKind
 from rinde.transactions.domain.transaction import AuditAction, TargetAccount, Transaction
+from rinde.transactions.domain.transfer import Transfer
 
 
 class FakeClock:
@@ -66,9 +74,7 @@ class FakeTransactionRepository:
         if cursor is not None:
             mark = Cursor.decode(cursor)
             rows = [
-                row
-                for row in rows
-                if (row.occurred_on, row.id) < (mark.occurred_on, mark.transaction_id)
+                row for row in rows if (row.occurred_on, row.id) < (mark.occurred_on, mark.row_id)
             ]
         page, rest = rows[:limit], rows[limit:]
         next_cursor = Cursor(page[-1].occurred_on, page[-1].id).encode() if page and rest else None
@@ -152,19 +158,90 @@ class FakeAccountGateway:
 
 class FakeIdempotencyStore:
     def __init__(self) -> None:
-        self.rows: dict[tuple[UUID, str], tuple[str, UUID, datetime]] = {}
+        self.rows: dict[tuple[UUID, str], tuple[RememberedKey, datetime]] = {}
 
     async def remember(
-        self, owner_id: UUID, key: str, fingerprint: str, transaction_id: UUID, at: datetime
+        self, owner_id: UUID, key: str, remembered: RememberedKey, at: datetime
     ) -> None:
-        self.rows[(owner_id, key)] = (fingerprint, transaction_id, at)
+        self.rows[(owner_id, key)] = (remembered, at)
 
-    async def recall(self, owner_id: UUID, key: str) -> tuple[str, UUID] | None:
+    async def recall(self, owner_id: UUID, key: str) -> RememberedKey | None:
         found = self.rows.get((owner_id, key))
-        return (found[0], found[1]) if found else None
+        return found[0] if found else None
 
     async def forget_expired(self, before: datetime) -> None:
-        self.rows = {key: row for key, row in self.rows.items() if row[2] >= before}
+        self.rows = {key: row for key, row in self.rows.items() if row[1] >= before}
+
+
+class FakeTransferRepository:
+    def __init__(self) -> None:
+        self.rows: dict[UUID, Transfer] = {}
+
+    async def add(self, transfer: Transfer) -> None:
+        self.rows[transfer.id] = transfer
+
+    async def get(self, transfer_id: UUID, owner_id: UUID) -> Transfer | None:
+        found = self.rows.get(transfer_id)
+        return found if found and found.owner_id == owner_id else None
+
+    def _alive(self, owner_id: UUID) -> list[Transfer]:
+        return [
+            row for row in self.rows.values() if row.owner_id == owner_id and not row.is_deleted
+        ]
+
+    async def page_for_owner(
+        self, owner_id: UUID, filters: TransferFilters, *, cursor: str | None, limit: int
+    ) -> TransferPage:
+        rows = self._alive(owner_id)
+        if filters.account_id is not None:
+            # La cuenta vale de los dos lados: lo que le entro y lo que le salio.
+            rows = [
+                row
+                for row in rows
+                if filters.account_id in (row.from_account_id, row.to_account_id)
+            ]
+        if filters.since is not None:
+            rows = [row for row in rows if row.occurred_on >= filters.since]
+        if filters.until is not None:
+            rows = [row for row in rows if row.occurred_on <= filters.until]
+        rows.sort(key=lambda row: (row.occurred_on, row.id), reverse=True)
+        if cursor is not None:
+            mark = Cursor.decode(cursor)
+            rows = [
+                row for row in rows if (row.occurred_on, row.id) < (mark.occurred_on, mark.row_id)
+            ]
+        page, rest = rows[:limit], rows[limit:]
+        next_cursor = Cursor(page[-1].occurred_on, page[-1].id).encode() if page and rest else None
+        return TransferPage(items=page, next_cursor=next_cursor)
+
+    async def balances_for_owner(self, owner_id: UUID) -> list[AccountBalance]:
+        totals: dict[UUID, Money] = {}
+        for row in self._alive(owner_id):
+            for account_id in (row.from_account_id, row.to_account_id):
+                effect = row.effect_on(account_id)
+                if effect is None:
+                    continue
+                current = totals.get(account_id)
+                totals[account_id] = effect if current is None else current + effect
+        return [
+            AccountBalance(account_id=account_id, balance=total)
+            for account_id, total in totals.items()
+        ]
+
+    async def save(self, transfer: Transfer) -> None:
+        self.rows[transfer.id] = transfer
+
+
+class FakeTransferAuditLog:
+    def __init__(self) -> None:
+        self.entries: list[tuple[AuditAction, UUID, datetime]] = []
+
+    async def record(self, action: AuditAction, transfer: Transfer, at: datetime) -> None:
+        self.entries.append((action, transfer.id, at))
+
+    @property
+    def actions(self) -> list[AuditAction]:
+        return [action for action, _, _ in self.entries]
 
 
 class FakeAuditLog:
@@ -189,18 +266,22 @@ class Harness:
     def __init__(self) -> None:
         self.clock = FakeClock()
         self.transactions = FakeTransactionRepository()
+        self.transfers = FakeTransferRepository()
         self.categories = FakeCategoryRepository()
         self.accounts = FakeAccountGateway()
         self.idempotency = FakeIdempotencyStore()
         self.audit = FakeAuditLog()
+        self.transfer_audit = FakeTransferAuditLog()
         self.db = FakeDatabaseTransaction()
         self.unit: TransactionsUnit = build_transactions_unit(
             TransactionsDependencies(
                 transactions=self.transactions,
+                transfers=self.transfers,
                 categories=self.categories,
                 accounts=self.accounts,
                 idempotency=self.idempotency,
                 audit=self.audit,
+                transfer_audit=self.transfer_audit,
                 transaction=self.db,
                 clock=self.clock,
             )

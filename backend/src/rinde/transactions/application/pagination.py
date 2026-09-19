@@ -1,4 +1,4 @@
-"""Cursor de la lista de movimientos.
+"""Cursor de las listas paginadas de movimientos y de transferencias.
 
 Se pagina por cursor y no por página numerada: con paginación por número, un
 movimiento nuevo corre a todos los demás y la página siguiente repite o saltea
@@ -13,18 +13,21 @@ from uuid import UUID
 from rinde.transactions.domain.errors import CursorInvalidError
 
 # La lista va de la más reciente a la más vieja, y desempata por identificador
-# para que el orden sea total: sin eso, dos movimientos del mismo día podrían
-# aparecer en las dos páginas o en ninguna.
+# para que el orden sea total: sin eso, dos filas del mismo día podrían aparecer
+# en las dos páginas o en ninguna.
+#
+# El identificador es el de la fila, sea un movimiento o una transferencia: las
+# dos tablas se ordenan por el mismo par para poder unirse (ADR-0014, decisión 5).
 _SEPARATOR = "|"
 
 
 @dataclass(frozen=True, slots=True)
 class Cursor:
     occurred_on: date
-    transaction_id: UUID
+    row_id: UUID
 
     def encode(self) -> str:
-        raw = f"{self.occurred_on.isoformat()}{_SEPARATOR}{self.transaction_id}"
+        raw = f"{self.occurred_on.isoformat()}{_SEPARATOR}{self.row_id}"
         return urlsafe_b64encode(raw.encode()).decode().rstrip("=")
 
     @classmethod
@@ -33,7 +36,7 @@ class Cursor:
         try:
             padding = "=" * (-len(value) % 4)
             raw = urlsafe_b64decode(value + padding).decode()
-            occurred_on, transaction_id = raw.split(_SEPARATOR)
-            return cls(date.fromisoformat(occurred_on), UUID(transaction_id))
+            occurred_on, row_id = raw.split(_SEPARATOR)
+            return cls(date.fromisoformat(occurred_on), UUID(row_id))
         except (ValueError, UnicodeDecodeError) as error:
             raise CursorInvalidError from error

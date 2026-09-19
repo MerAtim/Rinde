@@ -23,6 +23,8 @@ from tests.unit.transactions.fakes import (
     FakeCategoryRepository,
     FakeIdempotencyStore,
     FakeTransactionRepository,
+    FakeTransferAuditLog,
+    FakeTransferRepository,
 )
 
 
@@ -259,9 +261,11 @@ class InMemoryTransactionsUnitFactory:
 
     def __init__(self, accounts: InMemoryAccounts, clock: FakeClock | None = None) -> None:
         self.transactions = FakeTransactionRepository()
+        self.transfers = FakeTransferRepository()
         self.categories = FakeCategoryRepository()
         self.idempotency = FakeIdempotencyStore()
         self.audit = FakeAuditLog()
+        self.transfer_audit = FakeTransferAuditLog()
         self.transaction = FakeTransaction()
         self.clock = clock or FakeClock()
         self._accounts = accounts
@@ -271,6 +275,7 @@ class InMemoryTransactionsUnitFactory:
         yield build_transactions_unit(
             TransactionsDependencies(
                 transactions=self.transactions,
+                transfers=self.transfers,
                 categories=self.categories,
                 accounts=AccountsApplicationGateway(
                     GetAccount(
@@ -283,6 +288,7 @@ class InMemoryTransactionsUnitFactory:
                 ),
                 idempotency=self.idempotency,
                 audit=self.audit,
+                transfer_audit=self.transfer_audit,
                 transaction=self.transaction,
                 clock=self.clock,
             )

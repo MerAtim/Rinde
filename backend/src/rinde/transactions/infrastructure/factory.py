@@ -13,6 +13,8 @@ from rinde.transactions.infrastructure.repositories import (
     SqlAlchemyCategoryRepository,
     SqlAlchemyIdempotencyStore,
     SqlAlchemyTransactionRepository,
+    SqlAlchemyTransferAuditLog,
+    SqlAlchemyTransferRepository,
 )
 
 
@@ -45,10 +47,12 @@ class SqlAlchemyTransactionsUnitFactory:
             yield build_transactions_unit(
                 TransactionsDependencies(
                     transactions=SqlAlchemyTransactionRepository(session),
+                    transfers=SqlAlchemyTransferRepository(session),
                     categories=SqlAlchemyCategoryRepository(session),
                     accounts=self._account_gateway(session),
                     idempotency=SqlAlchemyIdempotencyStore(session),
                     audit=SqlAlchemyAuditLog(session),
+                    transfer_audit=SqlAlchemyTransferAuditLog(session),
                     transaction=SqlAlchemyDatabaseTransaction(session),
                     clock=self._clock,
                 )
