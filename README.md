@@ -4,13 +4,22 @@ Aplicación web de finanzas personales para Argentina y LatAm. Responde una preg
 
 **Estado:** en construcción. El avance está en el [roadmap](docs/roadmap.md).
 
-## Qué va a hacer
+## Qué hace hoy
 
-* Registrar ingresos, gastos y transferencias en varias cuentas y monedas.
+* **Cuentas** en efectivo, banco, tarjeta o billetera cripto, cada una con su moneda (pesos, dólares o Bitcoin). Se renombran y se archivan sin perder su historia ([ADR-0009](docs/adr/0009-modelo-de-cuentas.md)).
+* **Ingresos y gastos** con categorías propias y sembradas, borrado reversible y saldo por cuenta ([ADR-0011](docs/adr/0011-modelo-de-movimientos.md)).
+* **Transferencias entre cuentas propias**, que no cuentan como gasto ni como ingreso. Entre monedas distintas se guardan los dos montos, sin inventar una cotización: la tasa real es la que te dieron ([ADR-0014](docs/adr/0014-modelo-de-transferencias.md)).
+* **Cuenta y sesión** con usuario, contraseña y código de recuperación, sin email ([ADR-0007](docs/adr/0007-autenticacion.md)).
+* **Interfaz en español y en inglés**, con modo oscuro y claro.
+
+## Qué falta
+
 * Convertir con la cotización que corresponda (oficial, MEP, CCL, blue, tarjeta o cripto) a la fecha de cada operación.
 * Presupuestos mensuales con alertas.
 * Reportes en pesos constantes, ajustados por inflación.
-* Interfaz en español y en inglés.
+* Importar resúmenes en CSV.
+
+El detalle y el orden están en el [roadmap](docs/roadmap.md).
 
 ## Stack
 
