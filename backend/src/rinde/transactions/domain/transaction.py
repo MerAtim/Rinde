@@ -20,7 +20,8 @@ from rinde.transactions.domain.errors import (
 
 # La fecha la elige la persona y su reloj puede ir adelantado del UTC del servidor.
 # Un día de tolerancia evita rechazar un gasto de esta noche en Buenos Aires.
-_FUTURE_TOLERANCE = timedelta(days=1)
+# Las transferencias usan la misma tolerancia: es la misma razón (ADR-0014).
+FUTURE_TOLERANCE = timedelta(days=1)
 
 
 class AuditAction(StrEnum):
@@ -78,7 +79,7 @@ class Draft:
             raise TransactionCurrencyMismatchError
         if self.category.kind is not self.kind:
             raise CategoryKindMismatchError
-        if self.occurred_on > (at + _FUTURE_TOLERANCE).date():
+        if self.occurred_on > (at + FUTURE_TOLERANCE).date():
             raise TransactionDateInFutureError
 
 
