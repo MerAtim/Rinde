@@ -46,7 +46,7 @@ from rinde.shared.infrastructure.clock import SystemClock
 from rinde.transactions.api.errors import transactions_error_handler
 from rinde.transactions.api.router import router as transactions_router
 from rinde.transactions.application.unit import TransactionsUnitFactory
-from rinde.transactions.domain.errors import CategoryError, TransactionError
+from rinde.transactions.domain.errors import CategoryError, TransactionError, TransferError
 from rinde.transactions.infrastructure.accounts_gateway import AccountsApplicationGateway
 from rinde.transactions.infrastructure.factory import SqlAlchemyTransactionsUnitFactory
 
@@ -155,6 +155,7 @@ def create_app(
     app.add_exception_handler(AccountError, accounts_error_handler)
     app.add_exception_handler(TransactionError, transactions_error_handler)
     app.add_exception_handler(CategoryError, transactions_error_handler)
+    app.add_exception_handler(TransferError, transactions_error_handler)
     app.include_router(health_router, prefix=API_PREFIX)
     app.include_router(auth_router, prefix=API_PREFIX)
     app.include_router(accounts_router, prefix=API_PREFIX)

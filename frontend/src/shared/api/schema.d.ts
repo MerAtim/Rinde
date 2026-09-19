@@ -250,6 +250,66 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/transfers": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Listar mis transferencias */
+    get: operations["list_transfers_api_transfers_get"];
+    put?: never;
+    /** Registrar una transferencia entre dos cuentas propias */
+    post: operations["register_transfer_api_transfers_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/transfers/{transfer_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Ver una transferencia */
+    get: operations["get_transfer_api_transfers__transfer_id__get"];
+    put?: never;
+    post?: never;
+    /**
+     * Borrar una transferencia
+     * @description El borrado es lógico y se puede deshacer (ADR-0014, decisión 4).
+     */
+    delete: operations["delete_transfer_api_transfers__transfer_id__delete"];
+    options?: never;
+    head?: never;
+    /**
+     * Editar una transferencia
+     * @description Las cuentas sí se editan: equivocarse de cuenta es el error más fácil acá.
+     */
+    patch: operations["edit_transfer_api_transfers__transfer_id__patch"];
+    trace?: never;
+  };
+  "/api/transfers/{transfer_id}/restore": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /** Deshacer el borrado de una transferencia */
+    post: operations["restore_transfer_api_transfers__transfer_id__restore_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/categories": {
     parameters: {
       query?: never;
@@ -523,6 +583,92 @@ export interface components {
        * Format: uuid
        */
       category_id: string;
+      /**
+       * Occurred On
+       * Format: date
+       */
+      occurred_on: string;
+      /** Description */
+      description: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+      /** Deleted At */
+      deleted_at: string | null;
+    };
+    /** TransferPageResponse */
+    TransferPageResponse: {
+      /** Items */
+      items: components["schemas"]["TransferResponse"][];
+      /** Next Cursor */
+      next_cursor: string | null;
+    };
+    /**
+     * TransferRequest
+     * @description Registrar y editar piden lo mismo: las cuentas también se pueden corregir.
+     *
+     *     Los dos montos viajan siempre, incluso entre cuentas de la misma moneda: una
+     *     transferencia con comisión saca 1000 y deposita 990 (ADR-0014, decisión 2).
+     */
+    TransferRequest: {
+      /**
+       * From Account Id
+       * Format: uuid
+       */
+      from_account_id: string;
+      /**
+       * To Account Id
+       * Format: uuid
+       */
+      to_account_id: string;
+      /**
+       * Sent
+       * @description Lo que sale, en la moneda de la cuenta de origen
+       */
+      sent: string;
+      /**
+       * Received
+       * @description Lo que entra, en la moneda de la de destino
+       */
+      received: string;
+      /**
+       * Occurred On
+       * Format: date
+       */
+      occurred_on: string;
+      /** Description */
+      description?: string | null;
+    };
+    /** TransferResponse */
+    TransferResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * From Account Id
+       * Format: uuid
+       */
+      from_account_id: string;
+      /** Sent */
+      sent: string;
+      currency_out: components["schemas"]["Currency"];
+      /**
+       * To Account Id
+       * Format: uuid
+       */
+      to_account_id: string;
+      /** Received */
+      received: string;
+      currency_in: components["schemas"]["Currency"];
       /**
        * Occurred On
        * Format: date
@@ -1469,6 +1615,364 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["TransactionResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_transfers_api_transfers_get: {
+    parameters: {
+      query?: {
+        account_id?: string | null;
+        since?: string | null;
+        until?: string | null;
+        cursor?: string | null;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TransferPageResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  register_transfer_api_transfers_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "Idempotency-Key"?: string | null;
+        "x-requested-with"?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TransferRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TransferResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  get_transfer_api_transfers__transfer_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        transfer_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TransferResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  delete_transfer_api_transfers__transfer_id__delete: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path: {
+        transfer_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TransferResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  edit_transfer_api_transfers__transfer_id__patch: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path: {
+        transfer_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["TransferRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TransferResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  restore_transfer_api_transfers__transfer_id__restore_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path: {
+        transfer_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["TransferResponse"];
         };
       };
       /** @description Unauthorized */

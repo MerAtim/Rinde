@@ -23,10 +23,14 @@ from rinde.transactions.api.schemas import (
     TransactionPageResponse,
     TransactionQuery,
     TransactionResponse,
+    TransferPageResponse,
+    TransferQuery,
+    TransferRequest,
+    TransferResponse,
 )
-from rinde.transactions.application.ports import TransactionFilters
+from rinde.transactions.application.ports import TransactionFilters, TransferFilters
 from rinde.transactions.application.unit import TransactionsUnit, TransactionsUnitFactory
-from rinde.transactions.application.use_cases import TransactionInput
+from rinde.transactions.application.use_cases import TransactionInput, TransferInput
 
 router = APIRouter(tags=["transactions"])
 
@@ -156,6 +160,97 @@ async def restore_transaction(
     transaction_id: UUID, user_id: CurrentUserId, unit: Unit
 ) -> TransactionResponse:
     return TransactionResponse.from_transaction(await unit.restore.execute(user_id, transaction_id))
+
+
+def _transfer_input(payload: TransferRequest) -> TransferInput:
+    return TransferInput(
+        from_account_id=payload.from_account_id,
+        to_account_id=payload.to_account_id,
+        sent=payload.sent,
+        received=payload.received,
+        occurred_on=payload.occurred_on,
+        description=payload.description,
+    )
+
+
+@router.get("/transfers", responses=error_responses(401, 422), summary="Listar mis transferencias")
+async def list_transfers(
+    user_id: CurrentUserId, unit: Unit, query: Annotated[TransferQuery, Query()]
+) -> TransferPageResponse:
+    page = await unit.list_transfers.execute(
+        user_id,
+        TransferFilters(account_id=query.account_id, since=query.since, until=query.until),
+        cursor=query.cursor,
+        limit=query.limit,
+    )
+    return TransferPageResponse.from_page(page)
+
+
+@router.post(
+    "/transfers",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=CSRF,
+    responses=error_responses(401, 403, 404, 409, 422),
+    summary="Registrar una transferencia entre dos cuentas propias",
+)
+async def register_transfer(
+    payload: TransferRequest,
+    user_id: CurrentUserId,
+    unit: Unit,
+    idempotency_key: IdempotencyKey = None,
+) -> TransferResponse:
+    transfer = await unit.register_transfer.execute(
+        user_id, _transfer_input(payload), idempotency_key
+    )
+    return TransferResponse.from_transfer(transfer)
+
+
+@router.get(
+    "/transfers/{transfer_id}",
+    responses=error_responses(401, 404),
+    summary="Ver una transferencia",
+)
+async def get_transfer(transfer_id: UUID, user_id: CurrentUserId, unit: Unit) -> TransferResponse:
+    return TransferResponse.from_transfer(await unit.get_transfer.execute(user_id, transfer_id))
+
+
+@router.patch(
+    "/transfers/{transfer_id}",
+    dependencies=CSRF,
+    responses=error_responses(401, 403, 404, 409, 422),
+    summary="Editar una transferencia",
+)
+async def edit_transfer(
+    transfer_id: UUID, payload: TransferRequest, user_id: CurrentUserId, unit: Unit
+) -> TransferResponse:
+    """Las cuentas sí se editan: equivocarse de cuenta es el error más fácil acá."""
+    transfer = await unit.edit_transfer.execute(user_id, transfer_id, _transfer_input(payload))
+    return TransferResponse.from_transfer(transfer)
+
+
+@router.delete(
+    "/transfers/{transfer_id}",
+    dependencies=CSRF,
+    responses=error_responses(401, 403, 404),
+    summary="Borrar una transferencia",
+)
+async def delete_transfer(
+    transfer_id: UUID, user_id: CurrentUserId, unit: Unit
+) -> TransferResponse:
+    """El borrado es lógico y se puede deshacer (ADR-0014, decisión 4)."""
+    return TransferResponse.from_transfer(await unit.delete_transfer.execute(user_id, transfer_id))
+
+
+@router.post(
+    "/transfers/{transfer_id}/restore",
+    dependencies=CSRF,
+    responses=error_responses(401, 403, 404),
+    summary="Deshacer el borrado de una transferencia",
+)
+async def restore_transfer(
+    transfer_id: UUID, user_id: CurrentUserId, unit: Unit
+) -> TransferResponse:
+    return TransferResponse.from_transfer(await unit.restore_transfer.execute(user_id, transfer_id))
 
 
 @router.get("/categories", responses=error_responses(401), summary="Listar mis categorías")
