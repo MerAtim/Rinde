@@ -45,18 +45,30 @@ Los chequeos de código viven en tres scripts (`scripts/check-backend.sh`, `scri
 * **Motivo:** su resultado cambia sin que cambie el código. Una vulnerabilidad publicada hoy pone en rojo un commit que ayer estaba verde. Un chequeo así no sirve como puerta local, porque bloquearía un push por algo que quien pushea no introdujo ni puede arreglar en ese momento. En la CI sí corresponde: ahí se ve y se atiende como lo que es, un aviso de la cadena de suministro.
 * **Consecuencia:** "los mismos chequeos que la CI" es cierto para los chequeos de código, no para los de dependencias e imágenes. Queda escrito acá para que no se lea como un olvido.
 
-### 4. Sin base de datos no hay chequeo de migraciones, y se dice
+### 4. Sin base de datos, los chequeos que la necesitan se omiten y se dice cuáles
 
-`alembic check` compara el modelo con una base real. Si falta `RINDE_DATABASE_URL`, el script falla y explica cómo levantar la base de tests, que ahora está declarada en `docker-compose.yml` bajo el perfil `test`. Se puede omitir a sabiendas con `RINDE_SKIP_DB_CHECKS=1`.
+Varios chequeos necesitan un PostgreSQL de verdad: `alembic check`, que compara el modelo con la base, y los tests de integración. Si falta `RINDE_DATABASE_URL`, el script falla y explica cómo levantar la base de tests, declarada en `docker-compose.yml` bajo el perfil `test`. Se puede omitir a sabiendas con `RINDE_SKIP_DB_CHECKS=1`.
 
 * **Alternativa descartada:** omitirlo en silencio cuando no hay base. Es justo lo que dejó pasar la migración desalineada: un verde que no significaba nada.
 * **Alternativa descartada:** fallar sin escapatoria. Quien no tenga Docker levantado en ese momento no podría pushear, y el camino de salida sería `--no-verify`, que apaga todos los chequeos y no solo este.
 * **Nota operativa:** la base se publica en `127.0.0.1`. En Windows hay que usar esa dirección y no `localhost`, que resuelve primero a IPv6: contra un puerto publicado solo en IPv4 la conexión no falla, se cuelga. El script lo dice en su mensaje de error.
 
+#### Sin base, la cobertura no se compara contra el mínimo
+
+Los tests de integración son los que ejercitan los repositorios. Sin base no corren, y la cobertura medida deja de ser comparable: en el momento de escribir esto, 95,96 % con base y 88,75 % sin ella, contra un mínimo de 90 %.
+
+Esto no se había previsto cuando se escribió la decisión, y se descubrió usando la salida: con `RINDE_SKIP_DB_CHECKS=1` el chequeo de migraciones se omitía como corresponde, pero los tests seguían comparando la cobertura contra un mínimo que ya no podían alcanzar. El push se rechazaba con un "cobertura insuficiente" que no decía nada sobre la causa, y la salida explícita servía solo por casualidad, mientras el número se mantuviera arriba del umbral.
+
+Ahora, sin base, los tests de integración se descartan con su marca y **la cobertura no se compara contra el mínimo**.
+
+* **Por qué no se baja el umbral:** bajarlo sería apagar la alarma. No comparar es otra cosa: es no afirmar un número que no se midió.
+* **Alternativa descartada:** dejar que falle como antes. Un chequeo que rechaza un push por un motivo que no se puede resolver sin Docker, y que además no nombra la causa real, empuja a `--no-verify`.
+* **Costo aceptado:** en ese modo, la cobertura no se verifica en la máquina. La CI siempre tiene base y siempre la compara, así que la garantía sigue estando donde el proyecto dice que está.
+
 ## Consecuencias
 
 * Positivas: un chequeo nuevo entra en local y en la CI al mismo tiempo, porque es el mismo script. Los dos errores que motivaron este ADR se habrían frenado antes de abrir el PR. Los tests de integración dejan de depender de un contenedor levantado a mano y pasan a salir del repositorio.
-* Negativas / costos aceptados: el YAML de la CI ya no muestra el comando; `pre-commit` revisa archivos completos y no el índice exacto; los chequeos de dependencias siguen siendo solo de CI.
+* Negativas / costos aceptados: el YAML de la CI ya no muestra el comando; `pre-commit` revisa archivos completos y no el índice exacto; los chequeos de dependencias siguen siendo solo de CI; sin base, la cobertura no se mide en la máquina.
 * Riesgos: que `pre-push` se vuelva lento a medida que crezcan los tests y empiece a saltearse. Mitigación prevista: si pasa de un par de minutos, mover los tests más lentos a una marca aparte y dejarlos solo en la CI, con este ADR actualizado.
 
 ## Referencias

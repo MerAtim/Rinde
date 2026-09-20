@@ -114,6 +114,12 @@ export RINDE_DATABASE_URL=postgresql+psycopg://rinde:solo_para_tests@127.0.0.1:5
 En Windows va `127.0.0.1` y no `localhost`: `localhost` resuelve primero a IPv6 y
 el puerto se publica solo en IPv4, así que la conexión no falla, se cuelga.
 
+Sin base se puede seguir con `RINDE_SKIP_DB_CHECKS=1`: se omiten el chequeo de
+migraciones y los tests de integración, y **la cobertura no se compara contra el
+mínimo**, porque sin esos tests el número no sería comparable. La CI siempre
+tiene base y siempre la compara
+([ADR-0012](docs/adr/0012-chequeos-locales-y-en-ci.md), decisión 4).
+
 Los chequeos de dependencias (`pip-audit`, `npm audit`), el escaneo de imágenes y
 el de secretos corren solo en la CI: su resultado cambia sin que cambie el código
 y no sirven como puerta local ([ADR-0012](docs/adr/0012-chequeos-locales-y-en-ci.md),
