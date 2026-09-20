@@ -1342,6 +1342,9 @@ export interface operations {
         account_id?: string | null;
         since?: string | null;
         until?: string | null;
+        category_id?: string | null;
+        /** @description Busca en la descripción, sin distinguir tildes ni mayúsculas */
+        q?: string | null;
         cursor?: string | null;
         limit?: number;
       };
@@ -1458,6 +1461,9 @@ export interface operations {
         account_id?: string | null;
         since?: string | null;
         until?: string | null;
+        category_id?: string | null;
+        /** @description Busca en la descripción, sin distinguir tildes ni mayúsculas */
+        q?: string | null;
         cursor?: string | null;
         limit?: number;
       };

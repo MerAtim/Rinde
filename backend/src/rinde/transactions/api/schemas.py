@@ -51,6 +51,12 @@ class TransactionQuery(BaseModel):
     account_id: UUID | None = None
     since: date | None = None
     until: date | None = None
+    category_id: UUID | None = None
+    q: str | None = Field(
+        default=None,
+        max_length=Description.MAX_LENGTH,
+        description="Busca en la descripción, sin distinguir tildes ni mayúsculas",
+    )
     cursor: str | None = None
     limit: int = Field(default=DEFAULT_PAGE_SIZE, ge=1, le=MAX_PAGE_SIZE)
 

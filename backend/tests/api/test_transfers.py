@@ -240,7 +240,7 @@ class TestHistorial:
     """`/api/history` mezcla las dos cosas; `/api/transactions` sigue sin verlas."""
 
     def _un_gasto(self, client: TestClient, cuenta: str) -> None:
-        categoria = client.post(
+        categoria: str = client.post(
             "/api/categories",
             json={"name": f"Categoría {uuid4().hex[:8]}", "kind": "expense"},
             headers=CSRF,
@@ -291,6 +291,67 @@ class TestHistorial:
 
     def test_sin_sesion_responde_401(self, client: TestClient) -> None:
         assert client.get("/api/history").status_code == status.HTTP_401_UNAUTHORIZED
+
+
+class TestFiltros:
+    def _un_gasto(self, client: TestClient, cuenta: str, descripcion: str) -> str:
+        categoria: str = client.post(
+            "/api/categories",
+            json={"name": f"Categoría {uuid4().hex[:8]}", "kind": "expense"},
+            headers=CSRF,
+        ).json()["id"]
+        client.post(
+            "/api/transactions",
+            json={
+                "account_id": cuenta,
+                "kind": "expense",
+                "amount": "1500.00",
+                "category_id": categoria,
+                "occurred_on": "2026-09-10",
+                "description": descripcion,
+            },
+            headers=CSRF,
+        )
+        return categoria
+
+    def test_busca_sin_distinguir_tildes(self, signed_in: TestClient) -> None:
+        banco = _account(signed_in)
+        self._un_gasto(signed_in, banco, "Panadería del barrio")
+        self._un_gasto(signed_in, banco, "Verdulería")
+
+        items = signed_in.get("/api/history?q=panaderia").json()["items"]
+
+        assert [item["transaction"]["description"] for item in items] == ["Panadería del barrio"]
+
+    def test_busca_tambien_en_las_transferencias(self, signed_in: TestClient) -> None:
+        banco, efectivo = _account(signed_in), _account(signed_in)
+        self._un_gasto(signed_in, banco, "Pago de la panadería")
+        signed_in.post(
+            "/api/transfers",
+            json=_body(banco, efectivo, description="Plata para la panadería"),
+            headers=CSRF,
+        )
+
+        items = signed_in.get("/api/history?q=panaderia").json()["items"]
+
+        assert sorted(item["type"] for item in items) == ["transaction", "transfer"]
+
+    def test_filtrar_por_categoria_deja_afuera_las_transferencias(
+        self, signed_in: TestClient
+    ) -> None:
+        banco, efectivo = _account(signed_in), _account(signed_in)
+        categoria = self._un_gasto(signed_in, banco, "Coto")
+        signed_in.post("/api/transfers", json=_body(banco, efectivo), headers=CSRF)
+
+        items = signed_in.get(f"/api/history?category_id={categoria}").json()["items"]
+
+        assert [item["type"] for item in items] == ["transaction"]
+
+    def test_un_parametro_desconocido_se_rechaza(self, signed_in: TestClient) -> None:
+        """La consulta prohíbe lo que no conoce: un filtro mal escrito se nota."""
+        response = signed_in.get("/api/history?categoria=lo-que-sea")
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
 class TestListar:
