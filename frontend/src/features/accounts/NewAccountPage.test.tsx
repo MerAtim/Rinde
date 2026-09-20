@@ -29,7 +29,7 @@ describe("Abrir una cuenta", () => {
     const user = userEvent.setup();
 
     await user.type(await screen.findByLabelText("Nombre"), "Lemon");
-    await user.click(screen.getByRole("radio", { name: "Billetera cripto" }));
+    await user.click(screen.getByRole("radio", { name: /^Billetera cripto/ }));
     await user.click(screen.getByRole("radio", { name: "Bitcoin (BTC)" }));
     await user.click(screen.getByRole("button", { name: "Abrir cuenta" }));
 
@@ -42,6 +42,54 @@ describe("Abrir una cuenta", () => {
     } satisfies OpenAccountInput);
   });
 
+  it("nombra las apps en los tipos que no se entienden solos", async () => {
+    mockApi({ ...SESSION, "GET /api/accounts": jsonResponse(200, []) });
+    renderWithProviders(<App />, { route: "/accounts/new" });
+
+    // Sin los ejemplos, Mercado Pago se termina cargando como efectivo.
+    expect(await screen.findByText("Mercado Pago, Ualá, Naranja X")).toBeInTheDocument();
+    // Los tipos que se entienden solos no llevan ejemplos.
+    expect(screen.getByRole("radio", { name: "Efectivo" })).toBeInTheDocument();
+  });
+
+  it("una billetera virtual se abre en pesos", async () => {
+    const created = anAccount({ name: "Mercado Pago", kind: "virtual_wallet", currency: "ARS" });
+    let sent: unknown = null;
+    mockApi({
+      ...SESSION,
+      "POST /api/accounts": (init) => {
+        sent = typeof init?.body === "string" ? JSON.parse(init.body) : null;
+        return jsonResponse(201, created);
+      },
+      "GET /api/accounts": jsonResponse(200, [created]),
+    });
+    renderWithProviders(<App />, { route: "/accounts/new" });
+    const user = userEvent.setup();
+
+    await user.type(await screen.findByLabelText("Nombre"), "Mercado Pago");
+    await user.click(screen.getByRole("radio", { name: /^Billetera virtual/ }));
+    await user.click(screen.getByRole("button", { name: "Abrir cuenta" }));
+
+    expect(sent).toEqual({
+      name: "Mercado Pago",
+      kind: "virtual_wallet",
+      currency: "ARS",
+    } satisfies OpenAccountInput);
+  });
+
+  it("no deja elegir Bitcoin en una billetera virtual", async () => {
+    mockApi({ ...SESSION, "GET /api/accounts": jsonResponse(200, []) });
+    renderWithProviders(<App />, { route: "/accounts/new" });
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("radio", { name: /^Billetera virtual/ }));
+
+    // Bitcoin vive solo en billeteras cripto (ADR-0009): queda deshabilitado,
+    // no escondido, para que se vea que existe y por qué no se puede.
+    expect(screen.getByRole("radio", { name: "Bitcoin (BTC)" })).toBeDisabled();
+    expect(screen.getByRole("radio", { name: "Dólares (USD)" })).toBeEnabled();
+  });
+
   it("no ofrece Bitcoin fuera de una billetera cripto", async () => {
     mockApi(SESSION);
     renderWithProviders(<App />, { route: "/accounts/new" });
@@ -50,7 +98,7 @@ describe("Abrir una cuenta", () => {
     const bitcoin = await screen.findByRole("radio", { name: "Bitcoin (BTC)" });
     expect(bitcoin).toBeDisabled();
 
-    await user.click(screen.getByRole("radio", { name: "Billetera cripto" }));
+    await user.click(screen.getByRole("radio", { name: /^Billetera cripto/ }));
     await user.click(bitcoin);
     expect(bitcoin).toBeChecked();
 

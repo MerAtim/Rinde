@@ -32,7 +32,9 @@ Borrar una cuenta dejaría huérfanos sus movimientos y rompería los reportes h
 
 ### 4. Bitcoin solo en billeteras cripto
 
-Una cuenta de efectivo, banco o tarjeta en BTC no existe en el mundo real, y admitirla abre errores de carga difíciles de detectar. Una billetera cripto admite cualquier moneda, porque las billeteras argentinas también guardan pesos y dólares.
+Una cuenta de efectivo, banco, tarjeta o billetera virtual en BTC no existe en el mundo real, y admitirla abre errores de carga difíciles de detectar. Una billetera cripto admite cualquier moneda, porque las billeteras argentinas también guardan pesos y dólares.
+
+* **Agregado después:** el tipo `virtual_wallet` (Mercado Pago, Ualá, Naranja X) entró más tarde y esta regla lo alcanzó sin tocarla, porque nombra a la billetera cripto como la única excepción en lugar de enumerar a las demás. El test que la verifica se deriva del enum de tipos, así que un tipo nuevo queda cubierto sin que nadie se acuerde.
 
 ### 5. Un recurso ajeno responde 404, no 403
 
