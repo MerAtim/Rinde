@@ -119,6 +119,92 @@ describe("Movimientos", () => {
     expect(within(fila as HTMLElement).queryByText("Ingreso")).not.toBeInTheDocument();
   });
 
+  it("buscar por texto acota la lista y queda en la dirección", async () => {
+    const pedidos: string[] = [];
+    mockApi({
+      ...BASE,
+      "GET /api/history": () => {
+        pedidos.push("todos");
+        return jsonResponse(200, aHistoryPage([aTransaction()]));
+      },
+      "GET /api/history?q=panaderia": () => {
+        pedidos.push("filtrado");
+        return jsonResponse(
+          200,
+          aHistoryPage([aTransaction({ description: "Panadería del barrio" })]),
+        );
+      },
+    });
+    renderWithProviders(<App />, { route: "/transactions" });
+    const user = userEvent.setup();
+
+    await screen.findByText("Coto");
+    await user.type(screen.getByLabelText("Buscar"), "panaderia");
+
+    expect(await screen.findByText("Panadería del barrio")).toBeInTheDocument();
+    expect(pedidos).toContain("filtrado");
+  });
+
+  it("abre ya filtrado si la dirección lo indica", async () => {
+    mockApi({
+      ...BASE,
+      "GET /api/history?q=panaderia": jsonResponse(
+        200,
+        aHistoryPage([aTransaction({ description: "Panadería del barrio" })]),
+      ),
+    });
+    renderWithProviders(<App />, { route: "/transactions?q=panaderia" });
+
+    expect(await screen.findByText("Panadería del barrio")).toBeInTheDocument();
+    expect(screen.getByLabelText("Buscar")).toHaveValue("panaderia");
+  });
+
+  it("filtrar por categoría pide solo esa categoría", async () => {
+    mockApi({
+      ...BASE,
+      "GET /api/history": jsonResponse(200, aHistoryPage([aTransaction()])),
+      [`GET /api/history?category_id=${EXPENSE_CATEGORY.id}`]: jsonResponse(
+        200,
+        aHistoryPage([aTransaction({ description: "Solo supermercado" })]),
+      ),
+    });
+    renderWithProviders(<App />, { route: "/transactions" });
+    const user = userEvent.setup();
+
+    await screen.findByText("Coto");
+    await user.click(screen.getByRole("button", { name: /Categoría/ }));
+    await user.click(await screen.findByRole("option", { name: "Supermercado" }));
+
+    expect(await screen.findByText("Solo supermercado")).toBeInTheDocument();
+  });
+
+  it("sin resultados por un filtro lo dice distinto que sin nada cargado", async () => {
+    mockApi({
+      ...BASE,
+      "GET /api/history?q=ferreteria": jsonResponse(200, aHistoryPage([])),
+    });
+    renderWithProviders(<App />, { route: "/transactions?q=ferreteria" });
+
+    expect(await screen.findByRole("heading", { name: "No encontramos nada" })).toBeInTheDocument();
+    // No ofrece "registrar el primero": hay movimientos, solo que estos no.
+    expect(screen.queryByRole("link", { name: "Registrar el primero" })).not.toBeInTheDocument();
+  });
+
+  it("limpiar saca los filtros de la dirección", async () => {
+    mockApi({
+      ...BASE,
+      "GET /api/history": jsonResponse(200, aHistoryPage([aTransaction()])),
+      "GET /api/history?q=ferreteria": jsonResponse(200, aHistoryPage([])),
+    });
+    renderWithProviders(<App />, { route: "/transactions?q=ferreteria" });
+    const user = userEvent.setup();
+
+    await user.click(await screen.findByRole("button", { name: "Limpiar" }));
+
+    expect(await screen.findByText("Coto")).toBeInTheDocument();
+    expect(screen.getByLabelText("Buscar")).toHaveValue("");
+  });
+
   it("si falla la carga, lo dice y permite reintentar", async () => {
     mockApi({ ...BASE, "GET /api/history": jsonResponse(500) });
     renderWithProviders(<App />, { route: "/transactions" });

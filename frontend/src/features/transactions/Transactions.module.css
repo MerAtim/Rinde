@@ -167,3 +167,20 @@
     grid-row: 1 / span 2;
   }
 }
+
+/* Los filtros: en una fila si entra, uno debajo del otro en pantallas chicas. */
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rinde-space-3);
+  align-items: end;
+}
+
+.filters > * {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.filters > button {
+  flex: 0 0 auto;
+}

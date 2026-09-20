@@ -56,6 +56,9 @@ export const isTransactionsApiError = api.isError;
 
 export interface TransactionFilters {
   accountId?: string;
+  categoryId?: string;
+  /** Busca en la descripción, sin distinguir tildes ni mayúsculas. */
+  text?: string;
   since?: string;
   until?: string;
   cursor?: string;
@@ -65,6 +68,8 @@ export interface TransactionFilters {
 function queryOf(filters: TransactionFilters): string {
   const params = new URLSearchParams();
   if (filters.accountId) params.set("account_id", filters.accountId);
+  if (filters.categoryId) params.set("category_id", filters.categoryId);
+  if (filters.text) params.set("q", filters.text);
   if (filters.since) params.set("since", filters.since);
   if (filters.until) params.set("until", filters.until);
   if (filters.cursor) params.set("cursor", filters.cursor);
