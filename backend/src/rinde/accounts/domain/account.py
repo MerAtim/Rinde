@@ -19,6 +19,10 @@ class AccountKind(StrEnum):
     CASH = "cash"
     BANK = "bank"
     CREDIT_CARD = "credit_card"
+    # Mercado Pago, Ualá, Naranja X: guardan pesos y dólares, no Bitcoin. Lo
+    # cripto vive en su propio tipo, y la regla de Bitcoin lo deja afuera solo
+    # (ADR-0009, decisión 4).
+    VIRTUAL_WALLET = "virtual_wallet"
     CRYPTO_WALLET = "crypto_wallet"
 
 
