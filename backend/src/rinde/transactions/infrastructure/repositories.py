@@ -24,6 +24,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rinde.shared.domain.money import Currency, Money
+from rinde.shared.domain.text import fold
 from rinde.transactions.application.pagination import Cursor
 from rinde.transactions.application.ports import (
     AccountBalance,
@@ -80,6 +81,9 @@ def _values(transaction: Transaction) -> dict[str, object]:
         "category_id": transaction.category_id,
         "occurred_on": transaction.occurred_on,
         "description": transaction.description.value if transaction.description else None,
+        "description_search": fold(transaction.description.value)
+        if transaction.description
+        else None,
         "created_at": transaction.created_at,
         "updated_at": transaction.updated_at,
         "deleted_at": transaction.deleted_at,
@@ -119,6 +123,14 @@ class SqlAlchemyTransactionRepository:
             query = query.where(transactions.c.occurred_on >= filters.since)
         if filters.until is not None:
             query = query.where(transactions.c.occurred_on <= filters.until)
+        if filters.category_id is not None:
+            query = query.where(transactions.c.category_id == filters.category_id)
+        if filters.text:
+            # `autoescape` trata los comodines de LIKE como texto: buscar "50%"
+            # busca eso y no cualquier cosa.
+            query = query.where(
+                transactions.c.description_search.contains(fold(filters.text), autoescape=True)
+            )
         if cursor is not None:
             mark = Cursor.decode(cursor)
             # Menor que el par (fecha, id): continúa justo después de la última fila.
@@ -209,6 +221,7 @@ def _transfer_values(transfer: Transfer) -> dict[str, object]:
         "amount_in": transfer.received.amount,
         "occurred_on": transfer.occurred_on,
         "description": transfer.description.value if transfer.description else None,
+        "description_search": fold(transfer.description.value) if transfer.description else None,
         "created_at": transfer.created_at,
         "updated_at": transfer.updated_at,
         "deleted_at": transfer.deleted_at,
@@ -254,6 +267,10 @@ class SqlAlchemyTransferRepository:
             query = query.where(transfers.c.occurred_on >= filters.since)
         if filters.until is not None:
             query = query.where(transfers.c.occurred_on <= filters.until)
+        if filters.text:
+            query = query.where(
+                transfers.c.description_search.contains(fold(filters.text), autoescape=True)
+            )
         if cursor is not None:
             mark = Cursor.decode(cursor)
             query = query.where(

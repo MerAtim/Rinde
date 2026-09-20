@@ -107,15 +107,17 @@ def _a_transaction(
     owner_id: UUID,
     account: TargetAccount,
     category: Category,
+    *,
     amount: str = "1500.00",
     day: int = 18,
+    description: str = "Coto",
 ) -> Transaction:
     draft = Draft(
         kind=category.kind,
         money=Money(Decimal(amount), account.currency),
         category=category,
         occurred_on=date(2026, 9, day),
-        description=Description.parse("Coto"),
+        description=Description.parse(description),
     )
     return register(draft, account, transaction_id=uuid4(), owner_id=owner_id, at=NOW)
 
@@ -125,7 +127,7 @@ async def test_a_saved_movement_comes_back_the_same(session: AsyncSession) -> No
     account = await _account(session, owner_id)
     category = await _category(session, owner_id)
     repository = SqlAlchemyTransactionRepository(session)
-    movement = _a_transaction(owner_id, account, category, "15300.50")
+    movement = _a_transaction(owner_id, account, category, amount="15300.50")
 
     await repository.add(movement)
 
@@ -139,7 +141,7 @@ async def test_no_reading_brings_back_a_deleted_movement(session: AsyncSession) 
     account = await _account(session, owner_id)
     category = await _category(session, owner_id)
     repository = SqlAlchemyTransactionRepository(session)
-    movement = _a_transaction(owner_id, account, category, "1000.00")
+    movement = _a_transaction(owner_id, account, category, amount="1000.00")
     await repository.add(movement)
 
     await repository.save(movement.deleted(NOW))
@@ -161,8 +163,8 @@ async def test_the_balance_is_the_sum_of_the_movements(session: AsyncSession) ->
     incomes = await _category(session, owner_id, TransactionKind.INCOME, "Sueldo")
     repository = SqlAlchemyTransactionRepository(session)
 
-    await repository.add(_a_transaction(owner_id, account, incomes, "100000.00"))
-    await repository.add(_a_transaction(owner_id, account, expenses, "15300.50"))
+    await repository.add(_a_transaction(owner_id, account, incomes, amount="100000.00"))
+    await repository.add(_a_transaction(owner_id, account, expenses, amount="15300.50"))
 
     balances = await repository.balances_for_owner(owner_id)
 
@@ -360,3 +362,79 @@ async def test_an_idempotency_key_remembers_its_movement(session: AsyncSession) 
 
     await store.forget_expired(NOW + timedelta(days=1))
     assert await store.recall(owner_id, "clave-1") is None
+
+
+class TestBuscarPorTexto:
+    """La búsqueda contra PostgreSQL real: el plegado y los comodines de LIKE."""
+
+    async def _con_descripciones(
+        self, session: AsyncSession, *descripciones: str
+    ) -> tuple[UUID, SqlAlchemyTransactionRepository, list[Transaction]]:
+        owner_id = await _user(session, "mechi")
+        account = await _account(session, owner_id)
+        category = await _category(session, owner_id)
+        repository = SqlAlchemyTransactionRepository(session)
+        filas = []
+        for dia, descripcion in enumerate(descripciones, start=10):
+            movimiento = _a_transaction(
+                owner_id, account, category, day=dia, description=descripcion
+            )
+            await repository.add(movimiento)
+            filas.append(movimiento)
+        return owner_id, repository, filas
+
+    async def _buscar(
+        self, repository: SqlAlchemyTransactionRepository, owner_id: UUID, texto: str
+    ) -> list[str]:
+        page = await repository.page_for_owner(
+            owner_id, TransactionFilters(text=texto), cursor=None, limit=50
+        )
+        return [row.description.value if row.description else "" for row in page.items]
+
+    async def test_encuentra_sin_tildes_ni_mayusculas(self, session: AsyncSession) -> None:
+        owner_id, repository, _ = await self._con_descripciones(
+            session, "Panadería del barrio", "Verdulería"
+        )
+
+        assert await self._buscar(repository, owner_id, "PANADERIA") == ["Panadería del barrio"]
+
+    async def test_encuentra_una_parte_del_texto(self, session: AsyncSession) -> None:
+        owner_id, repository, _ = await self._con_descripciones(
+            session, "Asado con los del trabajo"
+        )
+
+        assert await self._buscar(repository, owner_id, "los del") == ["Asado con los del trabajo"]
+
+    async def test_el_comodin_de_like_se_busca_como_texto(self, session: AsyncSession) -> None:
+        """Sin escapar, "%" traería todo y el filtro no filtraría nada."""
+        owner_id, repository, _ = await self._con_descripciones(
+            session, "Descuento 50% en la farmacia", "Café"
+        )
+
+        assert await self._buscar(repository, owner_id, "50%") == ["Descuento 50% en la farmacia"]
+        assert await self._buscar(repository, owner_id, "%") == ["Descuento 50% en la farmacia"]
+
+    async def test_el_guion_bajo_tampoco_es_comodin(self, session: AsyncSession) -> None:
+        owner_id, repository, _ = await self._con_descripciones(session, "pago_mensual", "pagos")
+
+        assert await self._buscar(repository, owner_id, "pago_") == ["pago_mensual"]
+
+    async def test_sin_coincidencias_no_devuelve_nada(self, session: AsyncSession) -> None:
+        owner_id, repository, _ = await self._con_descripciones(session, "Panadería")
+
+        assert await self._buscar(repository, owner_id, "ferretería") == []
+
+    async def test_filtra_por_categoria(self, session: AsyncSession) -> None:
+        owner_id = await _user(session, "mechi")
+        account = await _account(session, owner_id)
+        comida = await _category(session, owner_id, name="Comida")
+        transporte = await _category(session, owner_id, name="Transporte")
+        repository = SqlAlchemyTransactionRepository(session)
+        await repository.add(_a_transaction(owner_id, account, comida, description="Coto"))
+        await repository.add(_a_transaction(owner_id, account, transporte, description="Subte"))
+
+        page = await repository.page_for_owner(
+            owner_id, TransactionFilters(category_id=comida.id), cursor=None, limit=50
+        )
+
+        assert [row.description.value if row.description else "" for row in page.items] == ["Coto"]

@@ -24,6 +24,9 @@ class TransactionFilters:
     account_id: UUID | None = None
     since: date | None = None
     until: date | None = None
+    category_id: UUID | None = None
+    text: str | None = None
+    """Busca en la descripción, sin distinguir tildes ni mayúsculas."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,6 +48,8 @@ class TransferFilters:
     account_id: UUID | None = None
     since: date | None = None
     until: date | None = None
+    text: str | None = None
+    """Busca en la descripción. Una transferencia no tiene categoría por la que filtrar."""
 
 
 @dataclass(frozen=True, slots=True)

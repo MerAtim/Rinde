@@ -8,6 +8,7 @@ from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 
 from rinde.shared.domain.money import Currency, Money
+from rinde.shared.domain.text import fold
 from rinde.transactions.application.dependencies import TransactionsDependencies
 from rinde.transactions.application.pagination import Cursor
 from rinde.transactions.application.ports import (
@@ -70,6 +71,10 @@ class FakeTransactionRepository:
             rows = [row for row in rows if row.occurred_on >= filters.since]
         if filters.until is not None:
             rows = [row for row in rows if row.occurred_on <= filters.until]
+        if filters.category_id is not None:
+            rows = [row for row in rows if row.category_id == filters.category_id]
+        if filters.text:
+            rows = [row for row in rows if _matches(row.description, filters.text)]
         rows.sort(key=lambda row: (row.occurred_on, row.id), reverse=True)
         if cursor is not None:
             mark = Cursor.decode(cursor)
@@ -205,6 +210,8 @@ class FakeTransferRepository:
         if filters.until is not None:
             rows = [row for row in rows if row.occurred_on <= filters.until]
         rows.sort(key=lambda row: (row.occurred_on, row.id), reverse=True)
+        if filters.text:
+            rows = [row for row in rows if _matches(row.description, filters.text)]
         if cursor is not None:
             mark = Cursor.decode(cursor)
             rows = [
@@ -254,6 +261,13 @@ class FakeAuditLog:
     @property
     def actions(self) -> list[AuditAction]:
         return [action for action, _, _ in self.entries]
+
+
+def _matches(description: object, text: str) -> bool:
+    """Como el repositorio real: compara las dos formas plegadas."""
+    if description is None:
+        return False
+    return fold(text) in fold(str(getattr(description, "value", description)))
 
 
 def a_date(day: int = 18) -> date:

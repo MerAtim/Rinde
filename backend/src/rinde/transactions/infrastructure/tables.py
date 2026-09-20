@@ -72,6 +72,10 @@ transactions = Table(
     Column("category_id", Uuid, nullable=False),
     Column("occurred_on", Date, nullable=False),
     Column("description", String(120), nullable=True),
+    # La misma descripción sin tildes y en minúsculas: es lo que se compara al
+    # buscar. Se guarda en lugar de plegarla en cada consulta, que obligaría a
+    # recorrer la tabla entera aplicando una función a cada fila.
+    Column("description_search", String(120), nullable=True),
     Column("created_at", DateTime(timezone=True), nullable=False),
     Column("updated_at", DateTime(timezone=True), nullable=False),
     Column("deleted_at", DateTime(timezone=True), nullable=True),
@@ -167,6 +171,8 @@ transfers = Table(
     Column("amount_in", Numeric(20, 8), nullable=False),
     Column("occurred_on", Date, nullable=False),
     Column("description", String(120), nullable=True),
+    # Igual que en movimientos: la forma comparable, para buscar.
+    Column("description_search", String(120), nullable=True),
     Column("created_at", DateTime(timezone=True), nullable=False),
     Column("updated_at", DateTime(timezone=True), nullable=False),
     Column("deleted_at", DateTime(timezone=True), nullable=True),
