@@ -1019,6 +1019,129 @@
         }
       }
     },
+    "/api/history": {
+      "get": {
+        "tags": [
+          "transactions"
+        ],
+        "summary": "Listar mis movimientos y transferencias juntos",
+        "description": "La línea de tiempo completa.\n\n`/transactions` sigue devolviendo solo movimientos: es lo que necesita un\nreporte de gastos, donde una transferencia no tiene nada que hacer.",
+        "operationId": "list_history_api_history_get",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Since"
+            }
+          },
+          {
+            "name": "until",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Until"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryPageResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
     "/api/transactions/balances": {
       "get": {
         "tags": [
@@ -2545,6 +2668,87 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HistoryPageResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/HistoryTransaction"
+                },
+                {
+                  "$ref": "#/components/schemas/HistoryTransfer"
+                }
+              ],
+              "discriminator": {
+                "propertyName": "type",
+                "mapping": {
+                  "transaction": "#/components/schemas/HistoryTransaction",
+                  "transfer": "#/components/schemas/HistoryTransfer"
+                }
+              }
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "HistoryPageResponse",
+        "description": "Movimientos y transferencias en una sola línea de tiempo (ADR-0014)."
+      },
+      "HistoryTransaction": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "transaction",
+            "title": "Type",
+            "default": "transaction"
+          },
+          "transaction": {
+            "$ref": "#/components/schemas/TransactionResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "transaction"
+        ],
+        "title": "HistoryTransaction",
+        "description": "Un movimiento dentro del historial."
+      },
+      "HistoryTransfer": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "const": "transfer",
+            "title": "Type",
+            "default": "transfer"
+          },
+          "transfer": {
+            "$ref": "#/components/schemas/TransferResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "transfer"
+        ],
+        "title": "HistoryTransfer",
+        "description": "Una transferencia dentro del historial."
       },
       "LivenessResponse": {
         "properties": {
