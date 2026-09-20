@@ -50,7 +50,7 @@ def _categoria(harness: Harness) -> Category:
     return categoria
 
 
-async def _gasto(harness: Harness, cuenta: UUID, dia: int) -> UUID:
+async def _gasto(harness: Harness, cuenta: UUID, dia: int, descripcion: str | None = None) -> UUID:
     categoria = _categoria(harness)
     movimiento = await harness.unit.register.execute(
         DUENO,
@@ -60,12 +60,15 @@ async def _gasto(harness: Harness, cuenta: UUID, dia: int) -> UUID:
             amount=Decimal("100.00"),
             category_id=categoria.id,
             occurred_on=date(2026, 9, dia),
+            description=descripcion,
         ),
     )
     return movimiento.id
 
 
-async def _transferencia(harness: Harness, origen: UUID, destino: UUID, dia: int) -> UUID:
+async def _transferencia(
+    harness: Harness, origen: UUID, destino: UUID, dia: int, descripcion: str | None = None
+) -> UUID:
     transferencia = await harness.unit.register_transfer.execute(
         DUENO,
         TransferInput(
@@ -74,6 +77,7 @@ async def _transferencia(harness: Harness, origen: UUID, destino: UUID, dia: int
             sent=Decimal("500.00"),
             received=Decimal("500.00"),
             occurred_on=date(2026, 9, dia),
+            description=descripcion,
         ),
     )
     return transferencia.id
@@ -135,6 +139,74 @@ class TestIntercalar:
         pagina = await harness.unit.history.execute(DUENO, TransactionFilters(account_id=banco))
 
         assert [item.id for item in pagina.items] == [en_banco, transferencia]
+
+
+class TestFiltrar:
+    async def test_el_texto_busca_en_las_dos_fuentes(
+        self, harness: Harness, banco: UUID, efectivo: UUID
+    ) -> None:
+        gasto = await _gasto(harness, banco, 12, "Panadería del barrio")
+        transferencia = await _transferencia(harness, banco, efectivo, 11, "Pase a la panadería")
+        await _gasto(harness, banco, 10, "Verdulería")
+
+        pagina = await harness.unit.history.execute(DUENO, TransactionFilters(text="panaderia"))
+
+        assert [item.id for item in pagina.items] == [gasto, transferencia]
+
+    async def test_el_texto_no_distingue_tildes_ni_mayusculas(
+        self, harness: Harness, banco: UUID
+    ) -> None:
+        gasto = await _gasto(harness, banco, 12, "Almacén DON JOSÉ")
+
+        pagina = await harness.unit.history.execute(DUENO, TransactionFilters(text="don jose"))
+
+        assert [item.id for item in pagina.items] == [gasto]
+
+    async def test_filtrar_por_categoria_deja_afuera_las_transferencias(
+        self, harness: Harness, banco: UUID, efectivo: UUID
+    ) -> None:
+        """Una transferencia no tiene categoría: ninguna puede cumplir el filtro."""
+        categoria = _categoria(harness)
+        movimiento = await harness.unit.register.execute(
+            DUENO,
+            TransactionInput(
+                account_id=banco,
+                kind=TransactionKind.EXPENSE,
+                amount=Decimal("100.00"),
+                category_id=categoria.id,
+                occurred_on=date(2026, 9, 12),
+            ),
+        )
+        await _transferencia(harness, banco, efectivo, 11)
+
+        pagina = await harness.unit.history.execute(
+            DUENO, TransactionFilters(category_id=categoria.id)
+        )
+
+        assert [item.id for item in pagina.items] == [movimiento.id]
+
+    async def test_los_filtros_se_combinan(
+        self, harness: Harness, banco: UUID, efectivo: UUID
+    ) -> None:
+        esperado = await _gasto(harness, banco, 12, "Panadería")
+        await _gasto(harness, efectivo, 11, "Panadería")
+        await _gasto(harness, banco, 10, "Carnicería")
+
+        pagina = await harness.unit.history.execute(
+            DUENO, TransactionFilters(account_id=banco, text="panaderia")
+        )
+
+        assert [item.id for item in pagina.items] == [esperado]
+
+    async def test_sin_coincidencias_devuelve_la_lista_vacia(
+        self, harness: Harness, banco: UUID
+    ) -> None:
+        await _gasto(harness, banco, 12, "Panadería")
+
+        pagina = await harness.unit.history.execute(DUENO, TransactionFilters(text="ferretería"))
+
+        assert pagina.items == []
+        assert pagina.next_cursor is None
 
 
 class TestPaginar:

@@ -278,13 +278,22 @@ class ListHistory:
         movements = await self._deps.transactions.page_for_owner(
             owner_id, filters, cursor=cursor, limit=size
         )
-        transfers = await self._deps.transfers.page_for_owner(
-            owner_id,
-            TransferFilters(
-                account_id=filters.account_id, since=filters.since, until=filters.until
-            ),
-            cursor=cursor,
-            limit=size,
+        # Filtrando por categoría no hay transferencias que mostrar: no tienen
+        # categoría, así que ninguna puede cumplir (ADR-0014, decisión 6).
+        transfers = (
+            TransferPage(items=[], next_cursor=None)
+            if filters.category_id is not None
+            else await self._deps.transfers.page_for_owner(
+                owner_id,
+                TransferFilters(
+                    account_id=filters.account_id,
+                    since=filters.since,
+                    until=filters.until,
+                    text=filters.text,
+                ),
+                cursor=cursor,
+                limit=size,
+            )
         )
         merged: list[Transaction | Transfer] = sorted(
             [*movements.items, *transfers.items], key=_in_time, reverse=True
