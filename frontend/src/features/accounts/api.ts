@@ -10,6 +10,7 @@ export const ACCOUNT_KINDS = [
   "cash",
   "bank",
   "credit_card",
+  "virtual_wallet",
   "crypto_wallet",
 ] as const satisfies readonly AccountKind[];
 export const CURRENCIES = ["ARS", "USD", "BTC"] as const satisfies readonly Currency[];

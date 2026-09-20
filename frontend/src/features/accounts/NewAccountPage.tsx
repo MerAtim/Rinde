@@ -98,6 +98,11 @@ export function NewAccountPage() {
           options={ACCOUNT_KINDS.map((id) => ({
             id,
             label: t(`accounts.kind.${id}`),
+            // Solo donde el nombre no alcanza: nombrar las apps evita que una
+            // billetera virtual se cargue como efectivo.
+            ...(id === "virtual_wallet" || id === "crypto_wallet"
+              ? { description: t(`accounts.kindExamples.${id}`) }
+              : {}),
             icon: KIND_ICON[id],
           }))}
           value={kind}
