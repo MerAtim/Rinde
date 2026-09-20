@@ -10,6 +10,7 @@ Aplicación web de finanzas personales para Argentina y LatAm. Responde una preg
 * **Ingresos y gastos** con categorías propias y sembradas, borrado reversible y saldo por cuenta ([ADR-0011](docs/adr/0011-modelo-de-movimientos.md)).
 * **Transferencias entre cuentas propias**, que no cuentan como gasto ni como ingreso. Entre monedas distintas se guardan los dos montos, sin inventar una cotización: la tasa real es la que te dieron ([ADR-0014](docs/adr/0014-modelo-de-transferencias.md)).
 * **Una sola lista** con movimientos y transferencias, paginada por cursor. Los reportes de gasto siguen leyendo solo los movimientos: una transferencia no ensucia el resumen por categoría.
+* **Filtros por categoría y por texto**, que se comparten en la dirección. La búsqueda no distingue tildes ni mayúsculas: "panaderia" encuentra "Panadería".
 * **Cuenta y sesión** con usuario, contraseña y código de recuperación, sin email ([ADR-0007](docs/adr/0007-autenticacion.md)).
 * **Interfaz en español y en inglés**, con modo oscuro y claro.
 
