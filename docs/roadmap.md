@@ -33,8 +33,8 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * [x] Cuentas (efectivo, banco, tarjeta, billetera cripto) con moneda propia: API y pantallas (lista, alta, detalle con renombrar y archivar)
 * [x] Ingresos y gastos con categorías propias y sembradas, y saldo por cuenta
 * [x] Transferencias entre cuentas propias (no cuentan como gasto), con el monto de
-  cada lado cuando cambian de moneda (ADR-0014). Falta sumarlas a la lista de
-  movimientos: por ahora se ven en el detalle de cada cuenta
+  cada lado cuando cambian de moneda, y en la misma lista que los movimientos
+  (ADR-0014)
 * [x] Paginación por cursor, `Idempotency-Key` y log de auditoría append-only
 * [ ] Filtros por categoría y por texto en la lista de movimientos
 * [ ] Tipo de cuenta billetera virtual (Mercado Pago, Ualá, Naranja X), después de
