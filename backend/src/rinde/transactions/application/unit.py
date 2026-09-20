@@ -19,6 +19,7 @@ from rinde.transactions.application.use_cases import (
     GetTransaction,
     GetTransfer,
     ListBalances,
+    ListHistory,
     ListTransactions,
     ListTransfers,
     RegisterTransaction,
@@ -37,6 +38,7 @@ class TransactionsUnit:
     get: GetTransaction
     list: ListTransactions
     balances: ListBalances
+    history: ListHistory
     register_transfer: RegisterTransfer
     edit_transfer: EditTransfer
     delete_transfer: DeleteTransfer
@@ -64,6 +66,7 @@ def build_transactions_unit(deps: TransactionsDependencies) -> TransactionsUnit:
         get=GetTransaction(deps),
         list=ListTransactions(deps),
         balances=ListBalances(deps),
+        history=ListHistory(deps),
         register_transfer=RegisterTransfer(deps),
         edit_transfer=EditTransfer(deps),
         delete_transfer=DeleteTransfer(deps),

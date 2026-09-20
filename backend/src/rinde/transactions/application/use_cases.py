@@ -8,8 +8,10 @@ from uuid import UUID, uuid4
 
 from rinde.shared.domain.money import Money
 from rinde.transactions.application.dependencies import TransactionsDependencies
+from rinde.transactions.application.pagination import Cursor
 from rinde.transactions.application.ports import (
     AccountBalance,
+    HistoryPage,
     IdempotentResource,
     Page,
     RememberedKey,
@@ -244,6 +246,63 @@ class ListTransactions:
         size = min(max(limit, 1), MAX_PAGE_SIZE)
         return await self._deps.transactions.page_for_owner(
             owner_id, filters, cursor=cursor, limit=size
+        )
+
+
+def _in_time(item: Transaction | Transfer) -> tuple[date, UUID]:
+    """El orden del historial: por fecha de valor, y el identificador desempata."""
+    return (item.occurred_on, item.id)
+
+
+class ListHistory:
+    """Movimientos y transferencias en una sola lista, en orden.
+
+    Cada repositorio pagina su tabla aplicando el mismo cursor, y acá se
+    intercalan (ADR-0014, decisión 5). Se piden `limit` de cada lado y se
+    devuelven `limit` en total: lo que se descarta entra en la página siguiente,
+    porque el cursor apunta a la última fila devuelta y no a un número de página.
+    """
+
+    def __init__(self, deps: TransactionsDependencies) -> None:
+        self._deps = deps
+
+    async def execute(
+        self,
+        owner_id: UUID,
+        filters: TransactionFilters,
+        *,
+        cursor: str | None = None,
+        limit: int = DEFAULT_PAGE_SIZE,
+    ) -> HistoryPage:
+        size = min(max(limit, 1), MAX_PAGE_SIZE)
+        movements = await self._deps.transactions.page_for_owner(
+            owner_id, filters, cursor=cursor, limit=size
+        )
+        transfers = await self._deps.transfers.page_for_owner(
+            owner_id,
+            TransferFilters(
+                account_id=filters.account_id, since=filters.since, until=filters.until
+            ),
+            cursor=cursor,
+            limit=size,
+        )
+        merged: list[Transaction | Transfer] = sorted(
+            [*movements.items, *transfers.items], key=_in_time, reverse=True
+        )
+        page = merged[:size]
+        # Si una rama tiene continuación, devolvió su página entera, así que lo
+        # que falta está por debajo de la última fila que se entrega.
+        has_more = (
+            len(merged) > size
+            or movements.next_cursor is not None
+            or transfers.next_cursor is not None
+        )
+        last = page[-1] if page else None
+        return HistoryPage(
+            items=page,
+            next_cursor=Cursor(last.occurred_on, last.id).encode()
+            if last is not None and has_more
+            else None,
         )
 
 
