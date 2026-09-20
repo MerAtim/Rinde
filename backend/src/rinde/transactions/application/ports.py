@@ -54,6 +54,18 @@ class TransferPage:
 
 
 @dataclass(frozen=True, slots=True)
+class HistoryPage:
+    """Movimientos y transferencias en una sola línea de tiempo.
+
+    Las dos cosas se ordenan por el mismo par `(occurred_on, id)`, que es lo que
+    permite intercalarlas con un solo cursor (ADR-0014, decisión 5).
+    """
+
+    items: list[Transaction | Transfer]
+    next_cursor: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class AccountBalance:
     account_id: UUID
     balance: Money
