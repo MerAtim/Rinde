@@ -36,7 +36,8 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
   cada lado cuando cambian de moneda, y en la misma lista que los movimientos
   (ADR-0014)
 * [x] Paginación por cursor, `Idempotency-Key` y log de auditoría append-only
-* [ ] Filtros por categoría y por texto en la lista de movimientos
+* [x] Filtros por categoría y por texto en la lista de movimientos, sincronizados
+  con la dirección. La búsqueda pliega tildes y mayúsculas en una columna propia
 * [ ] Tipo de cuenta billetera virtual (Mercado Pago, Ualá, Naranja X), después de
   los movimientos: hoy hay que cargarlas como efectivo. Admite pesos y dólares, no
   Bitcoin, que sigue solo en billeteras cripto (ADR-0009, decisión 4). Sumar un
