@@ -843,6 +843,42 @@
             }
           },
           {
+            "name": "category_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Busca en la descripción, sin distinguir tildes ni mayúsculas",
+              "title": "Q"
+            },
+            "description": "Busca en la descripción, sin distinguir tildes ni mayúsculas"
+          },
+          {
             "name": "cursor",
             "in": "query",
             "required": false,
@@ -1078,6 +1114,42 @@
               ],
               "title": "Until"
             }
+          },
+          {
+            "name": "category_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Category Id"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Busca en la descripción, sin distinguir tildes ni mayúsculas",
+              "title": "Q"
+            },
+            "description": "Busca en la descripción, sin distinguir tildes ni mayúsculas"
           },
           {
             "name": "cursor",

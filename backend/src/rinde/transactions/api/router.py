@@ -54,7 +54,13 @@ async def list_transactions(
 ) -> TransactionPageResponse:
     page = await unit.list.execute(
         user_id,
-        TransactionFilters(account_id=query.account_id, since=query.since, until=query.until),
+        TransactionFilters(
+            account_id=query.account_id,
+            since=query.since,
+            until=query.until,
+            category_id=query.category_id,
+            text=query.q,
+        ),
         cursor=query.cursor,
         limit=query.limit,
     )
@@ -76,7 +82,13 @@ async def list_history(
     """
     page = await unit.history.execute(
         user_id,
-        TransactionFilters(account_id=query.account_id, since=query.since, until=query.until),
+        TransactionFilters(
+            account_id=query.account_id,
+            since=query.since,
+            until=query.until,
+            category_id=query.category_id,
+            text=query.q,
+        ),
         cursor=query.cursor,
         limit=query.limit,
     )
