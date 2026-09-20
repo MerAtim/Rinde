@@ -194,6 +194,29 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/history": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Listar mis movimientos y transferencias juntos
+     * @description La línea de tiempo completa.
+     *
+     *     `/transactions` sigue devolviendo solo movimientos: es lo que necesita un
+     *     reporte de gastos, donde una transferencia no tiene nada que hacer.
+     */
+    get: operations["list_history_api_history_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/transactions/balances": {
     parameters: {
       query?: never;
@@ -458,6 +481,42 @@ export interface components {
     HTTPValidationError: {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
+    };
+    /**
+     * HistoryPageResponse
+     * @description Movimientos y transferencias en una sola línea de tiempo (ADR-0014).
+     */
+    HistoryPageResponse: {
+      /** Items */
+      items: (
+        components["schemas"]["HistoryTransaction"] | components["schemas"]["HistoryTransfer"]
+      )[];
+      /** Next Cursor */
+      next_cursor: string | null;
+    };
+    /**
+     * HistoryTransaction
+     * @description Un movimiento dentro del historial.
+     */
+    HistoryTransaction: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "transaction";
+      transaction: components["schemas"]["TransactionResponse"];
+    };
+    /**
+     * HistoryTransfer
+     * @description Una transferencia dentro del historial.
+     */
+    HistoryTransfer: {
+      /**
+       * @description discriminator enum property added by openapi-typescript
+       * @enum {string}
+       */
+      type: "transfer";
+      transfer: components["schemas"]["TransferResponse"];
     };
     /** LivenessResponse */
     LivenessResponse: {
@@ -1375,6 +1434,50 @@ export interface operations {
       };
       /** @description Conflict */
       409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  list_history_api_history_get: {
+    parameters: {
+      query?: {
+        account_id?: string | null;
+        since?: string | null;
+        until?: string | null;
+        cursor?: string | null;
+        limit?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HistoryPageResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
         headers: {
           [name: string]: unknown;
         };

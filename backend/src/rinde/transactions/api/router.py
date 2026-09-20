@@ -18,6 +18,7 @@ from rinde.transactions.api.schemas import (
     CategoryRequest,
     CategoryResponse,
     EditTransactionRequest,
+    HistoryPageResponse,
     RegisterTransactionRequest,
     RenameCategoryRequest,
     TransactionPageResponse,
@@ -58,6 +59,28 @@ async def list_transactions(
         limit=query.limit,
     )
     return TransactionPageResponse.from_page(page)
+
+
+@router.get(
+    "/history",
+    responses=error_responses(401, 422),
+    summary="Listar mis movimientos y transferencias juntos",
+)
+async def list_history(
+    user_id: CurrentUserId, unit: Unit, query: Annotated[TransactionQuery, Query()]
+) -> HistoryPageResponse:
+    """La línea de tiempo completa.
+
+    `/transactions` sigue devolviendo solo movimientos: es lo que necesita un
+    reporte de gastos, donde una transferencia no tiene nada que hacer.
+    """
+    page = await unit.history.execute(
+        user_id,
+        TransactionFilters(account_id=query.account_id, since=query.since, until=query.until),
+        cursor=query.cursor,
+        limit=query.limit,
+    )
+    return HistoryPageResponse.from_page(page)
 
 
 @router.get(

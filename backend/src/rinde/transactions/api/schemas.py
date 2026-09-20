@@ -6,13 +6,18 @@ Los montos viajan como string decimal (ADR-0002): un número en JSON pasa por el
 
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PlainSerializer
 
 from rinde.shared.domain.money import Currency
-from rinde.transactions.application.ports import AccountBalance, Page, TransferPage
+from rinde.transactions.application.ports import (
+    AccountBalance,
+    HistoryPage,
+    Page,
+    TransferPage,
+)
 from rinde.transactions.application.use_cases import DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE
 from rinde.transactions.domain.category import Category, CategoryName, TransactionKind
 from rinde.transactions.domain.transaction import Description, Transaction
@@ -201,6 +206,44 @@ class TransferPageResponse(BaseModel):
     def from_page(cls, page: TransferPage) -> TransferPageResponse:
         return cls(
             items=[TransferResponse.from_transfer(row) for row in page.items],
+            next_cursor=page.next_cursor,
+        )
+
+
+class HistoryTransaction(BaseModel):
+    """Un movimiento dentro del historial."""
+
+    type: Literal["transaction"] = "transaction"
+    transaction: TransactionResponse
+
+
+class HistoryTransfer(BaseModel):
+    """Una transferencia dentro del historial."""
+
+    type: Literal["transfer"] = "transfer"
+    transfer: TransferResponse
+
+
+# Unión discriminada: quien la consume sabe cuál de las dos es sin adivinar.
+HistoryEntry = Annotated[HistoryTransaction | HistoryTransfer, Field(discriminator="type")]
+
+
+class HistoryPageResponse(BaseModel):
+    """Movimientos y transferencias en una sola línea de tiempo (ADR-0014)."""
+
+    items: list[HistoryEntry]
+    next_cursor: str | None
+    """Se pasa tal cual en `cursor` para pedir la página siguiente."""
+
+    @classmethod
+    def from_page(cls, page: HistoryPage) -> HistoryPageResponse:
+        return cls(
+            items=[
+                HistoryTransfer(transfer=TransferResponse.from_transfer(item))
+                if isinstance(item, Transfer)
+                else HistoryTransaction(transaction=TransactionResponse.from_transaction(item))
+                for item in page.items
+            ],
             next_cursor=page.next_cursor,
         )
 

@@ -236,6 +236,63 @@ class TestEditarYBorrar:
         assert response.json()["code"] == "TRANSFER_NOT_FOUND"
 
 
+class TestHistorial:
+    """`/api/history` mezcla las dos cosas; `/api/transactions` sigue sin verlas."""
+
+    def _un_gasto(self, client: TestClient, cuenta: str) -> None:
+        categoria = client.post(
+            "/api/categories",
+            json={"name": f"Categoría {uuid4().hex[:8]}", "kind": "expense"},
+            headers=CSRF,
+        ).json()["id"]
+        client.post(
+            "/api/transactions",
+            json={
+                "account_id": cuenta,
+                "kind": "expense",
+                "amount": "1500.00",
+                "category_id": categoria,
+                "occurred_on": "2026-09-10",
+            },
+            headers=CSRF,
+        )
+
+    def test_devuelve_las_dos_cosas_con_su_tipo(self, signed_in: TestClient) -> None:
+        banco, efectivo = _account(signed_in), _account(signed_in)
+        self._un_gasto(signed_in, banco)
+        signed_in.post("/api/transfers", json=_body(banco, efectivo), headers=CSRF)
+
+        items = signed_in.get("/api/history").json()["items"]
+
+        # La transferencia es del 11 y el gasto del 10: primero la más nueva.
+        assert [item["type"] for item in items] == ["transfer", "transaction"]
+        assert items[0]["transfer"]["sent"] == "50000.00"
+        assert items[1]["transaction"]["amount"] == "1500.00"
+
+    def test_la_lista_de_movimientos_sigue_sin_transferencias(self, signed_in: TestClient) -> None:
+        """Es la razón de ser del modelo: un reporte de gastos no las puede ver."""
+        banco, efectivo = _account(signed_in), _account(signed_in)
+        self._un_gasto(signed_in, banco)
+        signed_in.post("/api/transfers", json=_body(banco, efectivo), headers=CSRF)
+
+        movimientos = signed_in.get("/api/transactions").json()["items"]
+
+        assert len(movimientos) == 1
+        assert movimientos[0]["amount"] == "1500.00"
+
+    def test_la_cuenta_filtra_las_dos_fuentes(self, signed_in: TestClient) -> None:
+        banco, efectivo, otra = _account(signed_in), _account(signed_in), _account(signed_in)
+        self._un_gasto(signed_in, banco)
+        signed_in.post("/api/transfers", json=_body(efectivo, otra), headers=CSRF)
+
+        items = signed_in.get(f"/api/history?account_id={banco}").json()["items"]
+
+        assert [item["type"] for item in items] == ["transaction"]
+
+    def test_sin_sesion_responde_401(self, client: TestClient) -> None:
+        assert client.get("/api/history").status_code == status.HTTP_401_UNAUTHORIZED
+
+
 class TestListar:
     def test_la_cuenta_filtra_de_los_dos_lados(self, signed_in: TestClient) -> None:
         banco, efectivo, otra = _account(signed_in), _account(signed_in), _account(signed_in)
