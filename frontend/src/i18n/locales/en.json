@@ -298,6 +298,14 @@
       "sueldo": "Salary",
       "freelance": "Freelance",
       "otros-ingresos": "Other income"
+    },
+    "filters": {
+      "text": "Search",
+      "category": "Category",
+      "allCategories": "All categories",
+      "clear": "Clear",
+      "noneTitle": "Nothing found",
+      "noneBody": "Try other words or remove one of the filters."
     }
   },
   "transfers": {

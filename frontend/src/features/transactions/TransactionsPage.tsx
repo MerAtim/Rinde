@@ -6,20 +6,31 @@ import { Button, LinkButton } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
 import { useAccounts } from "../accounts/useAccounts";
 import { errorCodeOf } from "./errors";
+import { HistoryFilters, type HistoryFilterValues } from "./HistoryFilters";
 import { HistoryWithUndo } from "./HistoryList";
 import styles from "./Transactions.module.css";
 import { flattenHistory, useCategories, useHistory } from "./useTransactions";
 
 export function TransactionsPage() {
   const { t } = useTranslation();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   // Se puede llegar desde una cuenta: entonces la lista viene acotada a esa cuenta.
   const accountId = params.get("account") ?? undefined;
-  const history = useHistory(accountId ? { accountId } : {});
+  // Los filtros viven en la URL: se pueden compartir y sobreviven a recargar.
+  const filters: HistoryFilterValues = {
+    categoryId: params.get("category") ?? "",
+    text: params.get("q") ?? "",
+  };
+  const history = useHistory({
+    ...(accountId ? { accountId } : {}),
+    ...(filters.categoryId ? { categoryId: filters.categoryId } : {}),
+    ...(filters.text ? { text: filters.text } : {}),
+  });
   const categories = useCategories();
   // Las archivadas también, para poder mostrar de qué cuenta es cada fila.
   const accounts = useAccounts(true);
   const rows = flattenHistory(history.data);
+  const hasFilters = filters.categoryId !== "" || filters.text !== "";
 
   return (
     <div className={cx(styles.page)}>
@@ -28,12 +39,33 @@ export function TransactionsPage() {
           <h1 className={cx(styles.title)}>{t("transactions.list.title")}</h1>
           <p className={cx(styles.subtitle)}>{t("transactions.list.subtitle")}</p>
         </div>
-        {rows.length > 0 ? (
+        {rows.length > 0 || hasFilters ? (
           <LinkButton to="/transactions/new" icon="add">
             {t("transactions.list.add")}
           </LinkButton>
         ) : null}
       </header>
+      {categories.isSuccess && (categories.data.length > 0 || hasFilters) ? (
+        <HistoryFilters
+          categories={categories.data}
+          values={filters}
+          onChange={(next) => {
+            const updated = new URLSearchParams(params);
+            const cambios: [string, string][] = [
+              ["category", next.categoryId],
+              ["q", next.text],
+            ];
+            for (const [clave, valor] of cambios) {
+              if (valor) {
+                updated.set(clave, valor);
+              } else {
+                updated.delete(clave);
+              }
+            }
+            setParams(updated, { replace: true });
+          }}
+        />
+      ) : null}
       {history.isPending ? (
         <p role="status" className={cx(styles.subtitle)}>
           {t("transactions.list.loading")}
@@ -55,12 +87,16 @@ export function TransactionsPage() {
       {history.isSuccess && rows.length === 0 ? (
         <section className={cx(styles.empty)} aria-labelledby="transactions-empty">
           <h2 id="transactions-empty" className={cx(styles.emptyTitle)}>
-            {t("transactions.list.emptyTitle")}
+            {hasFilters ? t("transactions.filters.noneTitle") : t("transactions.list.emptyTitle")}
           </h2>
-          <p className={cx(styles.emptyBody)}>{t("transactions.list.emptyBody")}</p>
-          <LinkButton to="/transactions/new" icon="add">
-            {t("transactions.list.emptyAction")}
-          </LinkButton>
+          <p className={cx(styles.emptyBody)}>
+            {hasFilters ? t("transactions.filters.noneBody") : t("transactions.list.emptyBody")}
+          </p>
+          {hasFilters ? null : (
+            <LinkButton to="/transactions/new" icon="add">
+              {t("transactions.list.emptyAction")}
+            </LinkButton>
+          )}
         </section>
       ) : null}
       <HistoryWithUndo

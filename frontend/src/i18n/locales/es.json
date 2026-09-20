@@ -298,6 +298,14 @@
       "sueldo": "Sueldo",
       "freelance": "Trabajos propios",
       "otros-ingresos": "Otros ingresos"
+    },
+    "filters": {
+      "text": "Buscar",
+      "category": "Categoría",
+      "allCategories": "Todas las categorías",
+      "clear": "Limpiar",
+      "noneTitle": "No encontramos nada",
+      "noneBody": "Probá con otras palabras o sacá alguno de los filtros."
     }
   },
   "transfers": {
