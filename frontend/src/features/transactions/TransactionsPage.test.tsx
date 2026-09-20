@@ -7,7 +7,8 @@ import { expectNoA11yViolations } from "../../test/a11y";
 import { mockApi } from "../../test/api";
 import { jsonResponse, renderWithProviders } from "../../test/render";
 import { anAccount } from "../accounts/fixtures";
-import { aPage, aTransaction, EXPENSE_CATEGORY, INCOME_CATEGORY } from "./fixtures";
+import { aTransfer } from "../transfers/fixtures";
+import { aHistoryPage, aTransaction, EXPENSE_CATEGORY, INCOME_CATEGORY } from "./fixtures";
 
 const SESSION = { "GET /api/auth/me": jsonResponse(200, { username: "mechi" }) };
 const ACCOUNT = anAccount();
@@ -25,7 +26,7 @@ describe("Movimientos", () => {
   it("lista los movimientos con su fecha, su categoría y su monto", async () => {
     mockApi({
       ...BASE,
-      "GET /api/transactions": jsonResponse(200, aPage([aTransaction()])),
+      "GET /api/history": jsonResponse(200, aHistoryPage([aTransaction()])),
     });
     renderWithProviders(<App />, { route: "/transactions" });
 
@@ -40,7 +41,7 @@ describe("Movimientos", () => {
   });
 
   it("sin movimientos explica qué hacer", async () => {
-    mockApi({ ...BASE, "GET /api/transactions": jsonResponse(200, aPage([])) });
+    mockApi({ ...BASE, "GET /api/history": jsonResponse(200, aHistoryPage([])) });
     renderWithProviders(<App />, { route: "/transactions" });
 
     expect(
@@ -57,7 +58,7 @@ describe("Movimientos", () => {
     let alive = true;
     mockApi({
       ...BASE,
-      "GET /api/transactions": () => jsonResponse(200, aPage(alive ? [movement] : [])),
+      "GET /api/history": () => jsonResponse(200, aHistoryPage(alive ? [movement] : [])),
       [`DELETE /api/transactions/${movement.id}`]: () => {
         alive = false;
         return jsonResponse(200, { ...movement, deleted_at: "2026-09-18T14:00:00Z" });
@@ -88,8 +89,8 @@ describe("Movimientos", () => {
     });
     mockApi({
       ...BASE,
-      "GET /api/transactions": jsonResponse(200, aPage([first], "cursor-2")),
-      "GET /api/transactions?cursor=cursor-2": jsonResponse(200, aPage([second])),
+      "GET /api/history": jsonResponse(200, aHistoryPage([first], "cursor-2")),
+      "GET /api/history?cursor=cursor-2": jsonResponse(200, aHistoryPage([second])),
     });
     renderWithProviders(<App />, { route: "/transactions" });
     const user = userEvent.setup();
@@ -102,8 +103,24 @@ describe("Movimientos", () => {
     expect(screen.queryByRole("button", { name: "Ver más" })).not.toBeInTheDocument();
   });
 
+  it("muestra las transferencias junto a los movimientos, y sin signo", async () => {
+    const OTRA = anAccount({ id: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d", name: "Efectivo" });
+    mockApi({
+      ...BASE,
+      "GET /api/accounts?include_archived=true": jsonResponse(200, [ACCOUNT, OTRA]),
+      "GET /api/history": jsonResponse(200, aHistoryPage([aTransaction(), aTransfer()])),
+    });
+    renderWithProviders(<App />, { route: "/transactions" });
+
+    const fila = (await screen.findByText("De Galicia sueldo a Efectivo")).closest("li");
+    expect(fila).toHaveTextContent("50.000,00");
+    // Vista de conjunto: la plata cambió de lugar, no entró ni salió.
+    expect(within(fila as HTMLElement).queryByText("Gasto")).not.toBeInTheDocument();
+    expect(within(fila as HTMLElement).queryByText("Ingreso")).not.toBeInTheDocument();
+  });
+
   it("si falla la carga, lo dice y permite reintentar", async () => {
-    mockApi({ ...BASE, "GET /api/transactions": jsonResponse(500) });
+    mockApi({ ...BASE, "GET /api/history": jsonResponse(500) });
     renderWithProviders(<App />, { route: "/transactions" });
 
     expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -115,7 +132,7 @@ describe("Movimientos", () => {
   it("no tiene problemas de accesibilidad", async () => {
     mockApi({
       ...BASE,
-      "GET /api/transactions": jsonResponse(200, aPage([aTransaction()])),
+      "GET /api/history": jsonResponse(200, aHistoryPage([aTransaction()])),
     });
     const { container } = renderWithProviders(<App />, { route: "/transactions" });
 

@@ -1,35 +1,25 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 
 import { Alert } from "../../shared/ui/Alert";
 import { Button, LinkButton } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
-import { Snackbar } from "../../shared/ui/Snackbar";
 import { useAccounts } from "../accounts/useAccounts";
-import type { Account } from "../accounts/api";
-import type { Category, Transaction } from "./api";
 import { errorCodeOf } from "./errors";
+import { HistoryWithUndo } from "./HistoryList";
 import styles from "./Transactions.module.css";
-import { TransactionList } from "./TransactionList";
-import {
-  flatten,
-  useCategories,
-  useDeleteTransaction,
-  useRestoreTransaction,
-  useTransactions,
-} from "./useTransactions";
+import { flattenHistory, useCategories, useHistory } from "./useTransactions";
 
 export function TransactionsPage() {
   const { t } = useTranslation();
   const [params] = useSearchParams();
   // Se puede llegar desde una cuenta: entonces la lista viene acotada a esa cuenta.
   const accountId = params.get("account") ?? undefined;
-  const transactions = useTransactions(accountId ? { accountId } : {});
+  const history = useHistory(accountId ? { accountId } : {});
   const categories = useCategories();
-  // Las archivadas también, para poder mostrar de qué cuenta es cada movimiento.
+  // Las archivadas también, para poder mostrar de qué cuenta es cada fila.
   const accounts = useAccounts(true);
-  const rows = flatten(transactions.data);
+  const rows = flattenHistory(history.data);
 
   return (
     <div className={cx(styles.page)}>
@@ -44,27 +34,25 @@ export function TransactionsPage() {
           </LinkButton>
         ) : null}
       </header>
-      {transactions.isPending ? (
+      {history.isPending ? (
         <p role="status" className={cx(styles.subtitle)}>
           {t("transactions.list.loading")}
         </p>
       ) : null}
-      {transactions.isError ? (
+      {history.isError ? (
         <div className={cx(styles.problem)}>
-          <Alert>
-            {t(`transactions.errors.${errorCodeOf(transactions.error) ?? "UNKNOWN_ERROR"}`)}
-          </Alert>
+          <Alert>{t(`transactions.errors.${errorCodeOf(history.error) ?? "UNKNOWN_ERROR"}`)}</Alert>
           <Button
             variant="tonal"
             onPress={() => {
-              void transactions.refetch();
+              void history.refetch();
             }}
           >
             {t("transactions.list.retry")}
           </Button>
         </div>
       ) : null}
-      {transactions.isSuccess && rows.length === 0 ? (
+      {history.isSuccess && rows.length === 0 ? (
         <section className={cx(styles.empty)} aria-labelledby="transactions-empty">
           <h2 id="transactions-empty" className={cx(styles.emptyTitle)}>
             {t("transactions.list.emptyTitle")}
@@ -75,89 +63,24 @@ export function TransactionsPage() {
           </LinkButton>
         </section>
       ) : null}
-      <TransactionsWithUndo
-        transactions={rows}
+      <HistoryWithUndo
+        entries={rows}
         categories={categories.data ?? []}
         accounts={accounts.data ?? []}
       />
-      {transactions.hasNextPage ? (
+      {history.hasNextPage ? (
         <Button
           variant="outlined"
-          isDisabled={transactions.isFetchingNextPage}
+          isDisabled={history.isFetchingNextPage}
           onPress={() => {
-            void transactions.fetchNextPage();
+            void history.fetchNextPage();
           }}
         >
-          {transactions.isFetchingNextPage
+          {history.isFetchingNextPage
             ? t("transactions.list.loadingMore")
             : t("transactions.list.more")}
         </Button>
       ) : null}
     </div>
-  );
-}
-
-interface WithUndoProps {
-  transactions: Transaction[];
-  categories: Category[];
-  accounts: Account[];
-  /** En el detalle de una cuenta no hace falta repetir de qué cuenta es cada uno. */
-  showAccount?: boolean;
-}
-
-/**
- * Borrar no pregunta: borra y ofrece deshacer durante seis segundos, que es lo
- * que prefiere el sistema de diseño frente a un diálogo de confirmación.
- *
- * El aviso vive acá, fuera de la lista: al borrar el último movimiento la lista
- * queda vacía, y si el aviso viviera dentro se iría con ella justo cuando hace
- * falta.
- */
-export function TransactionsWithUndo({
-  transactions,
-  categories,
-  accounts,
-  showAccount = true,
-}: WithUndoProps) {
-  const { t } = useTranslation();
-  const [undoable, setUndoable] = useState<Transaction | null>(null);
-  const remove = useDeleteTransaction();
-  const restore = useRestoreTransaction();
-  const failure = errorCodeOf(remove.error) ?? errorCodeOf(restore.error);
-
-  return (
-    <>
-      {failure ? <Alert>{t(`transactions.errors.${failure}`)}</Alert> : null}
-      {transactions.length > 0 ? (
-        <TransactionList
-          transactions={transactions}
-          categories={categories}
-          accounts={accounts}
-          showAccount={showAccount}
-          onDelete={(transaction) => {
-            remove.mutate(transaction.id, {
-              onSuccess: () => {
-                setUndoable(transaction);
-              },
-            });
-          }}
-        />
-      ) : null}
-      {undoable ? (
-        <Snackbar
-          message={t("transactions.list.deleted")}
-          onDismiss={() => {
-            setUndoable(null);
-          }}
-          action={{
-            label: t("transactions.list.undo"),
-            onPress: () => {
-              restore.mutate(undoable.id);
-              setUndoable(null);
-            },
-          }}
-        />
-      ) : null}
-    </>
   );
 }
