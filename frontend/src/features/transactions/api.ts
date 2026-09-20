@@ -6,6 +6,9 @@ export type TransactionPage = components["schemas"]["TransactionPageResponse"];
 export type TransactionKind = components["schemas"]["TransactionKind"];
 export type Category = components["schemas"]["CategoryResponse"];
 export type Balance = components["schemas"]["BalanceResponse"];
+export type HistoryPage = components["schemas"]["HistoryPageResponse"];
+/** Un movimiento o una transferencia: el campo `type` dice cuál (ADR-0014). */
+export type HistoryEntry = HistoryPage["items"][number];
 
 export const TRANSACTION_KINDS = [
   "expense",
@@ -81,6 +84,14 @@ export async function fetchTransactions(
 export async function fetchTransaction(id: string, signal: AbortSignal): Promise<Transaction> {
   const response = await api.get(`/api/transactions/${encodeURIComponent(id)}`, signal);
   return (await response.json()) as Transaction;
+}
+
+export async function fetchHistory(
+  filters: TransactionFilters,
+  signal: AbortSignal,
+): Promise<HistoryPage> {
+  const response = await api.get(`/api/history${queryOf(filters)}`, signal);
+  return (await response.json()) as HistoryPage;
 }
 
 export async function fetchBalances(signal: AbortSignal): Promise<Balance[]> {

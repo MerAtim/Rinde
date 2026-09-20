@@ -13,9 +13,12 @@ import {
   editTransaction,
   fetchBalances,
   fetchCategories,
+  fetchHistory,
   fetchTransactions,
   registerTransaction,
   restoreTransaction,
+  type HistoryEntry,
+  type HistoryPage,
   type Transaction,
   type TransactionFilters,
   type TransactionInput,
@@ -27,6 +30,7 @@ export const transactionKeys = {
   lists: () => [...transactionKeys.all, "list"] as const,
   list: (filters: TransactionFilters) => [...transactionKeys.lists(), filters] as const,
   balances: () => [...transactionKeys.all, "balances"] as const,
+  history: (filters: TransactionFilters) => [...transactionKeys.all, "history", filters] as const,
   categories: () => ["categories"] as const,
 };
 
@@ -43,6 +47,22 @@ export function useTransactions(filters: TransactionFilters = {}) {
 
 /** Todos los movimientos ya traídos, en una sola lista. */
 export function flatten(data: InfiniteData<TransactionPage> | undefined): Transaction[] {
+  return data ? data.pages.flatMap((page) => page.items) : [];
+}
+
+/** Movimientos y transferencias en una sola lista, paginada con el mismo cursor. */
+export function useHistory(filters: TransactionFilters = {}) {
+  return useInfiniteQuery({
+    queryKey: transactionKeys.history(filters),
+    queryFn: ({ pageParam, signal }) =>
+      fetchHistory({ ...filters, ...(pageParam ? { cursor: pageParam } : {}) }, signal),
+    initialPageParam: "",
+    getNextPageParam: (page: HistoryPage) => page.next_cursor ?? undefined,
+  });
+}
+
+/** Todo lo ya traído, en una sola lista. */
+export function flattenHistory(data: InfiniteData<HistoryPage> | undefined): HistoryEntry[] {
   return data ? data.pages.flatMap((page) => page.items) : [];
 }
 

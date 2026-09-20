@@ -15,14 +15,13 @@ import { TextField } from "../../shared/ui/TextField";
 import styles from "./Accounts.module.css";
 import { type Account, type AccountErrorCode, isAccountsApiError } from "./api";
 import { errorCodeOf, fieldOf, validateName } from "./errors";
-import { TransactionsWithUndo } from "../transactions/TransactionsPage";
-import { AccountTransfers } from "../transfers/AccountTransfers";
+import { HistoryWithUndo } from "../transactions/HistoryList";
 import {
   balancesById,
-  flatten,
+  flattenHistory,
   useBalances,
   useCategories,
-  useTransactions,
+  useHistory,
 } from "../transactions/useTransactions";
 import { KIND_ICON } from "./presentation";
 import { useAccount, useAccounts, useArchiveAccount, useRenameAccount } from "./useAccounts";
@@ -100,7 +99,6 @@ function AccountDetail({ account }: { account: Account }) {
         </div>
       </header>
       <AccountMoney account={account} />
-      <AccountTransfersSection account={account} />
       {account.archived_at ? (
         <section className={cx(styles.section)}>
           <div>
@@ -123,13 +121,21 @@ function AccountDetail({ account }: { account: Account }) {
   );
 }
 
-/** Saldo de la cuenta y sus últimos movimientos. */
+/**
+ * Saldo de la cuenta y sus últimos movimientos, transferencias incluidas.
+ *
+ * Es una sola lista y no dos secciones: para quien mira su cuenta, una
+ * transferencia que le sacó plata es un movimiento más. Lo que la distingue es
+ * que del otro lado entró, y eso se ve en la otra cuenta (ADR-0014).
+ */
 function AccountMoney({ account }: { account: Account }) {
   const { t } = useTranslation();
   const balance = balancesById(useBalances().data).get(account.id);
-  const movements = useTransactions({ accountId: account.id, limit: 5 });
+  const history = useHistory({ accountId: account.id, limit: 5 });
   const categories = useCategories();
-  const rows = flatten(movements.data);
+  // Las archivadas también: una transferencia vieja puede apuntar a una de ellas.
+  const accounts = useAccounts(true);
+  const rows = flattenHistory(history.data);
 
   return (
     <section className={cx(styles.section)} aria-labelledby="account-money">
@@ -138,19 +144,25 @@ function AccountMoney({ account }: { account: Account }) {
       </h2>
       {/* Sin movimientos, el saldo es cero en la moneda de la cuenta. */}
       <MoneyAmount amount={balance?.amount ?? "0"} currency={account.currency} size="hero" />
-      <TransactionsWithUndo
-        transactions={rows}
+      <HistoryWithUndo
+        entries={rows}
         categories={categories.data ?? []}
-        accounts={[account]}
+        accounts={accounts.data ?? [account]}
         showAccount={false}
+        perspective={account.id}
       />
-      {movements.isSuccess && rows.length === 0 ? (
+      {history.isSuccess && rows.length === 0 ? (
         <p className={cx(styles.sectionBody)}>{t("accounts.detail.noMovements")}</p>
       ) : null}
       <div className={cx(styles.actions)}>
         {account.archived_at ? null : (
           <LinkButton to={`/transactions/new?account=${account.id}`} icon="add">
             {t("transactions.list.add")}
+          </LinkButton>
+        )}
+        {account.archived_at ? null : (
+          <LinkButton to={`/transfers/new?account=${account.id}`} variant="tonal" icon="swap">
+            {t("transfers.detail.add")}
           </LinkButton>
         )}
         {rows.length > 0 ? (
@@ -161,13 +173,6 @@ function AccountMoney({ account }: { account: Account }) {
       </div>
     </section>
   );
-}
-
-/** Las transferencias necesitan el nombre de la otra cuenta, no solo su id. */
-function AccountTransfersSection({ account }: { account: Account }) {
-  // Las archivadas también: una transferencia vieja puede apuntar a una de ellas.
-  const accounts = useAccounts(true);
-  return <AccountTransfers account={account} accounts={accounts.data ?? []} />;
 }
 
 function RenameSection({ account }: { account: Account }) {

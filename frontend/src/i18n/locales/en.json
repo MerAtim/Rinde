@@ -335,7 +335,8 @@
       "from": "From {{name}}",
       "to": "To {{name}}",
       "delete": "Delete",
-      "undo": "Undo"
+      "undo": "Undo",
+      "between": "From {{from}} to {{to}}"
     },
     "errors": {
       "SENT_REQUIRED": "Enter how much is sent.",

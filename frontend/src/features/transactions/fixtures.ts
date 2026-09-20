@@ -1,4 +1,5 @@
-import type { Balance, Category, Transaction, TransactionPage } from "./api";
+import type { Transfer } from "../transfers/api";
+import type { Balance, Category, HistoryPage, Transaction, TransactionPage } from "./api";
 
 /** Gasto de ejemplo: supermercado en pesos, de hoy. */
 export function aTransaction(overrides: Partial<Transaction> = {}): Transaction {
@@ -42,5 +43,25 @@ export function aBalance(overrides: Partial<Balance> = {}): Balance {
     amount: "84699.50",
     currency: "ARS",
     ...overrides,
+  };
+}
+
+/**
+ * Una página del historial, con movimientos y transferencias mezclados.
+ *
+ * El tipo se deduce de la forma: solo un movimiento tiene `kind`. Así el test
+ * se escribe con las entidades y no con la envoltura de la API.
+ */
+export function aHistoryPage(
+  items: (Transaction | Transfer)[],
+  nextCursor: string | null = null,
+): HistoryPage {
+  return {
+    items: items.map((item) =>
+      "kind" in item
+        ? { type: "transaction" as const, transaction: item }
+        : { type: "transfer" as const, transfer: item },
+    ),
+    next_cursor: nextCursor,
   };
 }

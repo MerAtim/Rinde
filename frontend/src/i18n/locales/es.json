@@ -335,7 +335,8 @@
       "from": "Desde {{name}}",
       "to": "Hacia {{name}}",
       "delete": "Borrar",
-      "undo": "Deshacer"
+      "undo": "Deshacer",
+      "between": "De {{from}} a {{to}}"
     },
     "errors": {
       "SENT_REQUIRED": "Escribí cuánto sale.",
