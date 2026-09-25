@@ -11,7 +11,7 @@ COPY . .
 RUN npm run build
 
 # Etapa 2: nginx sin privilegios sirve solo los archivos estáticos compilados.
-FROM nginxinc/nginx-unprivileged:1-alpine@sha256:b54ac358b83fc6c965793fd271839b4ea4cdb6e99895bb19618cbc2ca152d972 AS runtime
+FROM nginxinc/nginx-unprivileged:1-alpine@sha256:6a23acdfca2b9cfbcec61419e3f1426bcbedb91362f2f19306a8567423bb4612 AS runtime
 ENV API_UPSTREAM=http://api:8000
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
