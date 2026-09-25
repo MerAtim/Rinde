@@ -5,7 +5,7 @@
 # resultado no es byte a byte reproducible. Es a propósito: la imagen oficial de
 # Python se reconstruye más lento de lo que Debian publica parches, y preferimos
 # una imagen parcheada antes que una reproducible con CVE conocidos.
-FROM ghcr.io/astral-sh/uv:0.12.17@sha256:10787c682e4184e4f290de1171fd4703dc63de99221f10fe1c99002ce7fa9acc AS uv
+FROM ghcr.io/astral-sh/uv:0.12.19@sha256:04d046b13e60d6bcec73cbc5e1cad25d680dea90c8573340950a0ac2d1aef424 AS uv
 
 # Etapa 1: instala las dependencias en un entorno virtual.
 FROM python:3.14-slim@sha256:cad9a2c871761c413caa6fdd6441c783451e740a48aaeba60ae62a8b53525ef6 AS builder
