@@ -57,7 +57,7 @@ La API corre en una instancia gratuita de Render (0,1 CPU, 512 MB de RAM) que se
 
 ## Decisiones de arquitectura
 
-Cada decisión importante está registrada con sus alternativas y costos en [docs/adr](docs/adr/README.md).
+Cada decisión importante está registrada con sus alternativas y costos DOCUMENTADA DEBIDAMENTE en [docs/adr](docs/adr/README.md).
 
 ## Convenciones
 
