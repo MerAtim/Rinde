@@ -139,7 +139,12 @@
       "cash": "Efectivo",
       "bank": "Banco",
       "credit_card": "Tarjeta de crédito",
+      "virtual_wallet": "Billetera virtual",
       "crypto_wallet": "Billetera cripto"
+    },
+    "kindExamples": {
+      "virtual_wallet": "Mercado Pago, Ualá, Naranja X",
+      "crypto_wallet": "Lemon, Belo, Binance"
     },
     "currency": {
       "ARS": "Pesos argentinos (ARS)",

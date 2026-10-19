@@ -2500,6 +2500,7 @@
           "cash",
           "bank",
           "credit_card",
+          "virtual_wallet",
           "crypto_wallet"
         ],
         "title": "AccountKind"

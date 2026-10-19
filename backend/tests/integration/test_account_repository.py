@@ -138,6 +138,43 @@ async def test_the_database_rejects_rows_that_break_the_rules(
             )
 
 
+@pytest.mark.parametrize("currency", ["'ARS'", "'USD'"])
+async def test_a_virtual_wallet_holds_pesos_and_dollars(
+    session: AsyncSession, currency: str
+) -> None:
+    """El tipo nuevo entra en la base con las monedas que le corresponden."""
+    repository = SqlAlchemyAccountRepository(session)
+    owner = await _user(session, "duena")
+    account = _account(owner)
+    await repository.add(account)
+
+    await session.execute(
+        text(f"UPDATE accounts SET kind = 'virtual_wallet', currency = {currency} WHERE id = :id"),  # noqa: S608
+        {"id": account.id},
+    )
+
+    leida = await repository.get(account.id, owner)
+    assert leida is not None
+    assert leida.kind.value == "virtual_wallet"
+
+
+async def test_the_database_rejects_bitcoin_in_a_virtual_wallet(session: AsyncSession) -> None:
+    """La regla de Bitcoin es otra restricción y sigue valiendo sin tocarla."""
+    repository = SqlAlchemyAccountRepository(session)
+    owner = await _user(session, "duena")
+    account = _account(owner)
+    await repository.add(account)
+
+    with pytest.raises(IntegrityError):
+        async with session.begin_nested():
+            await session.execute(
+                text(
+                    "UPDATE accounts SET kind = 'virtual_wallet', currency = 'BTC' WHERE id = :id"
+                ),
+                {"id": account.id},
+            )
+
+
 async def test_an_account_needs_an_existing_owner(session: AsyncSession) -> None:
     repository = SqlAlchemyAccountRepository(session)
 
