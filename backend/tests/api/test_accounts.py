@@ -52,6 +52,16 @@ def test_opening_an_account_returns_it(client: TestClient) -> None:
     assert client.get(f"/api/accounts/{body['id']}").json() == body
 
 
+@pytest.mark.parametrize("currency", ["ARS", "USD"])
+def test_a_virtual_wallet_can_be_opened(client: TestClient, currency: str) -> None:
+    """Mercado Pago y las suyas dejan de tener que cargarse como efectivo."""
+    response = _open(client, name="Mercado Pago", kind="virtual_wallet", currency=currency)
+
+    assert response.status_code == status.HTTP_201_CREATED
+    body = response.json()
+    assert (body["kind"], body["currency"]) == ("virtual_wallet", currency)
+
+
 def test_the_list_shows_my_accounts_in_the_order_they_were_opened(
     client: TestClient, accounts: InMemoryAccountsUnitFactory
 ) -> None:
@@ -102,6 +112,7 @@ def test_an_archived_account_cannot_be_renamed(client: TestClient) -> None:
     ("fields", "code"),
     [
         ({"kind": "bank", "currency": "BTC"}, "ACCOUNT_CURRENCY_NOT_ALLOWED"),
+        ({"kind": "virtual_wallet", "currency": "BTC"}, "ACCOUNT_CURRENCY_NOT_ALLOWED"),
         ({"name": "Galicia\u200bsueldo"}, "ACCOUNT_NAME_INVALID"),
     ],
 )

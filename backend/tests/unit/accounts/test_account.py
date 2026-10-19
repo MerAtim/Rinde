@@ -54,10 +54,22 @@ def test_sixty_characters_is_the_limit() -> None:
     assert len(AccountName.parse("x" * 60).value) == 60
 
 
-@pytest.mark.parametrize("kind", [AccountKind.CASH, AccountKind.BANK, AccountKind.CREDIT_CARD])
+# Se derivan del enum y no se listan a mano: un tipo de cuenta nuevo queda
+# cubierto por esta regla sin que nadie tenga que acordarse de agregarlo.
+@pytest.mark.parametrize(
+    "kind", [kind for kind in AccountKind if kind is not AccountKind.CRYPTO_WALLET]
+)
 def test_bitcoin_only_lives_in_crypto_wallets(kind: AccountKind) -> None:
     with pytest.raises(AccountCurrencyNotAllowedError):
         _account(kind=kind, currency=Currency.BTC)
+
+
+@pytest.mark.parametrize("currency", [Currency.ARS, Currency.USD])
+def test_a_virtual_wallet_holds_pesos_and_dollars(currency: Currency) -> None:
+    """Mercado Pago, Ualá y Naranja X guardan las dos, y nada más (ADR-0009)."""
+    account = _account(kind=AccountKind.VIRTUAL_WALLET, currency=currency)
+
+    assert account.currency is currency
 
 
 @pytest.mark.parametrize("currency", list(Currency))

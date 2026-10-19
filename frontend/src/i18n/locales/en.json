@@ -139,7 +139,12 @@
       "cash": "Cash",
       "bank": "Bank",
       "credit_card": "Credit card",
+      "virtual_wallet": "Digital wallet",
       "crypto_wallet": "Crypto wallet"
+    },
+    "kindExamples": {
+      "virtual_wallet": "Mercado Pago, Ualá, Naranja X",
+      "crypto_wallet": "Lemon, Belo, Binance"
     },
     "currency": {
       "ARS": "Argentine pesos (ARS)",
