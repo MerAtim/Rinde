@@ -12,6 +12,11 @@ RUN npm run build
 
 # Etapa 2: nginx sin privilegios sirve solo los archivos estáticos compilados.
 FROM nginxinc/nginx-unprivileged:1-alpine@sha256:b54ac358b83fc6c965793fd271839b4ea4cdb6e99895bb19618cbc2ca152d972 AS runtime
+# Aplica los parches de seguridad publicados después de la imagen base (igual que el backend).
+# La imagen corre como el usuario sin privilegios 101: se instala como root y se vuelve a él.
+USER root
+RUN apk upgrade --no-cache
+USER 101
 ENV API_UPSTREAM=http://api:8000
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
