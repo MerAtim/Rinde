@@ -27,6 +27,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 FROM python:3.14-slim@sha256:cad9a2c871761c413caa6fdd6441c783451e740a48aaeba60ae62a8b53525ef6 AS runtime
 RUN apt-get update \
     && apt-get upgrade --yes --no-install-recommends \
+    # Ensure libexpat (Debian package name libexpat1) is upgraded to the latest
+    # available patched version that fixes CVE-2026-93990. This is explicit in case
+    # the base image did not already include the fix.
+    && apt-get install --yes --no-install-recommends libexpat1 \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /usr/local/lib/python3.14/site-packages/pip /usr/local/lib/python3.14/site-packages/pip-* /usr/local/bin/pip* \
     && groupadd --system --gid 10001 rinde \
