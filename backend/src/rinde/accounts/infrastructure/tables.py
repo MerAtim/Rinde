@@ -30,7 +30,10 @@ accounts = Table(
     Column("created_at", DateTime(timezone=True), nullable=False),
     Column("archived_at", DateTime(timezone=True), nullable=True),
     CheckConstraint("char_length(btrim(name)) BETWEEN 1 AND 60", name="name_length"),
-    CheckConstraint("kind IN ('cash', 'bank', 'credit_card', 'crypto_wallet')", name="kind_known"),
+    CheckConstraint(
+        "kind IN ('cash', 'bank', 'credit_card', 'virtual_wallet', 'crypto_wallet')",
+        name="kind_known",
+    ),
     CheckConstraint("currency IN ('ARS', 'USD', 'BTC')", name="currency_known"),
     CheckConstraint(
         "currency <> 'BTC' OR kind = 'crypto_wallet'", name="btc_only_in_crypto_wallet"

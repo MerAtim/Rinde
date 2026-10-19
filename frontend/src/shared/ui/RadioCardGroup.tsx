@@ -8,6 +8,8 @@ export interface RadioCardOption<T extends string> {
   id: T;
   label: string;
   icon: IconName;
+  /** Una línea corta para cuando el nombre solo no alcanza, como ejemplos. */
+  description?: string;
 }
 
 interface RadioCardGroupProps<T extends string> {
@@ -47,7 +49,12 @@ export function RadioCardGroup<T extends string>({
               {({ isSelected }) => (
                 <>
                   <Icon name={option.icon} size={24} />
-                  <span className={cx(styles.label)}>{option.label}</span>
+                  <span className={cx(styles.text)}>
+                    <span className={cx(styles.label)}>{option.label}</span>
+                    {option.description === undefined ? null : (
+                      <span className={cx(styles.description)}>{option.description}</span>
+                    )}
+                  </span>
                   <span className={cx(styles.check)}>
                     {isSelected ? <Icon name="check" size={18} /> : null}
                   </span>

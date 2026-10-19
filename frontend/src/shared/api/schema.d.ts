@@ -377,7 +377,7 @@ export interface components {
      * AccountKind
      * @enum {string}
      */
-    AccountKind: "cash" | "bank" | "credit_card" | "crypto_wallet";
+    AccountKind: "cash" | "bank" | "credit_card" | "virtual_wallet" | "crypto_wallet";
     /** AccountResponse */
     AccountResponse: {
       /**
