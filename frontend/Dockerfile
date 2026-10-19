@@ -12,6 +12,11 @@ RUN npm run build
 
 # Etapa 2: nginx sin privilegios sirve solo los archivos estáticos compilados.
 FROM nginxinc/nginx-unprivileged:1-alpine@sha256:b54ac358b83fc6c965793fd271839b4ea4cdb6e99895bb19618cbc2ca152d972 AS runtime
+
+# Security fix: ensure expat (libexpat) is upgraded to the patched version that fixes CVE-2026-93990.
+# Use apk to refresh indexes and upgrade/install the package in the final runtime layer.
+RUN apk update && apk add --no-cache -U expat
+
 ENV API_UPSTREAM=http://api:8000
 COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist /usr/share/nginx/html
