@@ -1,18 +1,42 @@
 name: Instalar Trivy
 description: Instala el binario de Trivy verificando su checksum SHA-256 publicado.
 
+inputs:
+  version:
+    description: Versión de Trivy.
+    default: 0.74.0
+  sha256:
+    description: Checksum SHA-256 publicado del archivo de esa versión.
+    default: 2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be4371a
+
 runs:
   using: composite
   steps:
+    # Las descargas de GitHub Releases dan 504 por rachas de más de un minuto.
+    # Con la caché, cada versión se baja una sola vez. Se guarda el archivo y no
+    # el binario para que el checksum se verifique siempre, también al venir de
+    # la caché; y la caché solo se guarda si el job terminó bien.
+    - name: Recuperar la descarga de la caché
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/descargas
+        key: trivy-${{ inputs.version }}-${{ inputs.sha256 }}
+
     - name: Descargar, verificar e instalar
       shell: bash
       env:
-        TRIVY_VERSION: 0.74.0
-        TRIVY_SHA256: 2ae6fe3ee734b7fdf11335663e18c75ea12dccc76062f09f164a3b0f8be4371a
+        TRIVY_VERSION: ${{ inputs.version }}
+        TRIVY_SHA256: ${{ inputs.sha256 }}
       run: |
         archivo="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
-        cd "$RUNNER_TEMP"
-        curl -fsSLo "$archivo" "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${archivo}"
+        mkdir -p "$RUNNER_TEMP/descargas"
+        cd "$RUNNER_TEMP/descargas"
+        if [[ ! -f "$archivo" ]]; then
+          # Sin --retry-delay, curl espera el doble en cada intento (1 s, 2 s,
+          # 4 s...): unos cuatro minutos en total antes de rendirse.
+          curl -fsSL --retry 8 --retry-all-errors --connect-timeout 20 \
+            -o "$archivo" "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${archivo}"
+        fi
         echo "${TRIVY_SHA256}  ${archivo}" | sha256sum --check --strict
-        tar -xzf "$archivo" trivy
+        tar -xzf "$archivo" -C "$RUNNER_TEMP" trivy
         echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
