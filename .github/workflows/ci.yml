@@ -63,7 +63,7 @@ jobs:
       - name: Instalar gitleaks verificando el checksum
         run: |
           archivo="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          curl -fsSLo "$archivo" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archivo}"
+          curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors -o "$archivo" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archivo}"
           echo "${GITLEAKS_SHA256}  ${archivo}" | sha256sum --check --strict
           tar -xzf "$archivo" -C "$RUNNER_TEMP" gitleaks
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
