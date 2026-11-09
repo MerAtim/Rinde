@@ -124,3 +124,12 @@ Los chequeos de dependencias (`pip-audit`, `npm audit`), el escaneo de imágenes
 el de secretos corren solo en la CI: su resultado cambia sin que cambie el código
 y no sirven como puerta local ([ADR-0012](docs/adr/0012-chequeos-locales-y-en-ci.md),
 decisión 3).
+
+Cuando una vulnerabilidad está en una dependencia transitiva y el paquete que la
+trae todavía no admite la versión corregida, se fuerza con `overrides` en
+`frontend/package.json`, acotado al rango vulnerable. Overrides vigentes:
+
+* `minimatch` 10.x a `^11.0.5` por
+  [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249).
+  ESLint y typescript-eslint todavía piden `^10`; el lint, los tipos y los tests
+  pasan con la 11. Se quita cuando ambos acepten `^11`.
