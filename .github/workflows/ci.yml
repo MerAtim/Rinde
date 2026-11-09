@@ -60,10 +60,23 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      # Mismo criterio que la acción instalar-trivy: caché del archivo, checksum
+      # siempre y reintentos con espera exponencial.
+      - name: Recuperar la descarga de gitleaks de la caché
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/descargas
+          key: gitleaks-${{ env.GITLEAKS_VERSION }}-${{ env.GITLEAKS_SHA256 }}
+
       - name: Instalar gitleaks verificando el checksum
         run: |
           archivo="gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors -o "$archivo" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archivo}"
+          mkdir -p "$RUNNER_TEMP/descargas"
+          cd "$RUNNER_TEMP/descargas"
+          if [[ ! -f "$archivo" ]]; then
+            curl -fsSL --retry 8 --retry-all-errors --connect-timeout 20 \
+              -o "$archivo" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${archivo}"
+          fi
           echo "${GITLEAKS_SHA256}  ${archivo}" | sha256sum --check --strict
           tar -xzf "$archivo" -C "$RUNNER_TEMP" gitleaks
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
