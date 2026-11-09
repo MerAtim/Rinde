@@ -1,0 +1,60 @@
+name: Auto-merge de Dependabot
+
+# Activa la integración automática en los PR de Dependabot que suben una versión
+# de parche (ADR-0015). No integra nada por su cuenta: GitHub integra recién
+# cuando pasan los chequeos obligatorios de la regla de main, y con rebase.
+#
+# Se usa un token de una GitHub App y no GITHUB_TOKEN: un push hecho con
+# GITHUB_TOKEN no dispara workflows, así que main quedaría sin CI y sin
+# despliegue para ese commit.
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  auto-merge:
+    name: Activar el auto-merge
+    # El autor del PR y quien disparó el evento tienen que ser Dependabot. Si una
+    # persona pushea a la rama, el PR deja de ser solo de Dependabot y se revisa
+    # a mano. Del autor no se puede hacer pasar otra cuenta.
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.actor == 'dependabot[bot]' &&
+      github.repository == 'MerAtim/Rinde'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Leer los datos de la actualización
+        id: metadata
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98 # v3.1.0
+        with:
+          github-token: ${{ github.token }}
+
+      # Solo parches, y nunca acciones de GitHub: esas cambian la CI misma y la
+      # App necesitaría permiso para escribir workflows. Tampoco si cambió quien
+      # publica el paquete, la señal típica de un ataque a la cadena de suministro.
+      - name: Generar el token de la App
+        id: token
+        if: >-
+          steps.metadata.outputs.update-type == 'version-update:semver-patch' &&
+          steps.metadata.outputs.package-ecosystem != 'github_actions' &&
+          steps.metadata.outputs.maintainer-changes != 'true'
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+        with:
+          client-id: ${{ secrets.AUTOMERGE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.AUTOMERGE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Activar el auto-merge con rebase
+        if: steps.token.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: gh pr merge --auto --rebase "$PR_URL"

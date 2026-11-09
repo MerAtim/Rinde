@@ -133,3 +133,10 @@ trae todavía no admite la versión corregida, se fuerza con `overrides` en
   [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249).
   ESLint y typescript-eslint todavía piden `^10`; el lint, los tipos y los tests
   pasan con la 11. Se quita cuando ambos acepten `^11`.
+
+Los PR de Dependabot que suben una versión de parche se integran solos cuando la
+CI da verde ([ADR-0015](docs/adr/0015-auto-merge-de-dependabot.md)). Quedan
+afuera las actualizaciones menores y mayores, las de acciones de GitHub y las
+de paquetes que cambiaron de mantenedor: esas se revisan a mano. El auto-merge
+usa una GitHub App, cuyo client ID y clave privada viven como secretos de
+Dependabot (`AUTOMERGE_APP_CLIENT_ID` y `AUTOMERGE_APP_PRIVATE_KEY`).
