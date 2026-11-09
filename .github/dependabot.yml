@@ -1,9 +1,12 @@
 version: 2
 updates:
   # Acciones de GitHub fijadas por SHA: Dependabot propone la actualización
-  # con el SHA nuevo y el comentario de versión.
+  # con el SHA nuevo y el comentario de versión. `/` solo cubre los workflows:
+  # las acciones compuestas propias se listan aparte.
   - package-ecosystem: github-actions
-    directory: /
+    directories:
+      - /
+      - /.github/actions/*
     schedule:
       interval: weekly
     commit-message:
