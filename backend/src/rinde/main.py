@@ -39,6 +39,11 @@ from rinde.config import Settings, get_settings
 from rinde.health.api.router import router as health_router
 from rinde.health.application.check_readiness import CheckReadiness, DatabaseProbe
 from rinde.health.infrastructure.database_probe import SqlAlchemyDatabaseProbe
+from rinde.rates.api.errors import rates_error_handler
+from rinde.rates.api.router import router as rates_router
+from rinde.rates.application.unit import RatesUnitFactory
+from rinde.rates.domain.errors import RateError
+from rinde.rates.infrastructure.factory import SqlAlchemyRatesUnitFactory, build_rate_provider
 from rinde.shared.api.csrf import CsrfRejectedError, csrf_error_handler
 from rinde.shared.api.errors import domain_error_handler
 from rinde.shared.domain.errors import DomainError
@@ -57,13 +62,16 @@ PLAIN_COOKIE_NAME = "rinde_session"
 SECONDS_PER_DAY = 24 * 60 * 60
 
 
-def create_app(
+# Un parámetro por módulo con infraestructura reemplazable: la cantidad crece con
+# los módulos, no con la complejidad de la función. Todos son opcionales y por nombre.
+def create_app(  # noqa: PLR0913
     settings: Settings | None = None,
     *,
     database_probe: DatabaseProbe | None = None,
     auth_factory: AuthUnitFactory | None = None,
     accounts_factory: AccountsUnitFactory | None = None,
     transactions_factory: TransactionsUnitFactory | None = None,
+    rates_factory: RatesUnitFactory | None = None,
 ) -> FastAPI:
     """Crea la aplicación.
 
@@ -72,6 +80,12 @@ def create_app(
     config = settings or get_settings()
     engine: AsyncEngine | None = None
     http_client: httpx.AsyncClient | None = None
+
+    def shared_http_client() -> httpx.AsyncClient:
+        nonlocal http_client
+        if http_client is None:
+            http_client = httpx.AsyncClient(headers={"User-Agent": f"rinde-api/{version('rinde')}"})
+        return http_client
 
     def shared_engine() -> AsyncEngine:
         nonlocal engine
@@ -82,12 +96,13 @@ def create_app(
     if database_probe is None:
         database_probe = SqlAlchemyDatabaseProbe(shared_engine())
     if auth_factory is None:
-        http_client = httpx.AsyncClient(headers={"User-Agent": f"rinde-api/{version('rinde')}"})
         auth_factory = SqlAlchemyAuthUnitFactory(
             async_sessionmaker(shared_engine(), expire_on_commit=False),
             AuthServices(
                 hasher=Argon2PasswordHasher(),
-                breaches=PwnedPasswordsChecker(http_client, base_url=config.pwned_passwords_url),
+                breaches=PwnedPasswordsChecker(
+                    shared_http_client(), base_url=config.pwned_passwords_url
+                ),
                 clock=SystemClock(),
                 secrets=SecureRandomSecrets(),
                 session_ttl=timedelta(days=config.session_ttl_days),
@@ -118,6 +133,20 @@ def create_app(
             async_sessionmaker(shared_engine(), expire_on_commit=False), clock, account_gateway
         )
 
+    if rates_factory is None:
+        clock = SystemClock()
+        rates_factory = SqlAlchemyRatesUnitFactory(
+            async_sessionmaker(shared_engine(), expire_on_commit=False),
+            build_rate_provider(
+                shared_http_client(),
+                clock,
+                dolarapi_url=config.dolarapi_url,
+                argentinadatos_url=config.argentinadatos_url,
+                criptoya_url=config.criptoya_url,
+            ),
+            clock,
+        )
+
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
@@ -142,11 +171,18 @@ def create_app(
     app.state.identify = identify_user
     app.state.accounts_factory = accounts_factory
     app.state.transactions_factory = transactions_factory
+    app.state.rates_factory = rates_factory
     app.state.session_cookie = SessionCookie(
         name=SECURE_COOKIE_NAME if config.session_cookie_secure else PLAIN_COOKIE_NAME,
         secure=config.session_cookie_secure,
         max_age_seconds=config.session_ttl_days * SECONDS_PER_DAY,
     )
+    _register_modules(app)
+    return app
+
+
+def _register_modules(app: FastAPI) -> None:
+    """Los manejadores de errores y los routers de cada módulo."""
     # Del más general al más específico: Starlette elige el manejador más cercano
     # en la jerarquía del error, así cada módulo sigue traduciendo los suyos.
     app.add_exception_handler(DomainError, domain_error_handler)
@@ -156,8 +192,6 @@ def create_app(
     app.add_exception_handler(TransactionError, transactions_error_handler)
     app.add_exception_handler(CategoryError, transactions_error_handler)
     app.add_exception_handler(TransferError, transactions_error_handler)
-    app.include_router(health_router, prefix=API_PREFIX)
-    app.include_router(auth_router, prefix=API_PREFIX)
-    app.include_router(accounts_router, prefix=API_PREFIX)
-    app.include_router(transactions_router, prefix=API_PREFIX)
-    return app
+    app.add_exception_handler(RateError, rates_error_handler)
+    for router in (health_router, auth_router, accounts_router, transactions_router, rates_router):
+        app.include_router(router, prefix=API_PREFIX)

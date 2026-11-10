@@ -369,6 +369,43 @@ export interface paths {
     patch: operations["rename_category_api_categories__category_id__patch"];
     trace?: never;
   };
+  "/api/rates": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Cotizaciones del dólar de un día
+     * @description Los tipos que ninguna fuente tiene ese día no aparecen: no se inventan.
+     */
+    get: operations["list_rates_api_rates_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/rates/{rate_type}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Un tipo de dólar de un día */
+    get: operations["get_rate_api_rates__rate_type__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -540,6 +577,48 @@ export interface components {
       kind: components["schemas"]["AccountKind"];
       currency: components["schemas"]["Currency"];
     };
+    /** QuoteResponse */
+    QuoteResponse: {
+      rate_type: components["schemas"]["RateType"];
+      base: components["schemas"]["Currency"];
+      counter: components["schemas"]["Currency"];
+      /**
+       * Day
+       * Format: date
+       * @description Día al que corresponde, en Argentina
+       */
+      day: string;
+      /**
+       * Buy
+       * @description Pesos que se reciben por un dólar
+       */
+      buy: string;
+      /**
+       * Sell
+       * @description Pesos que se pagan por un dólar
+       */
+      sell: string;
+      source: components["schemas"]["RateSource"];
+      /**
+       * Updated At
+       * @description Cuándo la actualizó la fuente. Un feriado, puede ser de un día hábil anterior
+       */
+      updated_at: string | null;
+    };
+    /**
+     * RateSource
+     * @enum {string}
+     */
+    RateSource: "dolarapi" | "argentinadatos" | "criptoya";
+    /**
+     * RateType
+     * @description Los dólares que se usan en Argentina.
+     *
+     *     `CRYPTO` es el dólar que se consigue comprando una stablecoin con pesos, no
+     *     el precio del Bitcoin: ese es otro par de monedas.
+     * @enum {string}
+     */
+    RateType: "official" | "mep" | "ccl" | "blue" | "card" | "crypto";
     /** ReadinessResponse */
     ReadinessResponse: {
       status: components["schemas"]["ComponentStatus"];
@@ -2344,6 +2423,117 @@ export interface operations {
       };
       /** @description Unprocessable Content */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  list_rates_api_rates_get: {
+    parameters: {
+      query?: {
+        /** @description Día en Argentina. Si falta, hoy */
+        day?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QuoteResponse"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  get_rate_api_rates__rate_type__get: {
+    parameters: {
+      query?: {
+        /** @description Día en Argentina. Si falta, hoy */
+        day?: string | null;
+      };
+      header?: never;
+      path: {
+        rate_type: components["schemas"]["RateType"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["QuoteResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };

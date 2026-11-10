@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     session_ttl_days: int = Field(default=30, ge=1, le=90)
     session_cookie_secure: bool = True
     pwned_passwords_url: str = "https://api.pwnedpasswords.com/range/"
+    # Fuentes de cotizaciones (ADR-0016). Configurables para apuntarlas a un doble en pruebas.
+    dolarapi_url: str = "https://dolarapi.com"
+    argentinadatos_url: str = "https://api.argentinadatos.com"
+    criptoya_url: str = "https://criptoya.com"
 
     @field_validator("database_url")
     @classmethod

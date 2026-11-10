@@ -2490,6 +2490,173 @@
           }
         }
       }
+    },
+    "/api/rates": {
+      "get": {
+        "tags": [
+          "rates"
+        ],
+        "summary": "Cotizaciones del dólar de un día",
+        "description": "Los tipos que ninguna fuente tiene ese día no aparecen: no se inventan.",
+        "operationId": "list_rates_api_rates_get",
+        "parameters": [
+          {
+            "name": "day",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Día en Argentina. Si falta, hoy",
+              "title": "Day"
+            },
+            "description": "Día en Argentina. Si falta, hoy"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/QuoteResponse"
+                  },
+                  "title": "Response List Rates Api Rates Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/rates/{rate_type}": {
+      "get": {
+        "tags": [
+          "rates"
+        ],
+        "summary": "Un tipo de dólar de un día",
+        "operationId": "get_rate_api_rates__rate_type__get",
+        "parameters": [
+          {
+            "name": "rate_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RateType"
+            }
+          },
+          {
+            "name": "day",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Día en Argentina. Si falta, hoy",
+              "title": "Day"
+            },
+            "description": "Día en Argentina. Si falta, hoy"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2878,6 +3045,85 @@
           "currency"
         ],
         "title": "OpenAccountRequest"
+      },
+      "QuoteResponse": {
+        "properties": {
+          "rate_type": {
+            "$ref": "#/components/schemas/RateType"
+          },
+          "base": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "counter": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "day": {
+            "type": "string",
+            "format": "date",
+            "title": "Day",
+            "description": "Día al que corresponde, en Argentina"
+          },
+          "buy": {
+            "type": "string",
+            "title": "Buy",
+            "description": "Pesos que se reciben por un dólar"
+          },
+          "sell": {
+            "type": "string",
+            "title": "Sell",
+            "description": "Pesos que se pagan por un dólar"
+          },
+          "source": {
+            "$ref": "#/components/schemas/RateSource"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At",
+            "description": "Cuándo la actualizó la fuente. Un feriado, puede ser de un día hábil anterior"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rate_type",
+          "base",
+          "counter",
+          "day",
+          "buy",
+          "sell",
+          "source",
+          "updated_at"
+        ],
+        "title": "QuoteResponse"
+      },
+      "RateSource": {
+        "type": "string",
+        "enum": [
+          "dolarapi",
+          "argentinadatos",
+          "criptoya"
+        ],
+        "title": "RateSource"
+      },
+      "RateType": {
+        "type": "string",
+        "enum": [
+          "official",
+          "mep",
+          "ccl",
+          "blue",
+          "card",
+          "crypto"
+        ],
+        "title": "RateType",
+        "description": "Los dólares que se usan en Argentina.\n\n`CRYPTO` es el dólar que se consigue comprando una stablecoin con pesos, no\nel precio del Bitcoin: ese es otro par de monedas."
       },
       "ReadinessResponse": {
         "properties": {
