@@ -21,8 +21,9 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Strict, ValidationErr
 
 from rinde.rates.application.ports import Clock, QuoteRequest, RateSourceUnavailableError
 from rinde.rates.domain.errors import QuoteInvalidError
-from rinde.rates.domain.quote import Quote, RateSource, RateType, round_rate
+from rinde.rates.domain.quote import Quote, RateSource, round_rate
 from rinde.rates.infrastructure.http import get_json
+from rinde.shared.domain.rate_type import RateType
 
 logger = logging.getLogger(__name__)
 

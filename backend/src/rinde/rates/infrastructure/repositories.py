@@ -7,9 +7,10 @@ from sqlalchemy import RowMapping, case, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rinde.rates.domain.quote import Quote, RateSource, RateType
+from rinde.rates.domain.quote import Quote, RateSource
 from rinde.rates.infrastructure.tables import exchange_rates
 from rinde.shared.domain.money import Currency
+from rinde.shared.domain.rate_type import RateType
 
 # Si un día quedó guardado de más de una fuente, gana la de mayor prioridad:
 # la misma que en la cadena de fuentes.

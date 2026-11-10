@@ -10,7 +10,8 @@ from rinde.rates.domain.errors import (
     RateNotFoundError,
     RatesUnavailableError,
 )
-from rinde.rates.domain.quote import ALL_RATE_TYPES, RateSource, RateType
+from rinde.rates.domain.quote import RateSource
+from rinde.shared.domain.rate_type import ALL_RATE_TYPES, RateType
 from tests.fakes import FakeClock, FakeTransaction
 from tests.unit.rates.fakes import FakeRateProvider, InMemoryQuotes, quote
 

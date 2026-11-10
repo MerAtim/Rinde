@@ -12,9 +12,9 @@ from fastapi import APIRouter, Depends, Query, Request
 
 from rinde.rates.api.schemas import QuoteResponse
 from rinde.rates.application.unit import RatesUnit, RatesUnitFactory
-from rinde.rates.domain.quote import RateType
 from rinde.shared.api.identity import CurrentUserId
 from rinde.shared.api.schemas import error_responses
+from rinde.shared.domain.rate_type import RateType
 
 router = APIRouter(prefix="/rates", tags=["rates"])
 

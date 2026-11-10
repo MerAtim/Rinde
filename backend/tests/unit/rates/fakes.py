@@ -5,7 +5,8 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from rinde.rates.application.ports import QuoteRequest, RateSourceUnavailableError
-from rinde.rates.domain.quote import Quote, RateSource, RateType
+from rinde.rates.domain.quote import Quote, RateSource
+from rinde.shared.domain.rate_type import RateType
 
 
 def quote(

@@ -9,7 +9,8 @@ from fastapi.testclient import TestClient
 
 from rinde.config import Settings
 from rinde.main import create_app
-from rinde.rates.domain.quote import RateSource, RateType
+from rinde.rates.domain.quote import RateSource
+from rinde.shared.domain.rate_type import RateType
 from tests.fakes import FakeDatabaseProbe, InMemoryAuthUnitFactory, InMemoryRatesUnitFactory
 from tests.unit.rates.fakes import FakeRateProvider, quote
 

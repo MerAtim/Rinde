@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 
 from rinde.rates.domain.errors import QuoteInvalidError
 from rinde.shared.domain.money import Currency
+from rinde.shared.domain.rate_type import RateType
 
 ARGENTINA = ZoneInfo("America/Argentina/Buenos_Aires")
 
@@ -22,25 +23,6 @@ RATE_DECIMALS = 8
 _RATE_QUANTUM = Decimal(1).scaleb(-RATE_DECIMALS)
 # NUMERIC(24, 8) deja 16 dígitos enteros. Un valor más grande no entra en la base.
 _MAX_RATE = Decimal(10) ** 16
-
-
-class RateType(StrEnum):
-    """Los dólares que se usan en Argentina.
-
-    `CRYPTO` es el dólar que se consigue comprando una stablecoin con pesos, no
-    el precio del Bitcoin: ese es otro par de monedas.
-    """
-
-    OFFICIAL = "official"
-    """Minorista de Banco Nación. No es el mayorista del BCRA (Comunicación A 3500)."""
-    MEP = "mep"
-    CCL = "ccl"
-    BLUE = "blue"
-    CARD = "card"
-    CRYPTO = "crypto"
-
-
-ALL_RATE_TYPES = frozenset(RateType)
 
 
 class RateSource(StrEnum):
