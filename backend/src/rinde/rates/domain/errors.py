@@ -31,3 +31,15 @@ class RatesUnavailableError(RateError):
 
 class RateDateInFutureError(RateError):
     code = "RATE_DATE_IN_FUTURE"
+
+
+class ConversionNotSupportedError(RateError):
+    """No hay cotización para ese par: por ahora, Bitcoin (ADR-0017)."""
+
+    code = "CONVERSION_NOT_SUPPORTED"
+
+
+class ConversionSameCurrencyError(RateError):
+    """Convertir pesos a pesos no es una conversión: es un pedido mal armado."""
+
+    code = "CONVERSION_SAME_CURRENCY"
