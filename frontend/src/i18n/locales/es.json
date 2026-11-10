@@ -215,6 +215,10 @@
       "CSRF_REJECTED": "No pudimos validar el pedido. Recargá la página y probá de nuevo.",
       "NETWORK_ERROR": "No hay conexión con Rinde. Revisá tu internet y probá de nuevo.",
       "UNKNOWN_ERROR": "Algo salió mal. Probá de nuevo en un momento."
+    },
+    "equivalent": {
+      "value": "≈ {{amount}} {{rate}}",
+      "unavailable": "Sin cotización para convertir"
     }
   },
   "transactions": {
@@ -400,6 +404,43 @@
       "type": "Dólar",
       "buy": "Compra",
       "sell": "Venta"
+    },
+    "at": {
+      "official": "al dólar oficial",
+      "mep": "al MEP",
+      "ccl": "al CCL",
+      "blue": "al blue",
+      "card": "al dólar tarjeta",
+      "crypto": "al dólar cripto"
+    }
+  },
+  "preferences": {
+    "title": "Preferencias",
+    "subtitle": "Con qué moneda y qué dólar se muestran los equivalentes.",
+    "loading": "Cargando tus preferencias…",
+    "loadError": "No pudimos cargar tus preferencias.",
+    "fields": {
+      "currency": "Moneda de los totales",
+      "currencyHelp": "Lo que esté en la otra moneda se muestra convertido a esta.",
+      "rateType": "Dólar para convertir"
+    },
+    "rateTypeHelp": {
+      "mep": "El dólar legal que se compra y se vende sin cupo, con bonos. El más usado para valuar ahorros.",
+      "official": "El minorista de Banco Nación. Es la referencia formal, pero pocas personas pueden operar a ese precio.",
+      "blue": "El informal. No tiene respaldo legal.",
+      "ccl": "El que se usa para pasar dólares al exterior, con bonos o acciones.",
+      "crypto": "El que se consigue comprando una stablecoin con pesos.",
+      "card": "El de los consumos en dólares con tarjeta, con impuestos incluidos."
+    },
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "saved": "Guardamos tus preferencias.",
+    "errors": {
+      "PREFERENCES_CURRENCY_NOT_ALLOWED": "Esa moneda no sirve para los totales.",
+      "NOT_AUTHENTICATED": "Tu sesión venció. Volvé a ingresar.",
+      "CSRF_REJECTED": "No pudimos guardar. Recargá la página y probá de nuevo.",
+      "NETWORK_ERROR": "No hay conexión. Probá de nuevo en un momento.",
+      "UNKNOWN_ERROR": "No pudimos guardar tus preferencias."
     }
   }
 }
