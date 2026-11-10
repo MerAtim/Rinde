@@ -105,7 +105,7 @@ include_external_packages = true
 [[tool.importlinter.contracts]]
 name = "Capas de cada módulo: api e infraestructura dependen de aplicación, nunca al revés"
 type = "layers"
-containers = ["rinde.health", "rinde.auth", "rinde.accounts", "rinde.transactions"]
+containers = ["rinde.health", "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates"]
 layers = ["api | infrastructure", "application", "(domain)"]
 
 [[tool.importlinter.contracts]]
@@ -119,6 +119,8 @@ source_modules = [
     "rinde.accounts.domain",
     "rinde.transactions.application",
     "rinde.transactions.domain",
+    "rinde.rates.application",
+    "rinde.rates.domain",
     "rinde.shared.domain",
 ]
 forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic", "httpx", "argon2"]
@@ -127,7 +129,9 @@ forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic"
 name = "El kernel compartido no depende de ningún módulo: todos dependen de él"
 type = "forbidden"
 source_modules = ["rinde.shared"]
-forbidden_modules = ["rinde.auth", "rinde.health", "rinde.accounts", "rinde.transactions"]
+forbidden_modules = [
+    "rinde.auth", "rinde.health", "rinde.accounts", "rinde.transactions", "rinde.rates"
+]
 
 [[tool.importlinter.contracts]]
 name = "Cuentas no depende de auth: la identidad llega por el kernel compartido"
@@ -152,3 +156,9 @@ name = "Cuentas no depende de movimientos: el saldo se pide al módulo que lo ca
 type = "forbidden"
 source_modules = ["rinde.accounts"]
 forbidden_modules = ["rinde.transactions"]
+
+[[tool.importlinter.contracts]]
+name = "Cotizaciones no depende de ningún otro módulo: las mismas para todos los usuarios"
+type = "forbidden"
+source_modules = ["rinde.rates"]
+forbidden_modules = ["rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.health"]

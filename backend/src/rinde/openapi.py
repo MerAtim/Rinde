@@ -16,6 +16,7 @@ from pydantic import SecretStr
 from rinde.auth.application.unit import AuthUnit
 from rinde.config import Settings
 from rinde.main import create_app
+from rinde.rates.application.unit import RatesUnit
 
 
 class _UnusedDatabaseProbe:
@@ -34,13 +35,24 @@ class _UnusedAuthFactory:
         raise AssertionError(msg)
 
 
+class _UnusedRatesFactory:
+    """Exportar el contrato no consulta las fuentes de cotizaciones."""
+
+    def __call__(self) -> AbstractAsyncContextManager[RatesUnit]:  # pragma: no cover
+        msg = "Las cotizaciones no se consultan al exportar el contrato"
+        raise AssertionError(msg)
+
+
 def export(path: Path) -> None:
     settings = Settings(
         environment="development",
         database_url=SecretStr("postgresql+psycopg://openapi@localhost/openapi"),
     )
     app = create_app(
-        settings, database_probe=_UnusedDatabaseProbe(), auth_factory=_UnusedAuthFactory()
+        settings,
+        database_probe=_UnusedDatabaseProbe(),
+        auth_factory=_UnusedAuthFactory(),
+        rates_factory=_UnusedRatesFactory(),
     )
     contract = json.dumps(app.openapi(), indent=2, ensure_ascii=False)
     # Siempre LF, también en Windows: el archivo se compara byte a byte en CI.

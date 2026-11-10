@@ -113,6 +113,13 @@ OWNED_RESOURCES: dict[str, Callable[[TestClient], str]] = {
     "transfer_id": _register_transfer,
 }
 
+# Parámetros de camino que no nombran algo de una persona: las cotizaciones son
+# las mismas para todos. Sus rutas igual piden sesión (regla 1), pero no tienen
+# dueño que esconder (regla 2). Agregar uno acá también es una decisión de seguridad.
+SHARED_PARAMETERS: dict[str, str] = {
+    "rate_type": "mep",
+}
+
 # Un cuerpo válido para cada ruta con identificador que lo pide. Con un cuerpo
 # inválido la respuesta sería 422 antes de mirar el dueño, y el test no probaría nada.
 VALID_BODIES: dict[tuple[str, str], dict[str, Any]] = {
@@ -183,7 +190,7 @@ def test_the_public_list_only_names_routes_that_exist(app: FastAPI) -> None:
 def test_every_path_parameter_knows_how_to_create_a_foreign_resource(app: FastAPI) -> None:
     parameters = {name for _, path, _ in _routes(app) for name in PARAMETER.findall(path)}
 
-    missing = parameters - OWNED_RESOURCES.keys()
+    missing = parameters - OWNED_RESOURCES.keys() - SHARED_PARAMETERS.keys()
 
     assert not missing, (
         "Estos parámetros de camino no tienen registrada la forma de crear un recurso "
@@ -201,6 +208,10 @@ def test_every_route_with_an_identifier_and_a_body_has_a_valid_example(app: Fast
     assert not missing, f"Faltan cuerpos válidos en VALID_BODIES para: {missing}"
 
 
+def test_shared_parameters_do_not_overlap_with_owned_ones() -> None:
+    assert not SHARED_PARAMETERS.keys() & OWNED_RESOURCES.keys()
+
+
 def test_without_a_session_every_private_route_answers_401(
     app: FastAPI, client: TestClient
 ) -> None:
@@ -208,7 +219,7 @@ def test_without_a_session_every_private_route_answers_401(
     for method, path, _ in _routes(app):
         if (method, path) in PUBLIC_ROUTES:
             continue
-        url = PARAMETER.sub(lambda _: str(uuid4()), path)
+        url = PARAMETER.sub(lambda match: SHARED_PARAMETERS.get(match.group(1), str(uuid4())), path)
         body = VALID_BODIES.get((method, path), {})
         response = client.request(method, url, json=body, headers=CSRF)
         if response.status_code != status.HTTP_401_UNAUTHORIZED:
@@ -227,7 +238,7 @@ def test_someone_elses_resource_answers_as_if_it_did_not_exist(
     _sign_in_as(client, "intrusa")
     leaks = []
     for method, path, _ in _routes(app):
-        if not PARAMETER.search(path):
+        if not set(PARAMETER.findall(path)) - SHARED_PARAMETERS.keys():
             continue
         url = PARAMETER.sub(lambda match: resources[match.group(1)], path)
         body = VALID_BODIES.get((method, path), {})

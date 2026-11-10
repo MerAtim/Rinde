@@ -15,9 +15,12 @@ from rinde.auth.application.unit import AuthUnit, build_auth_unit
 from rinde.auth.domain.errors import UsernameTakenError
 from rinde.auth.domain.user import User
 from rinde.auth.domain.username import Username
+from rinde.rates.application.unit import RatesUnit, build_rates_unit
+from rinde.rates.application.use_cases import RatesDependencies
 from rinde.transactions.application.dependencies import TransactionsDependencies
 from rinde.transactions.application.unit import TransactionsUnit, build_transactions_unit
 from rinde.transactions.infrastructure.accounts_gateway import AccountsApplicationGateway
+from tests.unit.rates.fakes import FakeRateProvider, InMemoryQuotes
 from tests.unit.transactions.fakes import (
     FakeAuditLog,
     FakeCategoryRepository,
@@ -289,6 +292,29 @@ class InMemoryTransactionsUnitFactory:
                 idempotency=self.idempotency,
                 audit=self.audit,
                 transfer_audit=self.transfer_audit,
+                transaction=self.transaction,
+                clock=self.clock,
+            )
+        )
+
+
+class InMemoryRatesUnitFactory:
+    """Cotizaciones con fuentes y base en memoria, compartidas entre pedidos."""
+
+    def __init__(self, provider: FakeRateProvider | None = None) -> None:
+        self.provider = provider or FakeRateProvider()
+        self.quotes = InMemoryQuotes()
+        self.transaction = FakeTransaction()
+        self.clock = FakeClock()
+        # Las 12 de Buenos Aires del 10 de noviembre de 2026.
+        self.clock.current = datetime(2026, 11, 10, 15, tzinfo=UTC)
+
+    @asynccontextmanager
+    async def __call__(self) -> AsyncIterator[RatesUnit]:
+        yield build_rates_unit(
+            RatesDependencies(
+                quotes=self.quotes,
+                provider=self.provider,
                 transaction=self.transaction,
                 clock=self.clock,
             )
