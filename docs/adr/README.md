@@ -17,3 +17,4 @@
 | [0013](0013-pruebas-de-extremo-a-extremo.md) | Pruebas de extremo a extremo | Aceptado | 2026-09-18 |
 | [0014](0014-modelo-de-transferencias.md) | Modelo de transferencias | Aceptado | 2026-09-19 |
 | [0015](0015-auto-merge-de-dependabot.md) | Integración automática de parches de Dependabot con una GitHub App | Aceptado | 2026-11-09 |
+| [0016](0016-fuentes-de-cotizaciones.md) | Fuentes de cotizaciones y cómo se llena el histórico | Aceptado | 2026-11-10 |

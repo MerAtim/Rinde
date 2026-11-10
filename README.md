@@ -10,13 +10,15 @@ Aplicación web de finanzas personales para Argentina y LatAm. Responde una preg
 * **Ingresos y gastos** con categorías propias y sembradas, borrado reversible y saldo por cuenta ([ADR-0011](docs/adr/0011-modelo-de-movimientos.md)).
 * **Transferencias entre cuentas propias**, que no cuentan como gasto ni como ingreso. Entre monedas distintas se guardan los dos montos, sin inventar una cotización: la tasa real es la que te dieron ([ADR-0014](docs/adr/0014-modelo-de-transferencias.md)).
 * **Una sola lista** con movimientos y transferencias, paginada por cursor. Los reportes de gasto siguen leyendo solo los movimientos: una transferencia no ensucia el resumen por categoría.
+* **Cotizaciones del dólar** oficial, MEP, CCL, blue, tarjeta y cripto, con compra, venta, fuente y fecha real. Si una fuente no responde, contesta la siguiente, pero nunca con otro tipo de dólar. Los días pasados se guardan la primera vez que se piden ([ADR-0016](docs/adr/0016-fuentes-de-cotizaciones.md)).
 * **Filtros por categoría y por texto**, que se comparten en la dirección. La búsqueda no distingue tildes ni mayúsculas: "panaderia" encuentra "Panadería".
 * **Cuenta y sesión** con usuario, contraseña y código de recuperación, sin email ([ADR-0007](docs/adr/0007-autenticacion.md)).
 * **Interfaz en español y en inglés**, con modo oscuro y claro.
 
 ## Qué falta
 
-* Convertir con la cotización que corresponda (oficial, MEP, CCL, blue, tarjeta o cripto) a la fecha de cada operación.
+* Convertir cada operación con la cotización de su fecha, guardando cuál se usó. Las cotizaciones ya están; falta usarlas.
+* El precio del Bitcoin.
 * Presupuestos mensuales con alertas.
 * Reportes en pesos constantes, ajustados por inflación.
 * Importar resúmenes en CSV.
