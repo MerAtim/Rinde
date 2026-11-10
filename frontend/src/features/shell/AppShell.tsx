@@ -10,7 +10,7 @@ import { ThemeToggle } from "../../shared/theme/ThemeToggle";
 import { Alert } from "../../shared/ui/Alert";
 import { Button } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
-import { IconButton } from "../../shared/ui/IconButton";
+import { IconButton, LinkIconButton } from "../../shared/ui/IconButton";
 import { LanguageSelector } from "../../shared/ui/LanguageSelector";
 import { type Destination, NavigationRail } from "../../shared/ui/NavigationRail";
 import { TopAppBar } from "../../shared/ui/TopAppBar";
@@ -52,6 +52,7 @@ export function AppShell() {
           <>
             <LanguageSelector />
             <ThemeToggle />
+            <LinkIconButton to="/preferences" icon="tune" label={t("preferences.title")} />
             {isWide ? (
               <Button
                 variant="text"

@@ -71,16 +71,22 @@ for (const idioma of IDIOMAS) {
       });
     }
 
-    // El inicio entra porque tiene la tabla del dólar, la más ancha: dos montos
-    // de cuatro cifras por fila, que no se pueden partir.
-    for (const ruta of ["/", "/accounts"]) {
+    // El inicio tiene la tabla del dólar, con dos montos por fila que no se
+    // parten; Cuentas, el equivalente de un saldo largo; y Preferencias, el
+    // formulario. La barra superior está en todas.
+    for (const ruta of ["/", "/accounts", "/preferences"]) {
       test(`${ruta} no se puede desplazar en horizontal`, async ({ page }) => {
         await page.setViewportSize({ width: 360, height: 900 });
         await mockSession(page);
         await page.goto(ruta);
         await expect(page.getByRole("navigation", { name: idioma.navegacion })).toBeVisible();
+        // Lo más ancho de cada pantalla tiene que estar a la vista antes de medir.
         if (ruta === "/") {
           await expect(page.getByRole("table")).toBeVisible();
+        } else if (ruta === "/accounts") {
+          await expect(page.getByText(/≈/)).toBeVisible();
+        } else {
+          await expect(page.getByRole("radiogroup").last()).toBeVisible();
         }
         await page.evaluate(() => document.fonts.ready);
 
