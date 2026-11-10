@@ -21,7 +21,8 @@ from rinde.rates.domain.errors import (
     RateNotFoundError,
     RatesUnavailableError,
 )
-from rinde.rates.domain.quote import ALL_RATE_TYPES, Quote, RateType, argentine_day
+from rinde.rates.domain.quote import Quote, argentine_day
+from rinde.shared.domain.rate_type import ALL_RATE_TYPES, RateType
 
 _ORDER = {rate_type: index for index, rate_type in enumerate(RateType)}
 

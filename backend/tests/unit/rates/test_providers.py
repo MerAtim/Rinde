@@ -6,7 +6,8 @@ import pytest
 
 from rinde.rates.application.ports import QuoteRequest, RateSourceUnavailableError
 from rinde.rates.application.providers import CachedRateProvider, FallbackRateProvider
-from rinde.rates.domain.quote import ALL_RATE_TYPES, Quote, RateSource, RateType
+from rinde.rates.domain.quote import Quote, RateSource
+from rinde.shared.domain.rate_type import ALL_RATE_TYPES, RateType
 from tests.fakes import FakeClock
 from tests.unit.rates.fakes import FakeRateProvider, quote
 

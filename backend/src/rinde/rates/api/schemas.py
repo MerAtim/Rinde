@@ -10,8 +10,9 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field, PlainSerializer
 
-from rinde.rates.domain.quote import Quote, RateSource, RateType
+from rinde.rates.domain.quote import Quote, RateSource
 from rinde.shared.domain.money import Currency
+from rinde.shared.domain.rate_type import RateType
 
 RateOut = Annotated[Decimal, PlainSerializer(str, return_type=str)]
 
