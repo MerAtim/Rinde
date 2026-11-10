@@ -71,17 +71,24 @@ for (const idioma of IDIOMAS) {
       });
     }
 
-    test("la página no se puede desplazar en horizontal", async ({ page }) => {
-      await page.setViewportSize({ width: 360, height: 900 });
-      await mockSession(page);
-      await page.goto("/accounts");
-      await expect(page.getByRole("navigation", { name: idioma.navegacion })).toBeVisible();
-      await page.evaluate(() => document.fonts.ready);
+    // El inicio entra porque tiene la tabla del dólar, la más ancha: dos montos
+    // de cuatro cifras por fila, que no se pueden partir.
+    for (const ruta of ["/", "/accounts"]) {
+      test(`${ruta} no se puede desplazar en horizontal`, async ({ page }) => {
+        await page.setViewportSize({ width: 360, height: 900 });
+        await mockSession(page);
+        await page.goto(ruta);
+        await expect(page.getByRole("navigation", { name: idioma.navegacion })).toBeVisible();
+        if (ruta === "/") {
+          await expect(page.getByRole("table")).toBeVisible();
+        }
+        await page.evaluate(() => document.fonts.ready);
 
-      const desborde = await page.evaluate(
-        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-      );
-      expect(desborde).toBeLessThanOrEqual(0);
-    });
+        const desborde = await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        );
+        expect(desborde).toBeLessThanOrEqual(0);
+      });
+    }
   });
 }

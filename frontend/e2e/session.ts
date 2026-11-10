@@ -24,4 +24,21 @@ export async function mockSession(page: Page): Promise<void> {
     route.fulfill(json({ items: [], next_cursor: null })),
   );
   await page.route("**/api/categories", (route) => route.fulfill(json([])));
+  // Los seis dólares, con montos de cuatro cifras: el peor caso de ancho de la tabla.
+  await page.route("**/api/rates*", (route) =>
+    route.fulfill(
+      json(
+        (["official", "mep", "ccl", "blue", "card", "crypto"] as const).map((rate_type) => ({
+          rate_type,
+          base: "USD",
+          counter: "ARS",
+          day: "2026-11-10",
+          buy: "1976.00000000",
+          sell: "2041.00000000",
+          source: "dolarapi",
+          updated_at: "2026-11-05T18:55:00Z",
+        })),
+      ),
+    ),
+  );
 }

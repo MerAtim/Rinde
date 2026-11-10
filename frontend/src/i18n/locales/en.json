@@ -374,5 +374,32 @@
       "CSRF_REJECTED": "Reload the page and try again.",
       "NOT_AUTHENTICATED": "Your session expired. Sign in again."
     }
+  },
+  "rates": {
+    "heading": "Dollar today",
+    "loading": "Fetching exchange rates…",
+    "empty": "No source has published rates today.",
+    "unavailable": "The exchange rate sources are not responding. Try again in a few minutes.",
+    "error": "The exchange rates could not be loaded.",
+    "types": {
+      "official": "Official",
+      "mep": "MEP",
+      "ccl": "CCL",
+      "blue": "Blue",
+      "card": "Card",
+      "crypto": "Crypto"
+    },
+    "sources": {
+      "dolarapi": "DolarAPI",
+      "argentinadatos": "ArgentinaDatos",
+      "criptoya": "CriptoYa"
+    },
+    "updatedOn": "{{source}}, updated on {{date}}",
+    "caption": "Argentine pesos per US dollar",
+    "columns": {
+      "type": "Dollar",
+      "buy": "Buy",
+      "sell": "Sell"
+    }
   }
 }

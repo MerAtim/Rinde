@@ -374,5 +374,32 @@
       "CSRF_REJECTED": "Recargá la página y probá otra vez.",
       "NOT_AUTHENTICATED": "Tu sesión venció. Volvé a ingresar."
     }
+  },
+  "rates": {
+    "heading": "Dólar hoy",
+    "loading": "Consultando cotizaciones…",
+    "empty": "Hoy ninguna fuente publicó cotizaciones.",
+    "unavailable": "Las fuentes de cotizaciones no responden. Probá de nuevo en unos minutos.",
+    "error": "No se pudieron traer las cotizaciones.",
+    "types": {
+      "official": "Oficial",
+      "mep": "MEP",
+      "ccl": "CCL",
+      "blue": "Blue",
+      "card": "Tarjeta",
+      "crypto": "Cripto"
+    },
+    "sources": {
+      "dolarapi": "DolarAPI",
+      "argentinadatos": "ArgentinaDatos",
+      "criptoya": "CriptoYa"
+    },
+    "updatedOn": "{{source}}, actualizado el {{date}}",
+    "caption": "Pesos por dólar",
+    "columns": {
+      "type": "Dólar",
+      "buy": "Compra",
+      "sell": "Venta"
+    }
   }
 }

@@ -60,6 +60,22 @@ export function useMoneyFormatter(): (amount: string, currency: string) => strin
   }, [locale]);
 }
 
+/**
+ * Una cotización como cifra sola, sin moneda: "1.587,90". La unidad la dice el
+ * encabezado de la tabla. Con la moneda, en inglés `Intl` escribe "ARS 1,587.90"
+ * y dos de esas por fila no entran en un teléfono.
+ */
+export function useRateFormatter(): (rate: string) => string {
+  const locale = useLocale();
+  return useMemo(() => {
+    const formatter = new Intl.NumberFormat(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }) as unknown as DecimalStringFormat;
+    return (rate: string) => formatter.format(rate);
+  }, [locale]);
+}
+
 /** La fecha de valor de un movimiento: "11 de septiembre", sin el año si es este. */
 export function useShortDateFormatter(): (iso: string) => string {
   const locale = useLocale();
