@@ -2,7 +2,12 @@ import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import i18n from "./index";
-import { useDateFormatter, useMoneyFormatter, useShortDateFormatter } from "./format";
+import {
+  useDateFormatter,
+  useMoneyFormatter,
+  useRateFormatter,
+  useShortDateFormatter,
+} from "./format";
 
 /** Intl separa el símbolo con espacios duros: se normalizan para comparar. */
 function plain(value: string): string {
@@ -25,6 +30,13 @@ describe("Formato", () => {
       "9.007.199.254.740.993,01",
     );
     expect(plain(result.current("0.00000001", "BTC"))).toContain("0,00000001");
+  });
+
+  it("muestra una cotización como cifra sola, con dos decimales", () => {
+    const { result } = renderHook(() => useRateFormatter());
+
+    expect(result.current("1587.90000000")).toBe("1.587,90");
+    expect(result.current("1665.22900000")).toBe("1.665,23");
   });
 
   it("muestra la fecha de un movimiento sin correrla de día", () => {
