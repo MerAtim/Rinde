@@ -144,9 +144,7 @@ jobs:
         run: bash ../scripts/check-backend.sh tests
 
       - name: Vulnerabilidades en dependencias
-        run: |
-          uv export --locked --all-groups --no-emit-project --format requirements-txt > "$RUNNER_TEMP/requirements.txt"
-          uv run pip-audit --strict --disable-pip --require-hashes -r "$RUNNER_TEMP/requirements.txt"
+        run: bash ../scripts/check-dependencies.sh backend
 
   frontend:
     name: Frontend
@@ -205,7 +203,7 @@ jobs:
           retention-days: 7
 
       - name: Vulnerabilidades en dependencias
-        run: npm audit --audit-level=moderate
+        run: bash ../scripts/check-dependencies.sh frontend
 
   contrato:
     name: Contrato de la API
@@ -265,10 +263,7 @@ jobs:
         uses: ./.github/actions/instalar-trivy
 
       - name: Escanear vulnerabilidades de las imágenes
-        run: |
-          for imagen in rinde/api:local rinde/web:local; do
-            trivy image --exit-code 1 --severity HIGH,CRITICAL --ignore-unfixed --no-progress "$imagen"
-          done
+        run: bash scripts/check-dependencies.sh images
 
       - name: Mostrar los logs si algo falló
         if: failure()

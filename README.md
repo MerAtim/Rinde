@@ -123,7 +123,10 @@ tiene base y siempre la compara
 Los chequeos de dependencias (`pip-audit`, `npm audit`), el escaneo de imágenes y
 el de secretos corren solo en la CI: su resultado cambia sin que cambie el código
 y no sirven como puerta local ([ADR-0012](docs/adr/0012-chequeos-locales-y-en-ci.md),
-decisión 3).
+decisión 3). Los comandos están en `scripts/check-dependencies.sh`, que usan la CI
+y la auditoría diaria (`.github/workflows/auditoria.yml`). La auditoría corre
+todos los días sobre `main`; si encuentra algo abre un issue, y lo cierra cuando
+todo vuelve a estar en verde.
 
 Cuando una vulnerabilidad está en una dependencia transitiva y el paquete que la
 trae todavía no admite la versión corregida, se fuerza con `overrides` en

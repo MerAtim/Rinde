@@ -1,0 +1,118 @@
+name: Auditoría de dependencias
+
+# Las bases de vulnerabilidades cambian sin que cambie el código (ADR-0012,
+# decisión 3): main puede quedar vulnerable sin ningún commit nuevo. Sin esta
+# auditoría, el aviso llegaba como una tanda de PR en rojo que no tenían la
+# culpa. Corre todos los días sobre main y deja un solo issue abierto mientras
+# haya algo para corregir; lo cierra cuando todo vuelve a estar en verde.
+#
+# GitHub desactiva los workflows programados de un repositorio público después
+# de 60 días sin actividad. Si eso pasa, se reactiva desde la pestaña Actions.
+
+on:
+  schedule:
+    # 09:17 UTC (06:17 en Argentina). Minuto no redondo: en punto, GitHub
+    # demora o descarta corridas programadas por la carga.
+    - cron: "17 9 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auditoria
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Dependencias del backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Instalar uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+
+      - name: Vulnerabilidades en dependencias
+        run: bash scripts/check-dependencies.sh backend
+
+  frontend:
+    name: Dependencias del frontend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Instalar Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: frontend/.nvmrc
+
+      # npm audit lee el lockfile: no hace falta instalar, y así no corre ningún
+      # script de instalación de terceros.
+      - name: Vulnerabilidades en dependencias
+        run: bash scripts/check-dependencies.sh frontend
+
+  imagenes:
+    name: Imágenes
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      POSTGRES_PASSWORD: soloparaci
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Construir las imágenes
+        run: docker compose build
+
+      - name: Instalar Trivy
+        uses: ./.github/actions/instalar-trivy
+
+      - name: Escanear vulnerabilidades de las imágenes
+        run: bash scripts/check-dependencies.sh images
+
+  aviso:
+    name: Aviso en un issue
+    needs: [backend, frontend, imagenes]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      HAY_FALLAS: ${{ contains(needs.*.result, 'failure') }}
+      CORRIDA: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      TITULO: "Auditoría de dependencias: hay vulnerabilidades en main"
+    steps:
+      - name: Abrir, actualizar o cerrar el issue
+        run: |
+          abierto="$(gh issue list --state open --search "in:title \"$TITULO\"" --json number,title \
+            --jq "map(select(.title == env.TITULO)) | first | .number // empty")"
+
+          if [[ "$HAY_FALLAS" == "true" ]]; then
+            # Un job también puede fallar por algo ajeno (una descarga caída):
+            # el mensaje no afirma más de lo que se sabe.
+            mensaje="La auditoría del $(date -u +%F) falló. Lo habitual es una vulnerabilidad nueva; el detalle está en $CORRIDA"
+            if [[ -n "$abierto" ]]; then
+              gh issue comment "$abierto" --body "$mensaje"
+            else
+              gh issue create --title "$TITULO" --body "$mensaje"
+            fi
+            exit 1
+          fi
+
+          if [[ -n "$abierto" ]]; then
+            gh issue close "$abierto" --comment "La auditoría del $(date -u +%F) pasó sin vulnerabilidades: $CORRIDA"
+          fi
