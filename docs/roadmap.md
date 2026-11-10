@@ -44,7 +44,8 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 ## Fase 3: cotizaciones (ADR-0002)
 * [x] Puerto `RateProvider` + adaptadores + fallback + caché + histórico propio
   (ADR-0016). Falta el precio del Bitcoin (par BTC/USD)
-* [ ] Snapshot de conversión en la transacción; moneda y tipo de referencia por usuario
+* [x] Conversión al consultar, con el histórico guardado, y moneda y tipo de
+  referencia por usuario (ADR-0017, reemplaza el snapshot por transacción)
 
 ## Fase 4: dashboard
 * [ ] Gasto por categoría, flujo mensual, patrimonio neto en ARS y en USD (tipo elegido)

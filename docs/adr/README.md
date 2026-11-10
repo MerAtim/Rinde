@@ -3,7 +3,7 @@
 | N.º | Título | Estado | Fecha |
 |-----|--------|--------|-------|
 | [0001](0001-monolito-modular-fastapi-clean-architecture.md) | Monolito modular con FastAPI y Clean Architecture | Aceptado | 2026-09-11 |
-| [0002](0002-representacion-de-dinero-y-cotizaciones.md) | Representación de dinero y cotizaciones múltiples | Aceptado | 2026-09-11 |
+| [0002](0002-representacion-de-dinero-y-cotizaciones.md) | Representación de dinero y cotizaciones múltiples | Aceptado, en parte reemplazado por ADR-0017 | 2026-09-11 |
 | [0003](0003-gestion-de-estado-frontend.md) | Gestión de estado en el frontend | Aceptado | 2026-09-11 |
 | [0004](0004-estrategia-de-ramas.md) | Estrategia de ramas | Aceptado | 2026-09-11 |
 | [0005](0005-hosting-gratuito.md) | Hosting gratuito con Cloudflare, Render y Neon | Aceptado | 2026-09-11 |
@@ -18,3 +18,4 @@
 | [0014](0014-modelo-de-transferencias.md) | Modelo de transferencias | Aceptado | 2026-09-19 |
 | [0015](0015-auto-merge-de-dependabot.md) | Integración automática de parches de Dependabot con una GitHub App | Aceptado | 2026-11-09 |
 | [0016](0016-fuentes-de-cotizaciones.md) | Fuentes de cotizaciones y cómo se llena el histórico | Aceptado | 2026-11-10 |
+| [0017](0017-conversion-al-consultar.md) | Conversión al consultar y preferencias de referencia | Acepta y reemplaza en parte a ADR-0002 | 2026-11-10 |
