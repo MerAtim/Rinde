@@ -39,6 +39,11 @@ from rinde.config import Settings, get_settings
 from rinde.health.api.router import router as health_router
 from rinde.health.application.check_readiness import CheckReadiness, DatabaseProbe
 from rinde.health.infrastructure.database_probe import SqlAlchemyDatabaseProbe
+from rinde.preferences.api.errors import preferences_error_handler
+from rinde.preferences.api.router import router as preferences_router
+from rinde.preferences.application.unit import PreferencesUnitFactory
+from rinde.preferences.domain.errors import PreferencesError
+from rinde.preferences.infrastructure.factory import SqlAlchemyPreferencesUnitFactory
 from rinde.rates.api.errors import rates_error_handler
 from rinde.rates.api.router import router as rates_router
 from rinde.rates.application.unit import RatesUnitFactory
@@ -72,6 +77,7 @@ def create_app(  # noqa: PLR0913
     accounts_factory: AccountsUnitFactory | None = None,
     transactions_factory: TransactionsUnitFactory | None = None,
     rates_factory: RatesUnitFactory | None = None,
+    preferences_factory: PreferencesUnitFactory | None = None,
 ) -> FastAPI:
     """Crea la aplicación.
 
@@ -147,6 +153,11 @@ def create_app(  # noqa: PLR0913
             clock,
         )
 
+    if preferences_factory is None:
+        preferences_factory = SqlAlchemyPreferencesUnitFactory(
+            async_sessionmaker(shared_engine(), expire_on_commit=False), SystemClock()
+        )
+
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
@@ -172,6 +183,7 @@ def create_app(  # noqa: PLR0913
     app.state.accounts_factory = accounts_factory
     app.state.transactions_factory = transactions_factory
     app.state.rates_factory = rates_factory
+    app.state.preferences_factory = preferences_factory
     app.state.session_cookie = SessionCookie(
         name=SECURE_COOKIE_NAME if config.session_cookie_secure else PLAIN_COOKIE_NAME,
         secure=config.session_cookie_secure,
@@ -193,5 +205,13 @@ def _register_modules(app: FastAPI) -> None:
     app.add_exception_handler(CategoryError, transactions_error_handler)
     app.add_exception_handler(TransferError, transactions_error_handler)
     app.add_exception_handler(RateError, rates_error_handler)
-    for router in (health_router, auth_router, accounts_router, transactions_router, rates_router):
+    app.add_exception_handler(PreferencesError, preferences_error_handler)
+    for router in (
+        health_router,
+        auth_router,
+        accounts_router,
+        transactions_router,
+        rates_router,
+        preferences_router,
+    ):
         app.include_router(router, prefix=API_PREFIX)

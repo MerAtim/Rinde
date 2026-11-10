@@ -2783,6 +2783,114 @@
           }
         }
       }
+    },
+    "/api/preferences": {
+      "get": {
+        "tags": [
+          "preferences"
+        ],
+        "summary": "Ver mis preferencias",
+        "operationId": "get_preferences_api_preferences_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "preferences"
+        ],
+        "summary": "Cambiar mis preferencias",
+        "operationId": "update_preferences_api_preferences_put",
+        "parameters": [
+          {
+            "name": "x-requested-with",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferencesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3214,6 +3322,45 @@
           "currency"
         ],
         "title": "OpenAccountRequest"
+      },
+      "PreferencesRequest": {
+        "properties": {
+          "reference_currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "rate_type": {
+            "$ref": "#/components/schemas/RateType"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reference_currency",
+          "rate_type"
+        ],
+        "title": "PreferencesRequest",
+        "description": "Las dos van siempre: es reemplazar las preferencias, no parchear una."
+      },
+      "PreferencesResponse": {
+        "properties": {
+          "reference_currency": {
+            "type": "string",
+            "enum": [
+              "ARS",
+              "USD"
+            ],
+            "title": "Reference Currency"
+          },
+          "rate_type": {
+            "$ref": "#/components/schemas/RateType"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference_currency",
+          "rate_type"
+        ],
+        "title": "PreferencesResponse"
       },
       "QuoteResponse": {
         "properties": {

@@ -105,7 +105,14 @@ include_external_packages = true
 [[tool.importlinter.contracts]]
 name = "Capas de cada módulo: api e infraestructura dependen de aplicación, nunca al revés"
 type = "layers"
-containers = ["rinde.health", "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates"]
+containers = [
+    "rinde.health",
+    "rinde.auth",
+    "rinde.accounts",
+    "rinde.transactions",
+    "rinde.rates",
+    "rinde.preferences",
+]
 layers = ["api | infrastructure", "application", "(domain)"]
 
 [[tool.importlinter.contracts]]
@@ -121,6 +128,8 @@ source_modules = [
     "rinde.transactions.domain",
     "rinde.rates.application",
     "rinde.rates.domain",
+    "rinde.preferences.application",
+    "rinde.preferences.domain",
     "rinde.shared.domain",
 ]
 forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic", "httpx", "argon2"]
@@ -130,7 +139,12 @@ name = "El kernel compartido no depende de ningún módulo: todos dependen de é
 type = "forbidden"
 source_modules = ["rinde.shared"]
 forbidden_modules = [
-    "rinde.auth", "rinde.health", "rinde.accounts", "rinde.transactions", "rinde.rates"
+    "rinde.auth",
+    "rinde.health",
+    "rinde.accounts",
+    "rinde.transactions",
+    "rinde.rates",
+    "rinde.preferences",
 ]
 
 [[tool.importlinter.contracts]]
@@ -161,4 +175,14 @@ forbidden_modules = ["rinde.transactions"]
 name = "Cotizaciones no depende de ningún otro módulo: las mismas para todos los usuarios"
 type = "forbidden"
 source_modules = ["rinde.rates"]
-forbidden_modules = ["rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.health"]
+forbidden_modules = [
+    "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.health", "rinde.preferences"
+]
+
+[[tool.importlinter.contracts]]
+name = "Preferencias no depende de ningún otro módulo: el tipo de dólar está en el kernel"
+type = "forbidden"
+source_modules = ["rinde.preferences"]
+forbidden_modules = [
+    "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.health", "rinde.rates"
+]
