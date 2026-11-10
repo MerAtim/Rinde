@@ -118,7 +118,10 @@ def test_the_edge_rejects_malformed_input(client: TestClient, url: str) -> None:
     assert client.get(url).status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
 
 
-@pytest.mark.parametrize("url", ["/api/rates", "/api/rates/mep"])
+@pytest.mark.parametrize(
+    "url",
+    ["/api/rates", "/api/rates/mep", "/api/rates/mep/conversion?amount=1&currency=USD&target=ARS"],
+)
 def test_without_a_session_rates_are_not_served(
     client: TestClient, rates: InMemoryRatesUnitFactory, url: str
 ) -> None:
@@ -126,3 +129,70 @@ def test_without_a_session_rates_are_not_served(
 
     assert client.get(url).status_code == status.HTTP_401_UNAUTHORIZED
     assert rates.provider.requests == []
+
+
+def test_an_amount_is_converted_with_the_rate_that_applies(client: TestClient) -> None:
+    response = client.get(
+        "/api/rates/mep/conversion", params={"amount": "100.00", "currency": "USD", "target": "ARS"}
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    body = response.json()
+    assert body["original"] == {"amount": "100.00", "currency": "USD"}
+    assert body["converted"] == {"amount": "156020.00", "currency": "ARS"}
+    assert body["rate"] == "1560.20000000"
+    assert (body["quote"]["rate_type"], body["quote"]["day"]) == ("mep", "2026-11-10")
+
+
+def test_a_past_day_converts_with_that_day(client: TestClient) -> None:
+    response = client.get(
+        "/api/rates/mep/conversion",
+        params={"amount": "-100.00", "currency": "USD", "target": "ARS", "day": "2026-03-02"},
+    )
+
+    # Una deuda en dólares se cancela comprándolos: a la venta de ese día.
+    assert response.json()["converted"] == {"amount": "-121000.00", "currency": "ARS"}
+
+
+@pytest.mark.parametrize(
+    ("params", "code"),
+    [
+        ({"amount": "1.00", "currency": "ARS", "target": "ARS"}, "CONVERSION_SAME_CURRENCY"),
+        ({"amount": "1.00", "currency": "BTC", "target": "ARS"}, "CONVERSION_NOT_SUPPORTED"),
+        ({"amount": "1.001", "currency": "USD", "target": "ARS"}, "AMOUNT_TOO_PRECISE"),
+    ],
+)
+def test_a_conversion_that_makes_no_sense_has_a_stable_code(
+    client: TestClient, params: dict[str, str], code: str
+) -> None:
+    response = client.get("/api/rates/mep/conversion", params=params)
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+    assert response.json() == {"code": code}
+
+
+@pytest.mark.parametrize(
+    "params",
+    [
+        {"currency": "USD", "target": "ARS"},
+        {"amount": "mucho", "currency": "USD", "target": "ARS"},
+        {"amount": "NaN", "currency": "USD", "target": "ARS"},
+        {"amount": "1.00", "currency": "EUR", "target": "ARS"},
+        {"amount": "1.00", "currency": "USD", "target": "ARS", "owner_id": "otro"},
+    ],
+)
+def test_the_conversion_edge_rejects_malformed_input(
+    client: TestClient, params: dict[str, str]
+) -> None:
+    response = client.get("/api/rates/mep/conversion", params=params)
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+
+
+def test_converting_without_a_quote_is_not_found(client: TestClient) -> None:
+    response = client.get(
+        "/api/rates/ccl/conversion", params={"amount": "1.00", "currency": "USD", "target": "ARS"}
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json() == {"code": "RATE_NOT_FOUND"}
