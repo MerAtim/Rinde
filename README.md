@@ -102,7 +102,9 @@ El navegador se baja una sola vez por clon:
 cd frontend && npx playwright install chromium
 ```
 
-Para omitirlas a sabiendas: `RINDE_SKIP_E2E=1`.
+Para omitirlas a sabiendas: `RINDE_SKIP_E2E=1`. Usan el puerto 4173, el de
+`vite preview`. Si otro proyecto lo tiene ocupado, el arranque falla en lugar de
+probar contra esa aplicación; se cambia con `RINDE_E2E_PORT=4199`.
 
 El chequeo de migraciones y los tests de integración necesitan un PostgreSQL de
 verdad. Está declarado en el compose bajo el perfil `test`, así que no se levanta
