@@ -10,9 +10,10 @@ from sqlalchemy import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-from rinde.rates.domain.quote import ALL_RATE_TYPES, Quote, RateSource, RateType
+from rinde.rates.domain.quote import Quote, RateSource
 from rinde.rates.infrastructure.repositories import SqlAlchemyQuoteRepository
 from rinde.rates.infrastructure.tables import exchange_rates
+from rinde.shared.domain.rate_type import ALL_RATE_TYPES, RateType
 
 pytestmark = [pytest.mark.anyio, pytest.mark.integration]
 

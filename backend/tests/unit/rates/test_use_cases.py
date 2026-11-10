@@ -1,16 +1,26 @@
 """Casos de uso de cotizaciones con fuentes y repositorio en memoria."""
 
 from datetime import UTC, date, datetime
+from decimal import Decimal
 
 import pytest
 
-from rinde.rates.application.use_cases import GetQuote, GetQuotes, RatesDependencies
+from rinde.rates.application.use_cases import (
+    ConvertAmount,
+    GetQuote,
+    GetQuotes,
+    RatesDependencies,
+)
 from rinde.rates.domain.errors import (
+    ConversionNotSupportedError,
+    ConversionSameCurrencyError,
     RateDateInFutureError,
     RateNotFoundError,
     RatesUnavailableError,
 )
-from rinde.rates.domain.quote import ALL_RATE_TYPES, RateSource, RateType
+from rinde.rates.domain.quote import RateSource
+from rinde.shared.domain.money import Currency, Money
+from rinde.shared.domain.rate_type import ALL_RATE_TYPES, RateType
 from tests.fakes import FakeClock, FakeTransaction
 from tests.unit.rates.fakes import FakeRateProvider, InMemoryQuotes, quote
 
@@ -126,3 +136,42 @@ async def test_one_type_is_returned_or_reported_missing() -> None:
     assert (await GetQuote(deps).execute(RateType.BLUE)).rate_type is RateType.BLUE
     with pytest.raises(RateNotFoundError):
         await GetQuote(deps).execute(RateType.CCL)
+
+
+async def test_an_amount_is_converted_with_the_quote_of_its_day() -> None:
+    deps, _ = _deps(FakeRateProvider(quote(RateType.MEP, PAST, buy="1190", sell="1210")))
+
+    result = await ConvertAmount(deps).execute(
+        Money(Decimal(100), Currency.USD), Currency.ARS, RateType.MEP, PAST
+    )
+
+    assert result.converted == Money(Decimal(119000), Currency.ARS)
+    assert result.quote.day == PAST
+
+
+@pytest.mark.parametrize(
+    ("currency", "target", "error"),
+    [
+        (Currency.ARS, Currency.ARS, ConversionSameCurrencyError),
+        (Currency.BTC, Currency.ARS, ConversionNotSupportedError),
+        (Currency.USD, Currency.BTC, ConversionNotSupportedError),
+    ],
+)
+async def test_what_cannot_be_converted_does_not_ask_the_sources(
+    currency: Currency, target: Currency, error: type[Exception]
+) -> None:
+    provider = FakeRateProvider(quote())
+    deps, _ = _deps(provider)
+
+    with pytest.raises(error):
+        await ConvertAmount(deps).execute(Money(Decimal(1), currency), target, RateType.MEP)
+    assert provider.requests == []
+
+
+async def test_without_a_quote_there_is_no_conversion() -> None:
+    deps, _ = _deps(FakeRateProvider())
+
+    with pytest.raises(RateNotFoundError):
+        await ConvertAmount(deps).execute(
+            Money(Decimal(1), Currency.USD), Currency.ARS, RateType.CCL
+        )

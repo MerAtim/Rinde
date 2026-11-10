@@ -17,7 +17,8 @@ from rinde.rates.application.ports import (
     RateProvider,
     RateSourceUnavailableError,
 )
-from rinde.rates.domain.quote import Quote, RateType
+from rinde.rates.domain.quote import Quote
+from rinde.shared.domain.rate_type import RateType
 
 logger = logging.getLogger(__name__)
 

@@ -4,13 +4,19 @@ from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from typing import Protocol
 
-from rinde.rates.application.use_cases import GetQuote, GetQuotes, RatesDependencies
+from rinde.rates.application.use_cases import (
+    ConvertAmount,
+    GetQuote,
+    GetQuotes,
+    RatesDependencies,
+)
 
 
 @dataclass(frozen=True, slots=True)
 class RatesUnit:
     list: GetQuotes
     get: GetQuote
+    convert: ConvertAmount
 
 
 class RatesUnitFactory(Protocol):
@@ -20,4 +26,4 @@ class RatesUnitFactory(Protocol):
 
 
 def build_rates_unit(deps: RatesDependencies) -> RatesUnit:
-    return RatesUnit(list=GetQuotes(deps), get=GetQuote(deps))
+    return RatesUnit(list=GetQuotes(deps), get=GetQuote(deps), convert=ConvertAmount(deps))

@@ -16,12 +16,17 @@ from rinde.rates.application.ports import (
     RateSourceUnavailableError,
     Transaction,
 )
+from rinde.rates.domain.conversion import Conversion, convert
 from rinde.rates.domain.errors import (
+    ConversionNotSupportedError,
+    ConversionSameCurrencyError,
     RateDateInFutureError,
     RateNotFoundError,
     RatesUnavailableError,
 )
-from rinde.rates.domain.quote import ALL_RATE_TYPES, Quote, RateType, argentine_day
+from rinde.rates.domain.quote import Quote, argentine_day
+from rinde.shared.domain.money import Currency, Money
+from rinde.shared.domain.rate_type import ALL_RATE_TYPES, RateType
 
 _ORDER = {rate_type: index for index, rate_type in enumerate(RateType)}
 
@@ -87,3 +92,27 @@ class GetQuote:
         if not quotes:
             raise RateNotFoundError
         return quotes[0]
+
+
+# Los pares que tienen cotización. Bitcoin necesita su propia fuente (ADR-0016).
+_CONVERTIBLE = frozenset({Currency.ARS, Currency.USD})
+
+
+class ConvertAmount:
+    """Un monto en la otra moneda, con el dólar elegido y la cotización del día (ADR-0017).
+
+    Se convierte al consultar, con el histórico guardado: el mismo día da
+    siempre el mismo resultado, porque una fila guardada no cambia.
+    """
+
+    def __init__(self, deps: RatesDependencies) -> None:
+        self._quote = GetQuote(deps)
+
+    async def execute(
+        self, money: Money, target: Currency, rate_type: RateType, day: date | None = None
+    ) -> Conversion:
+        if money.currency is target:
+            raise ConversionSameCurrencyError
+        if money.currency not in _CONVERTIBLE or target not in _CONVERTIBLE:
+            raise ConversionNotSupportedError
+        return convert(money, await self._quote.execute(rate_type, day))

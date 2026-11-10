@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Protocol
 
-from rinde.rates.domain.quote import Quote, RateType
+from rinde.rates.domain.quote import Quote
+from rinde.shared.domain.rate_type import RateType
 
 
 class RateSourceUnavailableError(Exception):

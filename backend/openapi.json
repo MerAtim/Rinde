@@ -2657,6 +2657,240 @@
           }
         }
       }
+    },
+    "/api/rates/{rate_type}/conversion": {
+      "get": {
+        "tags": [
+          "rates"
+        ],
+        "summary": "Convertir un monto con un tipo de dólar",
+        "description": "Con la compra o la venta según el caso, del lado prudente (ADR-0017).",
+        "operationId": "convert_amount_api_rates__rate_type__conversion_get",
+        "parameters": [
+          {
+            "name": "rate_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/RateType"
+            }
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "string",
+                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                }
+              ],
+              "description": "Monto como string decimal, por ejemplo \"1500.00\"",
+              "title": "Amount"
+            },
+            "description": "Monto como string decimal, por ejemplo \"1500.00\""
+          },
+          {
+            "name": "currency",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Currency"
+            }
+          },
+          {
+            "name": "target",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/Currency"
+            }
+          },
+          {
+            "name": "day",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Día en Argentina. Si falta, hoy",
+              "title": "Day"
+            },
+            "description": "Día en Argentina. Si falta, hoy"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          }
+        }
+      }
+    },
+    "/api/preferences": {
+      "get": {
+        "tags": [
+          "preferences"
+        ],
+        "summary": "Ver mis preferencias",
+        "operationId": "get_preferences_api_preferences_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "preferences"
+        ],
+        "summary": "Cambiar mis preferencias",
+        "operationId": "update_preferences_api_preferences_put",
+        "parameters": [
+          {
+            "name": "x-requested-with",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferencesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferencesResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2802,6 +3036,32 @@
           "ok",
           "unavailable"
         ]
+      },
+      "ConversionResponse": {
+        "properties": {
+          "original": {
+            "$ref": "#/components/schemas/MoneyResponse"
+          },
+          "converted": {
+            "$ref": "#/components/schemas/MoneyResponse"
+          },
+          "rate": {
+            "type": "string",
+            "title": "Rate",
+            "description": "El precio que se aplicó: la compra o la venta (ADR-0017)"
+          },
+          "quote": {
+            "$ref": "#/components/schemas/QuoteResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "original",
+          "converted",
+          "rate",
+          "quote"
+        ],
+        "title": "ConversionResponse"
       },
       "Credentials": {
         "properties": {
@@ -3022,6 +3282,23 @@
         ],
         "title": "MeResponse"
       },
+      "MoneyResponse": {
+        "properties": {
+          "amount": {
+            "type": "string",
+            "title": "Amount"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount",
+          "currency"
+        ],
+        "title": "MoneyResponse"
+      },
       "OpenAccountRequest": {
         "properties": {
           "name": {
@@ -3045,6 +3322,45 @@
           "currency"
         ],
         "title": "OpenAccountRequest"
+      },
+      "PreferencesRequest": {
+        "properties": {
+          "reference_currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "rate_type": {
+            "$ref": "#/components/schemas/RateType"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "reference_currency",
+          "rate_type"
+        ],
+        "title": "PreferencesRequest",
+        "description": "Las dos van siempre: es reemplazar las preferencias, no parchear una."
+      },
+      "PreferencesResponse": {
+        "properties": {
+          "reference_currency": {
+            "type": "string",
+            "enum": [
+              "ARS",
+              "USD"
+            ],
+            "title": "Reference Currency"
+          },
+          "rate_type": {
+            "$ref": "#/components/schemas/RateType"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference_currency",
+          "rate_type"
+        ],
+        "title": "PreferencesResponse"
       },
       "QuoteResponse": {
         "properties": {

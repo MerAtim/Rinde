@@ -406,6 +406,44 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/rates/{rate_type}/conversion": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Convertir un monto con un tipo de dólar
+     * @description Con la compra o la venta según el caso, del lado prudente (ADR-0017).
+     */
+    get: operations["convert_amount_api_rates__rate_type__conversion_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/preferences": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Ver mis preferencias */
+    get: operations["get_preferences_api_preferences_get"];
+    /** Cambiar mis preferencias */
+    put: operations["update_preferences_api_preferences_put"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -466,6 +504,17 @@ export interface components {
     };
     /** @enum {string} */
     ComponentStatus: "ok" | "unavailable";
+    /** ConversionResponse */
+    ConversionResponse: {
+      original: components["schemas"]["MoneyResponse"];
+      converted: components["schemas"]["MoneyResponse"];
+      /**
+       * Rate
+       * @description El precio que se aplicó: la compra o la venta (ADR-0017)
+       */
+      rate: string;
+      quote: components["schemas"]["QuoteResponse"];
+    };
     /** Credentials */
     Credentials: {
       /** Username */
@@ -570,12 +619,35 @@ export interface components {
       /** Username */
       username: string;
     };
+    /** MoneyResponse */
+    MoneyResponse: {
+      /** Amount */
+      amount: string;
+      currency: components["schemas"]["Currency"];
+    };
     /** OpenAccountRequest */
     OpenAccountRequest: {
       /** Name */
       name: string;
       kind: components["schemas"]["AccountKind"];
       currency: components["schemas"]["Currency"];
+    };
+    /**
+     * PreferencesRequest
+     * @description Las dos van siempre: es reemplazar las preferencias, no parchear una.
+     */
+    PreferencesRequest: {
+      reference_currency: components["schemas"]["Currency"];
+      rate_type: components["schemas"]["RateType"];
+    };
+    /** PreferencesResponse */
+    PreferencesResponse: {
+      /**
+       * Reference Currency
+       * @enum {string}
+       */
+      reference_currency: "ARS" | "USD";
+      rate_type: components["schemas"]["RateType"];
     };
     /** QuoteResponse */
     QuoteResponse: {
@@ -2534,6 +2606,153 @@ export interface operations {
       };
       /** @description Service Unavailable */
       503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  convert_amount_api_rates__rate_type__conversion_get: {
+    parameters: {
+      query: {
+        /** @description Monto como string decimal, por ejemplo "1500.00" */
+        amount: number | string;
+        currency: components["schemas"]["Currency"];
+        target: components["schemas"]["Currency"];
+        /** @description Día en Argentina. Si falta, hoy */
+        day?: string | null;
+      };
+      header?: never;
+      path: {
+        rate_type: components["schemas"]["RateType"];
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConversionResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  get_preferences_api_preferences_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PreferencesResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  update_preferences_api_preferences_put: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["PreferencesRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PreferencesResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
         headers: {
           [name: string]: unknown;
         };

@@ -215,6 +215,10 @@
       "CSRF_REJECTED": "We couldn't validate the request. Reload the page and try again.",
       "NETWORK_ERROR": "There's no connection to Rinde. Check your internet and try again.",
       "UNKNOWN_ERROR": "Something went wrong. Try again in a moment."
+    },
+    "equivalent": {
+      "value": "≈ {{amount}} {{rate}}",
+      "unavailable": "No rate available to convert"
     }
   },
   "transactions": {
@@ -400,6 +404,43 @@
       "type": "Dollar",
       "buy": "Buy",
       "sell": "Sell"
+    },
+    "at": {
+      "official": "at the official rate",
+      "mep": "at the MEP rate",
+      "ccl": "at the CCL rate",
+      "blue": "at the blue rate",
+      "card": "at the card rate",
+      "crypto": "at the crypto rate"
+    }
+  },
+  "preferences": {
+    "title": "Preferences",
+    "subtitle": "Which currency and which dollar rate equivalents are shown in.",
+    "loading": "Loading your preferences…",
+    "loadError": "We couldn't load your preferences.",
+    "fields": {
+      "currency": "Currency for totals",
+      "currencyHelp": "Anything in the other currency is shown converted to this one.",
+      "rateType": "Dollar rate for conversions"
+    },
+    "rateTypeHelp": {
+      "mep": "The legal dollar bought and sold through bonds, with no cap. The most common for valuing savings.",
+      "official": "Banco Nación's retail rate. It is the formal reference, but few people can trade at that price.",
+      "blue": "The informal rate. It has no legal backing.",
+      "ccl": "The rate used to move dollars abroad, through bonds or shares.",
+      "crypto": "The rate you get by buying a stablecoin with pesos.",
+      "card": "The rate for card purchases in dollars, taxes included."
+    },
+    "save": "Save",
+    "saving": "Saving…",
+    "saved": "Your preferences were saved.",
+    "errors": {
+      "PREFERENCES_CURRENCY_NOT_ALLOWED": "That currency can't be used for totals.",
+      "NOT_AUTHENTICATED": "Your session expired. Sign in again.",
+      "CSRF_REJECTED": "We couldn't save. Reload the page and try again.",
+      "NETWORK_ERROR": "No connection. Try again in a moment.",
+      "UNKNOWN_ERROR": "We couldn't save your preferences."
     }
   }
 }

@@ -57,7 +57,7 @@ export function createApiClient<Code extends string>(serverCodes: readonly Code[
   }
 
   function write(
-    method: "POST" | "PATCH" | "DELETE",
+    method: "POST" | "PUT" | "PATCH" | "DELETE",
     path: string,
     body?: object,
     headers: Record<string, string> = {},
@@ -87,6 +87,7 @@ export function createApiClient<Code extends string>(serverCodes: readonly Code[
     get,
     post: (path: string, body?: object, headers?: Record<string, string>) =>
       write("POST", path, body, headers),
+    put: (path: string, body: object) => write("PUT", path, body),
     patch: (path: string, body: object) => write("PATCH", path, body),
     delete: (path: string) => write("DELETE", path),
   };

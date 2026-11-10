@@ -15,13 +15,14 @@ import httpx
 import pytest
 
 from rinde.rates.application.ports import QuoteRequest, RateSourceUnavailableError
-from rinde.rates.domain.quote import ALL_RATE_TYPES, RateSource, RateType
+from rinde.rates.domain.quote import RateSource
 from rinde.rates.infrastructure.http import MAX_RESPONSE_BYTES, get_json
 from rinde.rates.infrastructure.sources import (
     ArgentinaDatosProvider,
     CriptoYaProvider,
     DolarApiProvider,
 )
+from rinde.shared.domain.rate_type import ALL_RATE_TYPES, RateType
 from tests.fakes import FakeClock
 
 pytestmark = pytest.mark.anyio

@@ -1,6 +1,6 @@
 # ADR-0002: Representación de dinero y cotizaciones múltiples
 
-* **Estado:** Aceptado
+* **Estado:** Aceptado. El snapshot de conversión por transacción, reemplazado por [ADR-0017](0017-conversion-al-consultar.md)
 * **Fecha:** 2026-09-11
 
 ## Contexto

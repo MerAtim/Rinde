@@ -8,10 +8,12 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Annotated
 
-from pydantic import BaseModel, Field, PlainSerializer
+from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
 
-from rinde.rates.domain.quote import Quote, RateSource, RateType
-from rinde.shared.domain.money import Currency
+from rinde.rates.domain.conversion import Conversion
+from rinde.rates.domain.quote import Quote, RateSource
+from rinde.shared.domain.money import Currency, Money
+from rinde.shared.domain.rate_type import RateType
 
 RateOut = Annotated[Decimal, PlainSerializer(str, return_type=str)]
 
@@ -39,4 +41,43 @@ class QuoteResponse(BaseModel):
             sell=quote.sell,
             source=quote.source,
             updated_at=quote.updated_at,
+        )
+
+
+AmountOut = Annotated[Decimal, PlainSerializer(str, return_type=str)]
+
+
+class ConversionQuery(BaseModel):
+    """Qué convertir, como parámetros de consulta."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    amount: Decimal = Field(description='Monto como string decimal, por ejemplo "1500.00"')
+    currency: Currency
+    target: Currency
+    day: date | None = Field(default=None, description="Día en Argentina. Si falta, hoy")
+
+
+class MoneyResponse(BaseModel):
+    amount: AmountOut
+    currency: Currency
+
+    @classmethod
+    def from_money(cls, money: Money) -> MoneyResponse:
+        return cls(amount=money.amount, currency=money.currency)
+
+
+class ConversionResponse(BaseModel):
+    original: MoneyResponse
+    converted: MoneyResponse
+    rate: RateOut = Field(description="El precio que se aplicó: la compra o la venta (ADR-0017)")
+    quote: QuoteResponse
+
+    @classmethod
+    def from_conversion(cls, conversion: Conversion) -> ConversionResponse:
+        return cls(
+            original=MoneyResponse.from_money(conversion.original),
+            converted=MoneyResponse.from_money(conversion.converted),
+            rate=conversion.rate,
+            quote=QuoteResponse.from_quote(conversion.quote),
         )

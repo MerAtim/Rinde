@@ -13,6 +13,9 @@ import type { Balance } from "../transactions/api";
 import type { Account } from "./api";
 import { balancesById, useBalances } from "../transactions/useTransactions";
 import { KIND_ICON } from "./presentation";
+import type { Preferences } from "../preferences/api";
+import { usePreferences } from "../preferences/usePreferences";
+import { Equivalent } from "./Equivalent";
 import { useAccounts } from "./useAccounts";
 
 // El filtro vive en la URL: sobrevive a recargar, se comparte y respeta el botón Atrás.
@@ -25,6 +28,8 @@ export function AccountsPage() {
   const accounts = useAccounts(includeArchived);
   // El saldo lo calcula el módulo de movimientos (ADR-0011): es otro pedido.
   const balances = balancesById(useBalances().data);
+  // Sin preferencias todavía, no se muestra ningún equivalente: nunca uno adivinado.
+  const preferences = usePreferences().data ?? null;
   const isEmpty = accounts.isSuccess && accounts.data.length === 0;
 
   return (
@@ -78,7 +83,11 @@ export function AccountsPage() {
         <ul className={cx(styles.list)}>
           {accounts.data.map((account) => (
             <li key={account.id}>
-              <AccountRow account={account} balance={balances.get(account.id)} />
+              <AccountRow
+                account={account}
+                balance={balances.get(account.id)}
+                preferences={preferences}
+              />
             </li>
           ))}
         </ul>
@@ -87,7 +96,15 @@ export function AccountsPage() {
   );
 }
 
-function AccountRow({ account, balance }: { account: Account; balance: Balance | undefined }) {
+function AccountRow({
+  account,
+  balance,
+  preferences,
+}: {
+  account: Account;
+  balance: Balance | undefined;
+  preferences: Preferences | null;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -103,6 +120,14 @@ function AccountRow({ account, balance }: { account: Account; balance: Balance |
             <StatusChip tone="neutral" icon="archive" label={t("accounts.list.archived")} />
           ) : null}
         </span>
+        {/* Debajo del tipo y no junto al saldo: ahí entra entero, sin achicar el nombre. */}
+        {balance && preferences ? (
+          <Equivalent
+            amount={balance.amount}
+            currency={account.currency}
+            preferences={preferences}
+          />
+        ) : null}
       </span>
       <span className={cx(styles.currency)}>
         {/* Sin movimientos todavía, el saldo es cero en la moneda de la cuenta. */}

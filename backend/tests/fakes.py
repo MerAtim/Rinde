@@ -15,6 +15,9 @@ from rinde.auth.application.unit import AuthUnit, build_auth_unit
 from rinde.auth.domain.errors import UsernameTakenError
 from rinde.auth.domain.user import User
 from rinde.auth.domain.username import Username
+from rinde.preferences.application.unit import PreferencesUnit, build_preferences_unit
+from rinde.preferences.application.use_cases import PreferencesDependencies
+from rinde.preferences.domain.preferences import Preferences
 from rinde.rates.application.unit import RatesUnit, build_rates_unit
 from rinde.rates.application.use_cases import RatesDependencies
 from rinde.transactions.application.dependencies import TransactionsDependencies
@@ -317,5 +320,33 @@ class InMemoryRatesUnitFactory:
                 provider=self.provider,
                 transaction=self.transaction,
                 clock=self.clock,
+            )
+        )
+
+
+class InMemoryPreferences:
+    def __init__(self) -> None:
+        self.rows: dict[UUID, Preferences] = {}
+
+    async def get(self, owner_id: UUID) -> Preferences | None:
+        return self.rows.get(owner_id)
+
+    async def save(self, preferences: Preferences) -> None:
+        self.rows[preferences.owner_id] = preferences
+
+
+class InMemoryPreferencesUnitFactory:
+    """Preferencias en memoria, compartidas entre pedidos como si fuera la base."""
+
+    def __init__(self) -> None:
+        self.preferences = InMemoryPreferences()
+        self.transaction = FakeTransaction()
+        self.clock = FakeClock()
+
+    @asynccontextmanager
+    async def __call__(self) -> AsyncIterator[PreferencesUnit]:
+        yield build_preferences_unit(
+            PreferencesDependencies(
+                preferences=self.preferences, transaction=self.transaction, clock=self.clock
             )
         )
