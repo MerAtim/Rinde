@@ -36,6 +36,14 @@ from rinde.auth.infrastructure.factory import SqlAlchemyAuthUnitFactory
 from rinde.auth.infrastructure.pwned_passwords import PwnedPasswordsChecker
 from rinde.auth.infrastructure.system import SecureRandomSecrets
 from rinde.config import Settings, get_settings
+from rinde.dashboard.api.router import router as dashboard_router
+from rinde.dashboard.application.ports import Clock
+from rinde.dashboard.application.use_cases import DashboardDependencies, GetDashboard
+from rinde.dashboard.infrastructure.gateways import (
+    PreferencesReferenceReader,
+    RatesConverterFactory,
+    TransactionsLedgerReader,
+)
 from rinde.health.api.router import router as health_router
 from rinde.health.application.check_readiness import CheckReadiness, DatabaseProbe
 from rinde.health.infrastructure.database_probe import SqlAlchemyDatabaseProbe
@@ -82,6 +90,7 @@ def create_app(  # noqa: PLR0913
     transactions_factory: TransactionsUnitFactory | None = None,
     rates_factory: RatesUnitFactory | None = None,
     preferences_factory: PreferencesUnitFactory | None = None,
+    dashboard_clock: Clock | None = None,
 ) -> FastAPI:
     """Crea la aplicación.
 
@@ -165,6 +174,17 @@ def create_app(  # noqa: PLR0913
             async_sessionmaker(shared_engine(), expire_on_commit=False), SystemClock()
         )
 
+    # El dashboard no tiene infraestructura propia: lee a los otros módulos por
+    # su capa de aplicación, con las mismas fábricas que usan sus endpoints.
+    dashboard = GetDashboard(
+        DashboardDependencies(
+            ledger=TransactionsLedgerReader(transactions_factory),
+            references=PreferencesReferenceReader(preferences_factory),
+            converters=RatesConverterFactory(rates_factory),
+            clock=dashboard_clock or SystemClock(),
+        )
+    )
+
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
@@ -191,6 +211,7 @@ def create_app(  # noqa: PLR0913
     app.state.transactions_factory = transactions_factory
     app.state.rates_factory = rates_factory
     app.state.preferences_factory = preferences_factory
+    app.state.dashboard = dashboard
     app.state.session_cookie = SessionCookie(
         name=SECURE_COOKIE_NAME if config.session_cookie_secure else PLAIN_COOKIE_NAME,
         secure=config.session_cookie_secure,
@@ -220,5 +241,6 @@ def _register_modules(app: FastAPI) -> None:
         transactions_router,
         rates_router,
         preferences_router,
+        dashboard_router,
     ):
         app.include_router(router, prefix=API_PREFIX)

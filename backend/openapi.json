@@ -2891,6 +2891,104 @@
           }
         }
       }
+    },
+    "/api/dashboard": {
+      "get": {
+        "tags": [
+          "dashboard"
+        ],
+        "summary": "Ver mi dashboard",
+        "description": "Gasto por categoría, flujo de cada mes y patrimonio, en la moneda de referencia.\n\nLo que no se puede convertir no entra en los totales: sale en `unconverted`.",
+        "operationId": "get_dashboard_api_dashboard_get",
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Primer mes, AAAA-MM. Si falta, cinco meses antes del último",
+              "title": "From"
+            },
+            "description": "Primer mes, AAAA-MM. Si falta, cinco meses antes del último"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Último mes, AAAA-MM. Si falta, el mes en curso",
+              "title": "To"
+            },
+            "description": "Último mes, AAAA-MM. Si falta, el mes en curso"
+          },
+          {
+            "name": "account",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "maxItems": 50,
+              "description": "Cuentas a incluir; se repite el parámetro. Si falta, todas",
+              "title": "Account"
+            },
+            "description": "Cuentas a incluir; se repite el parámetro. Si falta, todas"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3030,6 +3128,22 @@
         ],
         "title": "CategoryResponse"
       },
+      "CategorySpendingResponse": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/DashboardCategoryResponse"
+          },
+          "total": {
+            "$ref": "#/components/schemas/MoneyResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "total"
+        ],
+        "title": "CategorySpendingResponse"
+      },
       "ComponentStatus": {
         "type": "string",
         "enum": [
@@ -3097,6 +3211,89 @@
         ],
         "title": "Currency",
         "description": "Monedas admitidas. Sumar una es agregarla acá con su precisión."
+      },
+      "DashboardCategoryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug",
+            "description": "Solo en las sembradas: la interfaz las traduce"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ],
+        "title": "DashboardCategoryResponse"
+      },
+      "DashboardResponse": {
+        "properties": {
+          "period": {
+            "$ref": "#/components/schemas/PeriodResponse"
+          },
+          "reference": {
+            "$ref": "#/components/schemas/ReferenceResponse"
+          },
+          "spending": {
+            "items": {
+              "$ref": "#/components/schemas/CategorySpendingResponse"
+            },
+            "type": "array",
+            "title": "Spending",
+            "description": "De mayor a menor"
+          },
+          "monthly": {
+            "items": {
+              "$ref": "#/components/schemas/MonthFlowResponse"
+            },
+            "type": "array",
+            "title": "Monthly",
+            "description": "Un elemento por mes, sin huecos"
+          },
+          "net_worth": {
+            "items": {
+              "$ref": "#/components/schemas/NetWorthPointResponse"
+            },
+            "type": "array",
+            "title": "Net Worth",
+            "description": "Un cierre por mes; el último es el patrimonio de hoy"
+          },
+          "unconverted": {
+            "items": {
+              "$ref": "#/components/schemas/UnconvertedResponse"
+            },
+            "type": "array",
+            "title": "Unconverted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "period",
+          "reference",
+          "spending",
+          "monthly",
+          "net_worth",
+          "unconverted"
+        ],
+        "title": "DashboardResponse"
       },
       "EditTransactionRequest": {
         "properties": {
@@ -3299,6 +3496,63 @@
         ],
         "title": "MoneyResponse"
       },
+      "MonthFlowResponse": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "income": {
+            "$ref": "#/components/schemas/MoneyResponse"
+          },
+          "expense": {
+            "$ref": "#/components/schemas/MoneyResponse"
+          },
+          "net": {
+            "$ref": "#/components/schemas/MoneyResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "income",
+          "expense",
+          "net"
+        ],
+        "title": "MonthFlowResponse"
+      },
+      "NetWorthPointResponse": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "on": {
+            "type": "string",
+            "format": "date",
+            "title": "On",
+            "description": "Día del cierre: fin de mes, u hoy en el mes en curso"
+          },
+          "total": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MoneyResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío si alguna cuenta no tuvo cotización ese día: no se inventa"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "on",
+          "total"
+        ],
+        "title": "NetWorthPointResponse"
+      },
       "OpenAccountRequest": {
         "properties": {
           "name": {
@@ -3322,6 +3576,37 @@
           "currency"
         ],
         "title": "OpenAccountRequest"
+      },
+      "PeriodResponse": {
+        "properties": {
+          "first": {
+            "type": "string",
+            "title": "First"
+          },
+          "last": {
+            "type": "string",
+            "title": "Last"
+          },
+          "since": {
+            "type": "string",
+            "format": "date",
+            "title": "Since"
+          },
+          "until": {
+            "type": "string",
+            "format": "date",
+            "title": "Until",
+            "description": "Último día incluido: fin del último mes, u hoy"
+          }
+        },
+        "type": "object",
+        "required": [
+          "first",
+          "last",
+          "since",
+          "until"
+        ],
+        "title": "PeriodResponse"
       },
       "PreferencesRequest": {
         "properties": {
@@ -3503,6 +3788,22 @@
           "recovery_code"
         ],
         "title": "RecoverResponse"
+      },
+      "ReferenceResponse": {
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "rate_type": {
+            "$ref": "#/components/schemas/RateType"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "rate_type"
+        ],
+        "title": "ReferenceResponse"
       },
       "RegisterResponse": {
         "properties": {
@@ -3888,6 +4189,31 @@
           "deleted_at"
         ],
         "title": "TransferResponse"
+      },
+      "UnconvertedResponse": {
+        "properties": {
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "income": {
+            "$ref": "#/components/schemas/MoneyResponse"
+          },
+          "expense": {
+            "$ref": "#/components/schemas/MoneyResponse"
+          },
+          "balance": {
+            "$ref": "#/components/schemas/MoneyResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "currency",
+          "income",
+          "expense",
+          "balance"
+        ],
+        "title": "UnconvertedResponse",
+        "description": "Lo que quedó afuera de los totales, en su propia moneda."
       },
       "ValidationError": {
         "properties": {
