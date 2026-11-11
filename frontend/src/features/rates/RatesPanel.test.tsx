@@ -65,7 +65,9 @@ describe("Dólar hoy", () => {
     });
     renderWithProviders(<App />);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    // El inicio tiene otras secciones con sus propios avisos: se mira solo esta.
+    const panel = await screen.findByRole("region", { name: "Dólar hoy" });
+    expect(await within(panel).findByRole("alert")).toHaveTextContent(
       "Las fuentes de cotizaciones no responden",
     );
   });
@@ -74,7 +76,9 @@ describe("Dólar hoy", () => {
     mockApi({ ...SESSION, "GET /api/rates": jsonResponse(500, {}) });
     renderWithProviders(<App />);
 
-    expect(await screen.findByRole("alert")).toHaveTextContent(
+    // El inicio tiene otras secciones con sus propios avisos: se mira solo esta.
+    const panel = await screen.findByRole("region", { name: "Dólar hoy" });
+    expect(await within(panel).findByRole("alert")).toHaveTextContent(
       "No se pudieron traer las cotizaciones.",
     );
   });

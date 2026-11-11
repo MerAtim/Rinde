@@ -3,8 +3,10 @@ import { describe, expect, it } from "vitest";
 
 import i18n from "./index";
 import {
+  useAxisMoneyFormatter,
   useDateFormatter,
   useMoneyFormatter,
+  useMonthFormatter,
   useRateFormatter,
   useShortDateFormatter,
 } from "./format";
@@ -53,5 +55,29 @@ describe("Formato", () => {
     expect(result.current("2026-09-17T13:00:00Z")).toContain("September");
 
     await i18n.changeLanguage("es");
+  });
+});
+
+describe("Meses y ejes", () => {
+  it("nombra un mes sin correrse al anterior por la zona horaria", () => {
+    const { result } = renderHook(() => useMonthFormatter());
+
+    expect(result.current("2026-06", "long")).toBe("junio de 2026");
+    expect(result.current("2026-01", "short")).toMatch(/^ene/);
+    expect(result.current("2025-12", "short-with-year")).toMatch(/^dic.*25$/);
+  });
+
+  it("en inglés, con el formato de Estados Unidos", async () => {
+    await i18n.changeLanguage("en");
+    const { result } = renderHook(() => useMonthFormatter());
+
+    expect(result.current("2026-06", "long")).toBe("June 2026");
+  });
+
+  it("abrevia las marcas de un eje de dinero y mantiene la moneda", () => {
+    const { result } = renderHook(() => useAxisMoneyFormatter());
+
+    expect(plain(result.current(1_200_000, "ARS"))).toMatch(/^\$\s?1,2\s?M$/);
+    expect(plain(result.current(-2500, "USD"))).toContain("US$");
   });
 });

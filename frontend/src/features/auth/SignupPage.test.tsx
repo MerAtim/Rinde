@@ -68,7 +68,7 @@ describe("Crear cuenta", () => {
     await user.click(screen.getByRole("checkbox", { name: "Guardé el código en un lugar seguro" }));
     await user.click(continueButton);
 
-    expect(await screen.findByText("Hola, mechi")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Resumen" })).toBeInTheDocument();
   });
 
   it("no tiene problemas de accesibilidad", async () => {

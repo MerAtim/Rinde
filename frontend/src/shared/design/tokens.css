@@ -87,6 +87,8 @@
   --rinde-shape-card: 20px;
   --rinde-shape-dialog: 28px;
   --rinde-shape-full: 999px;
+  /* Punta de una barra de datos: redondeada en el extremo, recta en la base. */
+  --rinde-shape-chart-mark: 4px;
 
   /* Espacio: grilla de 4. */
   --rinde-space-1: 4px;

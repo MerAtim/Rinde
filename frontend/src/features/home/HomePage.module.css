@@ -3,21 +3,3 @@
   gap: var(--rinde-space-7);
   padding-block: var(--rinde-space-5);
 }
-
-.hero {
-  display: grid;
-  gap: var(--rinde-space-4);
-  max-width: 40rem;
-}
-
-.greeting {
-  color: var(--md-sys-color-primary);
-  font: 600 14px/20px var(--md-ref-typeface-plain);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.intro {
-  color: var(--md-sys-color-on-surface-variant);
-  font: 400 18px/28px var(--md-ref-typeface-plain);
-}

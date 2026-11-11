@@ -1,0 +1,214 @@
+/* El resumen del inicio. Todo valor visual sale de tokens.css (ADR-0006). */
+
+.page {
+  display: grid;
+  gap: var(--rinde-space-5);
+}
+
+.header {
+  display: grid;
+  gap: var(--rinde-space-1);
+}
+
+.title {
+  font: 500 28px/36px var(--md-ref-typeface-brand);
+  letter-spacing: -0.02em;
+}
+
+.muted {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 15px/22px var(--md-ref-typeface-plain);
+}
+
+/* Una sola fila de filtros, arriba de todo lo que acotan. */
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--rinde-space-4);
+  max-width: 40rem;
+}
+
+.problem {
+  display: grid;
+  justify-items: start;
+  gap: var(--rinde-space-3);
+}
+
+.summary {
+  display: grid;
+  gap: var(--rinde-space-5);
+  transition: opacity var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-standard);
+}
+
+/* El período anterior queda a la vista, atenuado, hasta que llega el nuevo. */
+.summary[data-updating="true"] {
+  opacity: 0.6;
+}
+
+.hero {
+  display: grid;
+  gap: var(--rinde-space-1);
+}
+
+.heroLabel {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 600 12px/16px var(--md-ref-typeface-plain);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+  gap: var(--rinde-space-5);
+  align-items: start;
+}
+
+.card {
+  display: grid;
+  /* Sin esto, la columna toma el ancho mínimo de una tabla larga y empuja la
+     página: con minmax(0, 1fr) la tabla se desplaza dentro de la tarjeta. */
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--rinde-space-4);
+  min-width: 0;
+  padding: var(--rinde-space-5);
+  border-radius: var(--rinde-shape-card);
+  background: var(--md-sys-color-surface-container);
+  box-shadow:
+    var(--md-sys-elevation-level2),
+    inset 0 1px 0 var(--rinde-edge-light);
+}
+
+.cardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rinde-space-3);
+}
+
+.cardTitle {
+  font: 500 18px/24px var(--md-ref-typeface-plain);
+}
+
+/* Chart.js necesita un contenedor con alto propio y posición relativa. */
+.chart {
+  position: relative;
+  height: 240px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rinde-space-2) var(--rinde-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 13px/18px var(--md-ref-typeface-plain);
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rinde-space-2);
+}
+
+.swatch {
+  width: var(--rinde-space-3);
+  height: var(--rinde-space-3);
+  border-radius: var(--rinde-shape-chart-mark);
+}
+
+.swatch[data-series="income"] {
+  background: var(--rinde-income);
+}
+
+.swatch[data-series="expense"] {
+  background: var(--rinde-expense);
+}
+
+/* Una tabla ancha se desplaza dentro de su tarjeta, nunca la página entera.
+   `relative` hace que el recorte alcance también a los textos solo para
+   lectores (.visually-hidden, absolutos): si no, quedan en su lugar dentro de
+   la tabla ancha y empujan la página. */
+.tableScroll {
+  position: relative;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.caption {
+  margin-block-end: var(--rinde-space-3);
+  caption-side: top;
+  text-align: start;
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 13px/18px var(--md-ref-typeface-plain);
+}
+
+.table th,
+.table td {
+  padding-block: var(--rinde-space-3);
+  text-align: start;
+  vertical-align: middle;
+  color: var(--md-sys-color-on-surface);
+  font: 500 15px/20px var(--md-ref-typeface-plain);
+}
+
+.table thead th {
+  padding-block-start: 0;
+  color: var(--md-sys-color-on-surface-variant);
+  font: 500 12px/16px var(--md-ref-typeface-plain);
+  letter-spacing: 0.04em;
+}
+
+.table tbody tr + tr > * {
+  border-block-start: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.table .number {
+  padding-inline-start: var(--rinde-space-4);
+  text-align: end;
+  white-space: nowrap;
+}
+
+/* Gastos por categoría: el nombre arriba y la barra debajo, alineadas a la izquierda. */
+.spending th {
+  display: grid;
+  gap: var(--rinde-space-2);
+  inline-size: 100%;
+}
+
+.spendingName {
+  overflow-wrap: anywhere;
+}
+
+.track {
+  display: block;
+  block-size: var(--rinde-space-2);
+}
+
+.bar {
+  display: block;
+  block-size: 100%;
+  min-inline-size: 2px;
+  border-start-end-radius: var(--rinde-shape-chart-mark);
+  border-end-end-radius: var(--rinde-shape-chart-mark);
+  background: var(--rinde-chart-mark);
+}
+
+.empty {
+  display: grid;
+  justify-items: start;
+  gap: var(--rinde-space-3);
+  max-width: 36rem;
+  padding-block: var(--rinde-space-5);
+}
+
+.emptyTitle {
+  font: 500 24px/32px var(--md-ref-typeface-brand);
+}

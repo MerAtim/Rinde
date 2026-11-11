@@ -11,7 +11,7 @@ export function today(): string {
 }
 
 /** El nombre de una categoría: las sembradas se traducen por su identificador. */
-export function useCategoryName(): (category: Category) => string {
+export function useCategoryName(): (category: Pick<Category, "name" | "slug">) => string {
   const { t } = useTranslation();
   return (category) =>
     category.slug ? t(`transactions.seed.${category.slug}`, category.name) : category.name;

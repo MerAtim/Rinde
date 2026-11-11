@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 
 import { accountKeys } from "../accounts/useAccounts";
+import { dashboardKeys } from "../dashboard/useDashboard";
 import { transactionKeys } from "../transactions/useTransactions";
 import {
   deleteTransfer,
@@ -52,6 +53,7 @@ function useInvalidateMoney() {
       queryClient.invalidateQueries({ queryKey: transferKeys.all }),
       queryClient.invalidateQueries({ queryKey: transactionKeys.all }),
       queryClient.invalidateQueries({ queryKey: accountKeys.all }),
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all }),
     ]);
 }
 
