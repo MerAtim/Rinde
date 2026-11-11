@@ -11,12 +11,14 @@ haga falta la cotización de hoy, que sale de la red. Los datos se siembran con
 una semilla fija, así cada corrida mide lo mismo, y se borran al terminar.
 """
 
+import os
 import random
 import statistics
 import time
 from collections.abc import AsyncIterator
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 from uuid import UUID, uuid4
 
 import httpx
@@ -71,6 +73,18 @@ class _NoNetwork:
     async def series(self, rate_type: RateType) -> list[Quote]:
         self.calls += 1
         raise RateSourceUnavailableError
+
+
+def _publish(line: str) -> None:
+    """En GitHub Actions, la medición queda en el resumen de la corrida.
+
+    pytest se guarda lo que la prueba imprime. Sin esto, el número que sostiene
+    el objetivo solo se vería si la prueba falla.
+    """
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary:
+        with Path(summary).open("a", encoding="utf-8") as file:
+            file.write(f"* {line}\n")
 
 
 def _month_shift(month: date, months: int) -> date:
@@ -240,6 +254,7 @@ async def test_the_dashboard_answers_under_300_ms_at_p95(
                 f"máximo {max(durations):.1f} ms, en {SAMPLES} pedidos"
             )
             print(f"\nDashboard con {TRANSACTIONS} movimientos: {summary}")  # noqa: T201
+            _publish(f"Dashboard con {TRANSACTIONS} movimientos: {summary}")
             # Que mida lo que dice medir: hay datos, se convirtió y no hubo red.
             assert body["spending"], "el período quedó sin gastos: la siembra no es la esperada"
             assert all(point["total"] is not None for point in body["net_worth"])
