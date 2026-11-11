@@ -19,3 +19,4 @@
 | [0015](0015-auto-merge-de-dependabot.md) | Integración automática de parches de Dependabot con una GitHub App | Aceptado | 2026-11-09 |
 | [0016](0016-fuentes-de-cotizaciones.md) | Fuentes de cotizaciones y cómo se llena el histórico | Aceptado | 2026-11-10 |
 | [0017](0017-conversion-al-consultar.md) | Conversión al consultar y preferencias de referencia | Acepta y reemplaza en parte a ADR-0002 | 2026-11-10 |
+| [0019](0019-navegador-de-ci-en-contenedor.md) | El job de frontend corre en la imagen oficial de Playwright | Aceptado | 2026-11-11 |
