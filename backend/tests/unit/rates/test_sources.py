@@ -18,6 +18,7 @@ from rinde.rates.application.ports import QuoteRequest, RateSourceUnavailableErr
 from rinde.rates.domain.quote import RateSource
 from rinde.rates.infrastructure.http import MAX_RESPONSE_BYTES, get_json
 from rinde.rates.infrastructure.sources import (
+    SERIES_MAX_BYTES,
     ArgentinaDatosProvider,
     CriptoYaProvider,
     DolarApiProvider,
@@ -264,3 +265,79 @@ async def test_what_is_not_a_quote_is_not_retried(response: httpx.Response) -> N
             await get_json(client, "https://x/", timeout_seconds=1, backoff_seconds=0)
 
     assert calls == 1
+
+
+# La forma real de la serie: una lista con un elemento por día, del más viejo al
+# más nuevo. Recortada: la real empieza en 2018 y tiene unos 2.900 días.
+SERIES = [
+    {"casa": "bolsa", "compra": 1540.1, "venta": 1567.3, "fecha": "2026-11-06"},
+    {"casa": "bolsa", "compra": 1540.1, "venta": 1567.3, "fecha": "2026-11-07"},
+    {"casa": "bolsa", "compra": 1551, "venta": 1578.2, "fecha": "2026-11-09"},
+    {"casa": "bolsa", "compra": 1560.2, "venta": 1587.9, "fecha": "2026-11-10"},
+]
+
+
+async def test_argentinadatos_brings_the_whole_series_in_one_request() -> None:
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.url.path)
+        return httpx.Response(200, content=json.dumps(SERIES).encode())
+
+    async with _client(handler) as client:
+        series = await ArgentinaDatosProvider(client, base_url="https://x").series(RateType.MEP)
+
+    assert seen == ["/v1/cotizaciones/dolares/bolsa"]
+    assert [q.day for q in series] == [
+        date(2026, 11, 6),
+        date(2026, 11, 7),
+        date(2026, 11, 9),
+        date(2026, 11, 10),
+    ]
+    assert series[-1].buy == Decimal("1560.2")
+    assert {q.source for q in series} == {RateSource.ARGENTINADATOS}
+
+
+@pytest.mark.parametrize(
+    "broken",
+    [
+        {"casa": "bolsa", "compra": "1551", "venta": 1578.2, "fecha": "2026-11-08"},
+        {"casa": "bolsa", "compra": 1600, "venta": 1500, "fecha": "2026-11-08"},
+        {"casa": "blue", "compra": 1535, "venta": 1555, "fecha": "2026-11-08"},
+        {"casa": "bolsa", "compra": 1551, "venta": 1578.2, "fecha": "ayer"},
+    ],
+)
+async def test_argentinadatos_series_drops_only_the_broken_days(broken: dict[str, Any]) -> None:
+    async with _client(_json([*SERIES, broken])) as client:
+        series = await ArgentinaDatosProvider(client, base_url="https://x").series(RateType.MEP)
+
+    assert date(2026, 11, 8) not in {q.day for q in series}
+    assert len(series) == len(SERIES)
+
+
+async def test_argentinadatos_series_keeps_the_first_of_a_repeated_day() -> None:
+    repeated = {"casa": "bolsa", "compra": 1, "venta": 2, "fecha": "2026-11-10"}
+    async with _client(_json([*SERIES, repeated])) as client:
+        series = await ArgentinaDatosProvider(client, base_url="https://x").series(RateType.MEP)
+
+    assert series[-1].buy == Decimal("1560.2")
+
+
+@pytest.mark.parametrize("body", [{"casa": "bolsa"}, "serie", None])
+async def test_argentinadatos_series_with_another_shape_is_down(body: Any) -> None:
+    async with _client(_json(body)) as client:
+        provider = ArgentinaDatosProvider(client, base_url="https://x")
+        with pytest.raises(RateSourceUnavailableError):
+            await provider.series(RateType.MEP)
+
+
+async def test_the_series_may_be_larger_than_a_quote_but_not_unbounded() -> None:
+    big = [SERIES[0]] * ((MAX_RESPONSE_BYTES // len(json.dumps(SERIES[0]))) + 10)
+    assert len(json.dumps(big)) > MAX_RESPONSE_BYTES
+    async with _client(_json(big)) as client:
+        series = await ArgentinaDatosProvider(client, base_url="https://x").series(RateType.MEP)
+    assert len(series) == 1
+
+    async with _client(lambda _: httpx.Response(200, content=b" " * (SERIES_MAX_BYTES + 1))) as c:
+        with pytest.raises(RateSourceUnavailableError):
+            await ArgentinaDatosProvider(c, base_url="https://x").series(RateType.MEP)

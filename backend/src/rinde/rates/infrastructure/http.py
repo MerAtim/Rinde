@@ -18,6 +18,8 @@ from rinde.rates.application.ports import RateSourceUnavailableError
 _RETRYABLE_STATUS = frozenset({502, 503, 504})
 # Las respuestas reales pesan unos pocos KB. Algo mucho más grande no es una cotización.
 MAX_RESPONSE_BYTES = 256 * 1024
+# Un reintento: una fuente caída no hace esperar de más, y la cadena sigue con la próxima.
+ATTEMPTS = 2
 
 
 async def get_json(
@@ -25,14 +27,14 @@ async def get_json(
     url: str,
     *,
     timeout_seconds: float,
-    attempts: int = 2,
     backoff_seconds: float = 0.25,
+    max_bytes: int = MAX_RESPONSE_BYTES,
 ) -> object | None:
     """El JSON de la respuesta, con los números como `Decimal`. `None` si es un 404.
 
     Con `float` 1587.9 ya no es exacto antes de llegar al dominio.
     """
-    for attempt in range(attempts):
+    for attempt in range(ATTEMPTS):
         if attempt:
             await asyncio.sleep(backoff_seconds * 2 ** (attempt - 1))
         try:
@@ -45,7 +47,7 @@ async def get_json(
             continue
         if not response.is_success:
             break
-        if len(response.content) > MAX_RESPONSE_BYTES:
+        if len(response.content) > max_bytes:
             break
         try:
             body: object = json.loads(response.content, parse_float=Decimal, parse_int=Decimal)

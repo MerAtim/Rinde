@@ -22,7 +22,7 @@ from rinde.rates.domain.quote import RateSource
 from rinde.shared.domain.money import Currency, Money
 from rinde.shared.domain.rate_type import ALL_RATE_TYPES, RateType
 from tests.fakes import FakeClock, FakeTransaction
-from tests.unit.rates.fakes import FakeRateProvider, InMemoryQuotes, quote
+from tests.unit.rates.fakes import FakeHistoryProvider, FakeRateProvider, InMemoryQuotes, quote
 
 pytestmark = pytest.mark.anyio
 
@@ -40,6 +40,7 @@ def _deps(
     deps = RatesDependencies(
         quotes=quotes or InMemoryQuotes(),
         provider=provider,
+        history=FakeHistoryProvider(),
         transaction=transaction,
         clock=clock,
     )

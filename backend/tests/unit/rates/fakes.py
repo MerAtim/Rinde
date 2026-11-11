@@ -39,6 +39,21 @@ class FakeRateProvider:
         }
 
 
+class FakeHistoryProvider:
+    """La serie completa de cada dólar, o falla si está caída. Anota cada pedido."""
+
+    def __init__(self, *quotes: Quote, down: bool = False) -> None:
+        self.stock = list(quotes)
+        self.down = down
+        self.requests: list[RateType] = []
+
+    async def series(self, rate_type: RateType) -> list[Quote]:
+        self.requests.append(rate_type)
+        if self.down:
+            raise RateSourceUnavailableError
+        return sorted((q for q in self.stock if q.rate_type is rate_type), key=lambda q: q.day)
+
+
 class InMemoryQuotes:
     def __init__(self, *quotes: Quote) -> None:
         self.rows: dict[tuple[date, RateType, RateSource], Quote] = {}
@@ -52,6 +67,13 @@ class InMemoryQuotes:
             if row_day == day and rate_type in types:
                 found.setdefault(rate_type, item)
         return list(found.values())
+
+    async def for_range(self, rate_type: RateType, since: date, until: date) -> list[Quote]:
+        found: dict[date, Quote] = {}
+        for (row_day, row_type, _), item in sorted(self.rows.items()):
+            if row_type is rate_type and since <= row_day <= until:
+                found.setdefault(row_day, item)
+        return [found[day] for day in sorted(found)]
 
     async def add_all(self, quotes: Iterable[Quote], fetched_at: datetime) -> None:
         for item in quotes:

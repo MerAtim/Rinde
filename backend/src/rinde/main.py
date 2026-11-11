@@ -48,7 +48,11 @@ from rinde.rates.api.errors import rates_error_handler
 from rinde.rates.api.router import router as rates_router
 from rinde.rates.application.unit import RatesUnitFactory
 from rinde.rates.domain.errors import RateError
-from rinde.rates.infrastructure.factory import SqlAlchemyRatesUnitFactory, build_rate_provider
+from rinde.rates.infrastructure.factory import (
+    SqlAlchemyRatesUnitFactory,
+    build_history_provider,
+    build_rate_provider,
+)
 from rinde.shared.api.csrf import CsrfRejectedError, csrf_error_handler
 from rinde.shared.api.errors import domain_error_handler
 from rinde.shared.domain.errors import DomainError
@@ -149,6 +153,9 @@ def create_app(  # noqa: PLR0913
                 dolarapi_url=config.dolarapi_url,
                 argentinadatos_url=config.argentinadatos_url,
                 criptoya_url=config.criptoya_url,
+            ),
+            build_history_provider(
+                shared_http_client(), clock, argentinadatos_url=config.argentinadatos_url
             ),
             clock,
         )

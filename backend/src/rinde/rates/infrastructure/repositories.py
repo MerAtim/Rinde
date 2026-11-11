@@ -53,6 +53,20 @@ class SqlAlchemyQuoteRepository:
         )
         return [_to_quote(row) for row in result.mappings()]
 
+    async def for_range(self, rate_type: RateType, since: date, until: date) -> list[Quote]:
+        result = await self._session.execute(
+            select(exchange_rates)
+            .where(
+                exchange_rates.c.day.between(since, until),
+                exchange_rates.c.base == Currency.USD.value,
+                exchange_rates.c.counter == Currency.ARS.value,
+                exchange_rates.c.rate_type == rate_type.value,
+            )
+            .order_by(exchange_rates.c.day, _PRIORITY)
+            .distinct(exchange_rates.c.day)
+        )
+        return [_to_quote(row) for row in result.mappings()]
+
     async def add_all(self, quotes: Iterable[Quote], fetched_at: datetime) -> None:
         rows = [
             {

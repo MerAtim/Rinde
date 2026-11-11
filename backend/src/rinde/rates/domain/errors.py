@@ -43,3 +43,9 @@ class ConversionSameCurrencyError(RateError):
     """Convertir pesos a pesos no es una conversión: es un pedido mal armado."""
 
     code = "CONVERSION_SAME_CURRENCY"
+
+
+class RateRangeInvalidError(RateError):
+    """Un rango al revés o más largo de lo que se permite pedir de una vez (ADR-0018)."""
+
+    code = "RATE_RANGE_INVALID"

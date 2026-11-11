@@ -23,7 +23,7 @@ from rinde.rates.application.use_cases import RatesDependencies
 from rinde.transactions.application.dependencies import TransactionsDependencies
 from rinde.transactions.application.unit import TransactionsUnit, build_transactions_unit
 from rinde.transactions.infrastructure.accounts_gateway import AccountsApplicationGateway
-from tests.unit.rates.fakes import FakeRateProvider, InMemoryQuotes
+from tests.unit.rates.fakes import FakeHistoryProvider, FakeRateProvider, InMemoryQuotes
 from tests.unit.transactions.fakes import (
     FakeAuditLog,
     FakeCategoryRepository,
@@ -304,8 +304,13 @@ class InMemoryTransactionsUnitFactory:
 class InMemoryRatesUnitFactory:
     """Cotizaciones con fuentes y base en memoria, compartidas entre pedidos."""
 
-    def __init__(self, provider: FakeRateProvider | None = None) -> None:
+    def __init__(
+        self,
+        provider: FakeRateProvider | None = None,
+        history: FakeHistoryProvider | None = None,
+    ) -> None:
         self.provider = provider or FakeRateProvider()
+        self.history = history or FakeHistoryProvider()
         self.quotes = InMemoryQuotes()
         self.transaction = FakeTransaction()
         self.clock = FakeClock()
@@ -318,6 +323,7 @@ class InMemoryRatesUnitFactory:
             RatesDependencies(
                 quotes=self.quotes,
                 provider=self.provider,
+                history=self.history,
                 transaction=self.transaction,
                 clock=self.clock,
             )

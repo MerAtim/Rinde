@@ -123,3 +123,34 @@ async def test_the_database_rejects_an_impossible_row(
 
     with pytest.raises(IntegrityError):
         await session.execute(insert(exchange_rates).values(row))
+
+
+async def test_a_range_brings_one_quote_per_day_in_order(session: AsyncSession) -> None:
+    repository = SqlAlchemyQuoteRepository(session)
+    later = Quote(
+        rate_type=RateType.MEP,
+        day=date(2026, 3, 3),
+        buy=Decimal(1200),
+        sell=Decimal(1220),
+        source=RateSource.ARGENTINADATOS,
+    )
+    blue = _quote(RateType.BLUE)
+    outside = Quote(
+        rate_type=RateType.MEP,
+        day=date(2026, 3, 10),
+        buy=Decimal(1),
+        sell=Decimal(2),
+        source=RateSource.ARGENTINADATOS,
+    )
+    await repository.add_all(
+        [later, _quote(), _quote(source=RateSource.DOLARAPI, sell="1300"), blue, outside],
+        FETCHED_AT,
+    )
+
+    found = await repository.for_range(RateType.MEP, DAY, date(2026, 3, 4))
+
+    # Un día guardado de dos fuentes da una sola: la de mayor prioridad, como `for_day`.
+    assert [(q.day, q.source) for q in found] == [
+        (DAY, RateSource.DOLARAPI),
+        (date(2026, 3, 3), RateSource.ARGENTINADATOS),
+    ]
