@@ -4,17 +4,21 @@ Ninguna lectura arma su propia consulta: todas parten de `_alive`, que ya excluy
 los movimientos borrados. Es la mitigación del borrado lógico (ADR-0011).
 """
 
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
+    ColumnElement,
+    Date,
     RowMapping,
     Select,
     case,
+    cast,
     delete,
     func,
     insert,
+    null,
     or_,
     select,
     tuple_,
@@ -28,7 +32,10 @@ from rinde.shared.domain.text import fold
 from rinde.transactions.application.pagination import Cursor
 from rinde.transactions.application.ports import (
     AccountBalance,
+    BalanceChange,
+    FlowSum,
     IdempotentResource,
+    LedgerScope,
     Page,
     RememberedKey,
     TransactionFilters,
@@ -50,6 +57,21 @@ from rinde.transactions.infrastructure.tables import (
     transfer_audit,
     transfers,
 )
+
+
+def _money(total: Decimal, code: str) -> Money:
+    """Una suma de la base: `NUMERIC` llega como `Decimal`, con la escala de la columna."""
+    currency = Currency(code)
+    return Money(total.quantize(currency.quantum), currency)
+
+
+def _month_of(occurred_on: ColumnElement[date]) -> ColumnElement[date]:
+    return cast(func.date_trunc("month", occurred_on), Date)
+
+
+def _change_month(occurred_on: ColumnElement[date], since: date) -> ColumnElement[date | None]:
+    """El mes del cambio, o nada si es anterior al período: eso es el saldo de apertura."""
+    return case((occurred_on < since, null()), else_=_month_of(occurred_on))
 
 
 def _to_transaction(row: RowMapping) -> Transaction:
@@ -171,6 +193,58 @@ class SqlAlchemyTransactionRepository:
                 )
             )
         return balances
+
+    async def flow_sums(self, owner_id: UUID, scope: LedgerScope) -> list[FlowSum]:
+        day: ColumnElement[date] = transactions.c.occurred_on
+        if scope.monthly_currency is not None:
+            day = case(
+                (
+                    transactions.c.currency == scope.monthly_currency.value,
+                    _month_of(transactions.c.occurred_on),
+                ),
+                else_=transactions.c.occurred_on,
+            )
+        columns = (day, transactions.c.kind, transactions.c.category_id, transactions.c.currency)
+        query = (
+            self._alive(owner_id)
+            .with_only_columns(*columns, func.sum(transactions.c.amount))
+            .where(transactions.c.occurred_on.between(scope.since, scope.until))
+            .group_by(*columns)
+        )
+        if scope.account_ids is not None:
+            query = query.where(transactions.c.account_id.in_(scope.account_ids))
+        result = await self._session.execute(query)
+        return [
+            FlowSum(
+                day=day,
+                kind=TransactionKind(kind),
+                category_id=category_id,
+                total=_money(total, code),
+            )
+            for day, kind, category_id, code, total in result.all()
+        ]
+
+    async def balance_changes(self, owner_id: UUID, scope: LedgerScope) -> list[BalanceChange]:
+        signed = func.sum(
+            case(
+                (transactions.c.kind == TransactionKind.INCOME.value, transactions.c.amount),
+                else_=-transactions.c.amount,
+            )
+        )
+        month = _change_month(transactions.c.occurred_on, scope.since)
+        query = (
+            self._alive(owner_id)
+            .with_only_columns(transactions.c.account_id, transactions.c.currency, month, signed)
+            .where(transactions.c.occurred_on <= scope.until)
+            .group_by(transactions.c.account_id, transactions.c.currency, month)
+        )
+        if scope.account_ids is not None:
+            query = query.where(transactions.c.account_id.in_(scope.account_ids))
+        result = await self._session.execute(query)
+        return [
+            BalanceChange(account_id=account_id, month=on, change=_money(total, code))
+            for account_id, code, on, total in result.all()
+        ]
 
     async def count_by_category(self, category_id: UUID, owner_id: UUID) -> int:
         query = self._alive(owner_id).where(transactions.c.category_id == category_id)
@@ -314,6 +388,33 @@ class SqlAlchemyTransferRepository:
             )
             for (account_id, code), total in totals.items()
         ]
+
+    async def balance_changes(self, owner_id: UUID, scope: LedgerScope) -> list[BalanceChange]:
+        """Las dos mitades por separado, como en `balances_for_owner`.
+
+        Con algunas cuentas elegidas, cuenta solo el lado de esas cuentas: una
+        transferencia hacia una cuenta que no se mira es plata que sale.
+        """
+        changes: list[BalanceChange] = []
+        for account_column, currency_column, amount_column, sign in (
+            (transfers.c.to_account_id, transfers.c.currency_in, transfers.c.amount_in, 1),
+            (transfers.c.from_account_id, transfers.c.currency_out, transfers.c.amount_out, -1),
+        ):
+            month = _change_month(transfers.c.occurred_on, scope.since)
+            query = (
+                self._alive(owner_id)
+                .with_only_columns(account_column, currency_column, month, func.sum(amount_column))
+                .where(transfers.c.occurred_on <= scope.until)
+                .group_by(account_column, currency_column, month)
+            )
+            if scope.account_ids is not None:
+                query = query.where(account_column.in_(scope.account_ids))
+            result = await self._session.execute(query)
+            changes.extend(
+                BalanceChange(account_id=account_id, month=on, change=_money(sign * total, code))
+                for account_id, code, on, total in result.all()
+            )
+        return changes
 
     async def save(self, transfer: Transfer) -> None:
         values = _transfer_values(transfer)

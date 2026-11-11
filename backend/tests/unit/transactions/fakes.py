@@ -13,6 +13,9 @@ from rinde.transactions.application.dependencies import TransactionsDependencies
 from rinde.transactions.application.pagination import Cursor
 from rinde.transactions.application.ports import (
     AccountBalance,
+    BalanceChange,
+    FlowSum,
+    LedgerScope,
     Page,
     RememberedKey,
     TransactionFilters,
@@ -42,6 +45,21 @@ class FakeDatabaseTransaction:
 
     async def commit(self) -> None:
         self.commits += 1
+
+
+def _in_scope(account_id: UUID, scope: LedgerScope) -> bool:
+    return scope.account_ids is None or account_id in scope.account_ids
+
+
+def _change_month(occurred_on: date, scope: LedgerScope) -> date | None:
+    return None if occurred_on < scope.since else occurred_on.replace(day=1)
+
+
+def _add_change(
+    totals: dict[tuple[UUID, date | None], Money], key: tuple[UUID, date | None], change: Money
+) -> None:
+    current = totals.get(key)
+    totals[key] = change if current is None else current + change
 
 
 class FakeTransactionRepository:
@@ -91,6 +109,36 @@ class FakeTransactionRepository:
             current = totals.get(row.account_id, Money.zero(row.money.currency))
             totals[row.account_id] = current + row.signed_amount
         return [AccountBalance(account_id, balance) for account_id, balance in totals.items()]
+
+    async def flow_sums(self, owner_id: UUID, scope: LedgerScope) -> list[FlowSum]:
+        totals: dict[tuple[date, TransactionKind, UUID, Currency], Money] = {}
+        for row in self._alive(owner_id):
+            if not scope.since <= row.occurred_on <= scope.until:
+                continue
+            if not _in_scope(row.account_id, scope):
+                continue
+            day = (
+                row.occurred_on.replace(day=1)
+                if row.money.currency is scope.monthly_currency
+                else row.occurred_on
+            )
+            key = (day, row.kind, row.category_id, row.money.currency)
+            totals[key] = totals.get(key, Money.zero(row.money.currency)) + row.money
+        return [
+            FlowSum(day=day, kind=kind, category_id=category_id, total=total)
+            for (day, kind, category_id, _), total in totals.items()
+        ]
+
+    async def balance_changes(self, owner_id: UUID, scope: LedgerScope) -> list[BalanceChange]:
+        totals: dict[tuple[UUID, date | None], Money] = {}
+        for row in self._alive(owner_id):
+            if row.occurred_on > scope.until or not _in_scope(row.account_id, scope):
+                continue
+            key = (row.account_id, _change_month(row.occurred_on, scope))
+            _add_change(totals, key, row.signed_amount)
+        return [
+            BalanceChange(account_id, day, change) for (account_id, day), change in totals.items()
+        ]
 
     async def count_by_category(self, category_id: UUID, owner_id: UUID) -> int:
         return len([row for row in self._alive(owner_id) if row.category_id == category_id])
@@ -233,6 +281,20 @@ class FakeTransferRepository:
         return [
             AccountBalance(account_id=account_id, balance=total)
             for account_id, total in totals.items()
+        ]
+
+    async def balance_changes(self, owner_id: UUID, scope: LedgerScope) -> list[BalanceChange]:
+        totals: dict[tuple[UUID, date | None], Money] = {}
+        for row in self._alive(owner_id):
+            if row.occurred_on > scope.until:
+                continue
+            for account_id in (row.from_account_id, row.to_account_id):
+                effect = row.effect_on(account_id)
+                if effect is None or not _in_scope(account_id, scope):
+                    continue
+                _add_change(totals, (account_id, _change_month(row.occurred_on, scope)), effect)
+        return [
+            BalanceChange(account_id, day, change) for (account_id, day), change in totals.items()
         ]
 
     async def save(self, transfer: Transfer) -> None:

@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from rinde.accounts.infrastructure.tables import accounts
 from rinde.auth.infrastructure.tables import users
 from rinde.shared.domain.money import Currency, Money
-from rinde.transactions.application.ports import TransferFilters
+from rinde.transactions.application.ports import BalanceChange, LedgerScope, TransferFilters
 from rinde.transactions.domain.transaction import AuditAction, Description, TargetAccount
 from rinde.transactions.domain.transfer import (
     Transfer,
@@ -360,3 +360,31 @@ async def _una_viva_y_una_borrada(session: AsyncSession) -> Escenario:
     await repository.add(viva)
     await repository.add(borrada)
     return Escenario(owner_id, repository, banco, efectivo, viva, borrada)
+
+
+async def test_balance_changes_count_each_side_on_its_own_account(session: AsyncSession) -> None:
+    """La transferencia cambia los dos saldos, cada uno en su moneda (ADR-0018)."""
+    owner_id = await _user(session, "mechi")
+    bank = await _account(session, owner_id)
+    dollars = await _account(session, owner_id, Currency.USD)
+    repository = SqlAlchemyTransferRepository(session)
+    await repository.add(
+        _a_transfer(owner_id, TransferRoute(bank, dollars), "100000.00", "80.00", 5)
+    )
+    await repository.add(_a_transfer(owner_id, TransferRoute(bank, dollars), "1000.00", "1.00", 19))
+    scope = LedgerScope(since=date(2026, 9, 10), until=date(2026, 9, 30))
+
+    changes = await repository.balance_changes(owner_id, scope)
+
+    assert sorted(changes, key=lambda c: (c.change.currency, c.month or date.min)) == [
+        BalanceChange(bank.id, None, Money(Decimal("-100000.00"), Currency.ARS)),
+        BalanceChange(bank.id, date(2026, 9, 1), Money(Decimal("-1000.00"), Currency.ARS)),
+        BalanceChange(dollars.id, None, Money(Decimal("80.00"), Currency.USD)),
+        BalanceChange(dollars.id, date(2026, 9, 1), Money(Decimal("1.00"), Currency.USD)),
+    ]
+
+    only_bank = await repository.balance_changes(
+        owner_id, LedgerScope(scope.since, scope.until, frozenset({bank.id}))
+    )
+    assert {c.account_id for c in only_bank} == {bank.id}
+    assert await repository.balance_changes(await _user(session, "otra"), scope) == []
