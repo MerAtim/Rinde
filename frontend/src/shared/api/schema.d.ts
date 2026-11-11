@@ -444,6 +444,28 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/dashboard": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Ver mi dashboard
+     * @description Gasto por categoría, flujo de cada mes y patrimonio, en la moneda de referencia.
+     *
+     *     Lo que no se puede convertir no entra en los totales: sale en `unconverted`.
+     */
+    get: operations["get_dashboard_api_dashboard_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -502,6 +524,11 @@ export interface components {
       /** Slug */
       slug: string | null;
     };
+    /** CategorySpendingResponse */
+    CategorySpendingResponse: {
+      category: components["schemas"]["DashboardCategoryResponse"];
+      total: components["schemas"]["MoneyResponse"];
+    };
     /** @enum {string} */
     ComponentStatus: "ok" | "unavailable";
     /** ConversionResponse */
@@ -531,6 +558,43 @@ export interface components {
      * @enum {string}
      */
     Currency: "ARS" | "USD" | "BTC";
+    /** DashboardCategoryResponse */
+    DashboardCategoryResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /**
+       * Slug
+       * @description Solo en las sembradas: la interfaz las traduce
+       */
+      slug: string | null;
+    };
+    /** DashboardResponse */
+    DashboardResponse: {
+      period: components["schemas"]["PeriodResponse"];
+      reference: components["schemas"]["ReferenceResponse"];
+      /**
+       * Spending
+       * @description De mayor a menor
+       */
+      spending: components["schemas"]["CategorySpendingResponse"][];
+      /**
+       * Monthly
+       * @description Un elemento por mes, sin huecos
+       */
+      monthly: components["schemas"]["MonthFlowResponse"][];
+      /**
+       * Net Worth
+       * @description Un cierre por mes; el último es el patrimonio de hoy
+       */
+      net_worth: components["schemas"]["NetWorthPointResponse"][];
+      /** Unconverted */
+      unconverted: components["schemas"]["UnconvertedResponse"][];
+    };
     /**
      * EditTransactionRequest
      * @description La cuenta no se edita: mover plata de cuenta es otra operación.
@@ -625,12 +689,51 @@ export interface components {
       amount: string;
       currency: components["schemas"]["Currency"];
     };
+    /** MonthFlowResponse */
+    MonthFlowResponse: {
+      /** Month */
+      month: string;
+      income: components["schemas"]["MoneyResponse"];
+      expense: components["schemas"]["MoneyResponse"];
+      net: components["schemas"]["MoneyResponse"];
+    };
+    /** NetWorthPointResponse */
+    NetWorthPointResponse: {
+      /** Month */
+      month: string;
+      /**
+       * On
+       * Format: date
+       * @description Día del cierre: fin de mes, u hoy en el mes en curso
+       */
+      on: string;
+      /** @description Vacío si alguna cuenta no tuvo cotización ese día: no se inventa */
+      total: components["schemas"]["MoneyResponse"] | null;
+    };
     /** OpenAccountRequest */
     OpenAccountRequest: {
       /** Name */
       name: string;
       kind: components["schemas"]["AccountKind"];
       currency: components["schemas"]["Currency"];
+    };
+    /** PeriodResponse */
+    PeriodResponse: {
+      /** First */
+      first: string;
+      /** Last */
+      last: string;
+      /**
+       * Since
+       * Format: date
+       */
+      since: string;
+      /**
+       * Until
+       * Format: date
+       * @description Último día incluido: fin del último mes, u hoy
+       */
+      until: string;
     };
     /**
      * PreferencesRequest
@@ -715,6 +818,11 @@ export interface components {
     RecoverResponse: {
       /** Recovery Code */
       recovery_code: string;
+    };
+    /** ReferenceResponse */
+    ReferenceResponse: {
+      currency: components["schemas"]["Currency"];
+      rate_type: components["schemas"]["RateType"];
     };
     /** RegisterResponse */
     RegisterResponse: {
@@ -898,6 +1006,16 @@ export interface components {
       updated_at: string;
       /** Deleted At */
       deleted_at: string | null;
+    };
+    /**
+     * UnconvertedResponse
+     * @description Lo que quedó afuera de los totales, en su propia moneda.
+     */
+    UnconvertedResponse: {
+      currency: components["schemas"]["Currency"];
+      income: components["schemas"]["MoneyResponse"];
+      expense: components["schemas"]["MoneyResponse"];
+      balance: components["schemas"]["MoneyResponse"];
     };
     /** ValidationError */
     ValidationError: {
@@ -2744,6 +2862,51 @@ export interface operations {
       };
       /** @description Forbidden */
       403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  get_dashboard_api_dashboard_get: {
+    parameters: {
+      query?: {
+        /** @description Primer mes, AAAA-MM. Si falta, cinco meses antes del último */
+        from?: string | null;
+        /** @description Último mes, AAAA-MM. Si falta, el mes en curso */
+        to?: string | null;
+        /** @description Cuentas a incluir; se repite el parámetro. Si falta, todas */
+        account?: string[];
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DashboardResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
         headers: {
           [name: string]: unknown;
         };

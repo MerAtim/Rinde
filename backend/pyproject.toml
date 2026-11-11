@@ -112,6 +112,7 @@ containers = [
     "rinde.transactions",
     "rinde.rates",
     "rinde.preferences",
+    "rinde.dashboard",
 ]
 layers = ["api | infrastructure", "application", "(domain)"]
 
@@ -130,6 +131,8 @@ source_modules = [
     "rinde.rates.domain",
     "rinde.preferences.application",
     "rinde.preferences.domain",
+    "rinde.dashboard.application",
+    "rinde.dashboard.domain",
     "rinde.shared.domain",
 ]
 forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic", "httpx", "argon2"]
@@ -145,6 +148,7 @@ forbidden_modules = [
     "rinde.transactions",
     "rinde.rates",
     "rinde.preferences",
+    "rinde.dashboard",
 ]
 
 [[tool.importlinter.contracts]]
@@ -186,3 +190,37 @@ source_modules = ["rinde.preferences"]
 forbidden_modules = [
     "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.health", "rinde.rates"
 ]
+
+[[tool.importlinter.contracts]]
+name = "Solo los adaptadores del dashboard conocen otros módulos: su dominio y su aplicación, no"
+type = "forbidden"
+source_modules = ["rinde.dashboard.application", "rinde.dashboard.domain"]
+forbidden_modules = [
+    "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
+    "rinde.health",
+]
+
+[[tool.importlinter.contracts]]
+name = "El dashboard lee a los otros módulos por su capa de aplicación, nunca por su API, su base ni su dominio"
+type = "forbidden"
+# Solo las importaciones directas: la capa de aplicación de otro módulo usa su
+# propio dominio, y eso es lo que se espera de ella.
+allow_indirect_imports = true
+source_modules = ["rinde.dashboard"]
+forbidden_modules = [
+    "rinde.auth",
+    "rinde.accounts",
+    "rinde.health",
+    "rinde.transactions.api", "rinde.transactions.infrastructure", "rinde.transactions.domain",
+    "rinde.rates.api", "rinde.rates.infrastructure", "rinde.rates.domain",
+    "rinde.preferences.api", "rinde.preferences.infrastructure", "rinde.preferences.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Ningún módulo depende del dashboard: es un modelo de lectura sobre los demás"
+type = "forbidden"
+source_modules = [
+    "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
+    "rinde.health",
+]
+forbidden_modules = ["rinde.dashboard"]
