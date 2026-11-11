@@ -9,13 +9,10 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from decimal import ROUND_HALF_EVEN, Decimal, InvalidOperation
 from enum import StrEnum
-from zoneinfo import ZoneInfo
 
 from rinde.rates.domain.errors import QuoteInvalidError
 from rinde.shared.domain.money import Currency
 from rinde.shared.domain.rate_type import RateType
-
-ARGENTINA = ZoneInfo("America/Argentina/Buenos_Aires")
 
 RATE_DECIMALS = 8
 """Los mismos decimales que la columna `NUMERIC(24, 8)` (ADR-0002)."""
@@ -29,18 +26,6 @@ class RateSource(StrEnum):
     DOLARAPI = "dolarapi"
     ARGENTINADATOS = "argentinadatos"
     CRIPTOYA = "criptoya"
-
-
-def argentine_day(moment: datetime) -> date:
-    """El día en Argentina. Las fuentes publican por día argentino, no por día UTC.
-
-    A las 22 de Buenos Aires ya es el día siguiente en UTC: con la fecha UTC se
-    pediría la cotización de un día que todavía no empezó.
-    """
-    if moment.tzinfo is None:
-        msg = "el momento tiene que tener zona horaria"
-        raise ValueError(msg)
-    return moment.astimezone(ARGENTINA).date()
 
 
 def round_rate(value: Decimal) -> Decimal:

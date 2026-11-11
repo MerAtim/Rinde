@@ -6,7 +6,8 @@ from decimal import Decimal
 import pytest
 
 from rinde.rates.domain.errors import QuoteInvalidError
-from rinde.rates.domain.quote import Quote, RateSource, argentine_day, round_rate
+from rinde.rates.domain.quote import Quote, RateSource, round_rate
+from rinde.shared.domain.calendar import argentine_day
 from rinde.shared.domain.money import Currency
 from rinde.shared.domain.rate_type import ALL_RATE_TYPES, RateType
 
