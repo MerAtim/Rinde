@@ -150,6 +150,18 @@ jobs:
     name: Frontend
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    # La imagen oficial de Playwright ya trae el navegador y sus dependencias
+    # del sistema. Antes se instalaban en cada corrida con apt, y una caída de
+    # los mirrors de Ubuntu dejaba la CI en rojo sin que el código tuviera nada
+    # que ver (ADR-0019). Fijada por digest, como las acciones. El usuario 1001
+    # es el del runner: así el espacio de trabajo queda con el mismo dueño.
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
+      options: --user 1001
+    env:
+      # Tiene que ser la misma versión de la imagen: el paso que la compara
+      # avisa cuando una actualización de @playwright/test la deja atrás.
+      PLAYWRIGHT_IMAGE_VERSION: 1.65.0
     defaults:
       run:
         working-directory: frontend
@@ -185,10 +197,15 @@ jobs:
       - name: Build
         run: bash ../scripts/check-frontend.sh build
 
-      # El navegador se baja en cada corrida: es una descarga, no una accion de
-      # terceros que haya que fijar por SHA.
-      - name: Instalar el navegador de Playwright
-        run: npx playwright install --with-deps chromium
+      # Si @playwright/test se actualiza y la imagen no, el navegador de la
+      # imagen no es el que espera: se corta acá, con el motivo a la vista.
+      - name: Comprobar que la imagen es la del Playwright instalado
+        run: |
+          instalada="$(node -p "require('@playwright/test/package.json').version")"
+          if [[ "$instalada" != "$PLAYWRIGHT_IMAGE_VERSION" ]]; then
+            echo "::error::@playwright/test es ${instalada} y la imagen es ${PLAYWRIGHT_IMAGE_VERSION}. Actualizá la imagen y su digest en ci.yml."
+            exit 1
+          fi
 
       - name: Pruebas de extremo a extremo
         run: bash ../scripts/check-frontend.sh e2e
