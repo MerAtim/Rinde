@@ -11,6 +11,7 @@ from rinde.transactions.application.categories import (
     RenameCategory,
 )
 from rinde.transactions.application.dependencies import TransactionsDependencies
+from rinde.transactions.application.summary import SummarizeLedger
 from rinde.transactions.application.use_cases import (
     DeleteTransaction,
     DeleteTransfer,
@@ -39,6 +40,7 @@ class TransactionsUnit:
     list: ListTransactions
     balances: ListBalances
     history: ListHistory
+    summary: SummarizeLedger
     register_transfer: RegisterTransfer
     edit_transfer: EditTransfer
     delete_transfer: DeleteTransfer
@@ -67,6 +69,7 @@ def build_transactions_unit(deps: TransactionsDependencies) -> TransactionsUnit:
         list=ListTransactions(deps),
         balances=ListBalances(deps),
         history=ListHistory(deps),
+        summary=SummarizeLedger(deps),
         register_transfer=RegisterTransfer(deps),
         edit_transfer=EditTransfer(deps),
         delete_transfer=DeleteTransfer(deps),

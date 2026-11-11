@@ -15,7 +15,9 @@ from rinde.accounts.infrastructure.tables import accounts
 from rinde.auth.infrastructure.tables import users
 from rinde.shared.domain.money import Currency, Money
 from rinde.transactions.application.ports import (
+    BalanceChange,
     IdempotentResource,
+    LedgerScope,
     RememberedKey,
     TransactionFilters,
 )
@@ -438,3 +440,107 @@ class TestBuscarPorTexto:
         )
 
         assert [row.description.value if row.description else "" for row in page.items] == ["Coto"]
+
+
+SEPTEMBER = LedgerScope(since=date(2026, 9, 10), until=date(2026, 9, 20))
+
+
+async def test_flow_totals_add_up_by_day_category_and_currency(session: AsyncSession) -> None:
+    """La base suma: llega una fila por día y categoría, no una por movimiento (ADR-0018)."""
+    owner_id = await _user(session, "mechi")
+    pesos = await _account(session, owner_id)
+    dollars = await _account(session, owner_id, Currency.USD)
+    food = await _category(session, owner_id)
+    salary = await _category(session, owner_id, TransactionKind.INCOME, "Sueldo")
+    repository = SqlAlchemyTransactionRepository(session)
+    for movement in (
+        _a_transaction(owner_id, pesos, food, amount="100.25", day=12),
+        _a_transaction(owner_id, pesos, food, amount="0.75", day=12),
+        _a_transaction(owner_id, dollars, food, amount="3.00", day=12),
+        _a_transaction(owner_id, pesos, salary, amount="9000.00", day=15),
+        _a_transaction(owner_id, pesos, food, amount="5.00", day=9),
+    ):
+        await repository.add(movement)
+    gone = _a_transaction(owner_id, pesos, food, amount="777.00", day=12)
+    await repository.add(gone)
+    await repository.save(gone.deleted(NOW))
+
+    flows = await repository.flow_sums(owner_id, SEPTEMBER)
+    names = {food.id: "Supermercado", salary.id: "Sueldo"}
+
+    assert sorted((f.day.day, f.kind, names[f.category_id], f.total.amount, f.total.currency)
+                  for f in flows) == [
+        (12, TransactionKind.EXPENSE, "Supermercado", Decimal("3.00"), Currency.USD),
+        (12, TransactionKind.EXPENSE, "Supermercado", Decimal("101.00"), Currency.ARS),
+        (15, TransactionKind.INCOME, "Sueldo", Decimal("9000.00"), Currency.ARS),
+    ]  # fmt: skip
+    assert await repository.flow_sums(await _user(session, "otra"), SEPTEMBER) == []
+
+
+async def test_flow_totals_only_for_the_chosen_accounts(session: AsyncSession) -> None:
+    owner_id = await _user(session, "mechi")
+    one = await _account(session, owner_id)
+    other = await _account(session, owner_id)
+    food = await _category(session, owner_id)
+    repository = SqlAlchemyTransactionRepository(session)
+    await repository.add(_a_transaction(owner_id, one, food, amount="1.00", day=12))
+    await repository.add(_a_transaction(owner_id, other, food, amount="2.00", day=12))
+
+    flows = await repository.flow_sums(
+        owner_id, LedgerScope(SEPTEMBER.since, SEPTEMBER.until, frozenset({one.id}))
+    )
+
+    assert [f.total for f in flows] == [Money(Decimal("1.00"), Currency.ARS)]
+
+
+async def test_balance_changes_start_with_everything_before_the_period(
+    session: AsyncSession,
+) -> None:
+    owner_id = await _user(session, "mechi")
+    account = await _account(session, owner_id)
+    food = await _category(session, owner_id)
+    salary = await _category(session, owner_id, TransactionKind.INCOME, "Sueldo")
+    repository = SqlAlchemyTransactionRepository(session)
+    for movement in (
+        _a_transaction(owner_id, account, salary, amount="1000.00", day=1),
+        _a_transaction(owner_id, account, food, amount="100.00", day=9),
+        _a_transaction(owner_id, account, food, amount="10.00", day=12),
+        _a_transaction(owner_id, account, food, amount="5.00", day=12),
+        # Después del período: no cuenta.
+        _a_transaction(owner_id, account, food, amount="1.00", day=17),
+    ):
+        await repository.add(movement)
+
+    changes = await repository.balance_changes(
+        owner_id, LedgerScope(since=date(2026, 9, 10), until=date(2026, 9, 15))
+    )
+
+    assert sorted(changes, key=lambda c: c.month or date.min) == [
+        BalanceChange(account.id, None, Money(Decimal("900.00"), Currency.ARS)),
+        BalanceChange(account.id, date(2026, 9, 1), Money(Decimal("-15.00"), Currency.ARS)),
+    ]
+
+
+async def test_flows_in_the_reference_currency_are_added_by_month(session: AsyncSession) -> None:
+    owner_id = await _user(session, "mechi")
+    pesos = await _account(session, owner_id)
+    dollars = await _account(session, owner_id, Currency.USD)
+    food = await _category(session, owner_id)
+    repository = SqlAlchemyTransactionRepository(session)
+    for movement in (
+        _a_transaction(owner_id, pesos, food, amount="1.00", day=11),
+        _a_transaction(owner_id, pesos, food, amount="2.00", day=12),
+        _a_transaction(owner_id, dollars, food, amount="3.00", day=11),
+        _a_transaction(owner_id, dollars, food, amount="4.00", day=12),
+    ):
+        await repository.add(movement)
+
+    flows = await repository.flow_sums(
+        owner_id, LedgerScope(SEPTEMBER.since, SEPTEMBER.until, monthly_currency=Currency.ARS)
+    )
+
+    assert sorted((f.total.currency, f.day, f.total.amount) for f in flows) == [
+        (Currency.ARS, date(2026, 9, 1), Decimal("3.00")),
+        (Currency.USD, date(2026, 9, 11), Decimal("3.00")),
+        (Currency.USD, date(2026, 9, 12), Decimal("4.00")),
+    ]
