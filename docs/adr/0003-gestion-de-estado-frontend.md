@@ -1,6 +1,6 @@
 # ADR-0003: Gestión de estado en el frontend
 
-* **Estado:** Aceptado
+* **Estado:** Aceptado. Zustand para los filtros, reemplazado por [ADR-0020](0020-pantalla-del-dashboard.md): los filtros viven solo en la URL
 * **Fecha:** 2026-09-11
 
 ## Contexto
