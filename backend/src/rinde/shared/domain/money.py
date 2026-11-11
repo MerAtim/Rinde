@@ -35,13 +35,17 @@ class Currency(StrEnum):
     @property
     def quantum(self) -> Decimal:
         """La unidad mínima: 0.01 para ARS, 0.00000001 para BTC."""
-        return Decimal(1).scaleb(-self.minor_units)
+        return _QUANTUM[self]
 
 
 _MINOR_UNITS: dict[Currency, int] = {
     Currency.ARS: 2,
     Currency.USD: 2,
     Currency.BTC: 8,
+}
+# Calculada una vez: cada `Money` la usa al crearse, y un reporte crea miles.
+_QUANTUM: dict[Currency, Decimal] = {
+    currency: Decimal(1).scaleb(-units) for currency, units in _MINOR_UNITS.items()
 }
 
 
