@@ -11,6 +11,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PlainSerializer
 
+from rinde.shared.api.schemas import AmountOut, decimal_text
 from rinde.shared.domain.money import Currency
 from rinde.transactions.application.ports import (
     AccountBalance,
@@ -37,10 +38,9 @@ def _decimal_from_string(value: object) -> Decimal:
 AmountIn = Annotated[
     Decimal,
     BeforeValidator(_decimal_from_string, json_schema_input_type=str),
-    PlainSerializer(str, return_type=str),
+    PlainSerializer(decimal_text, return_type=str),
     Field(description='Monto positivo como string decimal, por ejemplo "15300.50"'),
 ]
-AmountOut = Annotated[Decimal, PlainSerializer(str, return_type=str)]
 
 
 class TransactionQuery(BaseModel):

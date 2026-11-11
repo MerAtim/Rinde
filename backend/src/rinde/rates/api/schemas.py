@@ -12,10 +12,11 @@ from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
 
 from rinde.rates.domain.conversion import Conversion
 from rinde.rates.domain.quote import Quote, RateSource
-from rinde.shared.domain.money import Currency, Money
+from rinde.shared.api.schemas import MoneyResponse, decimal_text
+from rinde.shared.domain.money import Currency
 from rinde.shared.domain.rate_type import RateType
 
-RateOut = Annotated[Decimal, PlainSerializer(str, return_type=str)]
+RateOut = Annotated[Decimal, PlainSerializer(decimal_text, return_type=str)]
 
 
 class QuoteResponse(BaseModel):
@@ -44,9 +45,6 @@ class QuoteResponse(BaseModel):
         )
 
 
-AmountOut = Annotated[Decimal, PlainSerializer(str, return_type=str)]
-
-
 class ConversionQuery(BaseModel):
     """Qué convertir, como parámetros de consulta."""
 
@@ -56,15 +54,6 @@ class ConversionQuery(BaseModel):
     currency: Currency
     target: Currency
     day: date | None = Field(default=None, description="Día en Argentina. Si falta, hoy")
-
-
-class MoneyResponse(BaseModel):
-    amount: AmountOut
-    currency: Currency
-
-    @classmethod
-    def from_money(cls, money: Money) -> MoneyResponse:
-        return cls(amount=money.amount, currency=money.currency)
 
 
 class ConversionResponse(BaseModel):
