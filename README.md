@@ -10,15 +10,16 @@ Aplicación web de finanzas personales para Argentina y LatAm. Responde una preg
 * **Ingresos y gastos** con categorías propias y sembradas, borrado reversible y saldo por cuenta ([ADR-0011](docs/adr/0011-modelo-de-movimientos.md)).
 * **Transferencias entre cuentas propias**, que no cuentan como gasto ni como ingreso. Entre monedas distintas se guardan los dos montos, sin inventar una cotización: la tasa real es la que te dieron ([ADR-0014](docs/adr/0014-modelo-de-transferencias.md)).
 * **Una sola lista** con movimientos y transferencias, paginada por cursor. Los reportes de gasto siguen leyendo solo los movimientos: una transferencia no ensucia el resumen por categoría.
-* **Cotizaciones del dólar** oficial, MEP, CCL, blue, tarjeta y cripto, con compra, venta, fuente y fecha real. Si una fuente no responde, contesta la siguiente, pero nunca con otro tipo de dólar. Los días pasados se guardan la primera vez que se piden ([ADR-0016](docs/adr/0016-fuentes-de-cotizaciones.md)).
+* **Cotizaciones del dólar** oficial, MEP, CCL, blue, tarjeta y cripto, con compra, venta, fuente y fecha real. Si una fuente no responde, contesta la siguiente, pero nunca con otro tipo de dólar. Los días pasados se guardan la primera vez que se piden; para un período de meses se trae la serie entera en un solo pedido ([ADR-0016](docs/adr/0016-fuentes-de-cotizaciones.md), [ADR-0018](docs/adr/0018-modelo-de-lectura-del-dashboard.md)).
 * **Equivalentes y preferencias:** cada persona elige en qué moneda ve los totales y con qué dólar se convierte (por defecto, pesos al MEP). En Cuentas, el saldo de cada cuenta en la otra moneda muestra su equivalente. Se convierte con la cotización guardada del día y del lado prudente: nunca se valúa de más lo que tenés ni de menos lo que debés ([ADR-0017](docs/adr/0017-conversion-al-consultar.md)).
+* **Resumen para el dashboard** en la API: gasto por categoría, ingresos y gastos de cada mes y patrimonio al cierre de cada mes, en la moneda de referencia. Cada monto se convierte con la cotización de su día, y lo que no se puede convertir se informa aparte en vez de inventarse. Responde en menos de 300 ms con 50.000 movimientos, y una prueba lo verifica en cada cambio ([ADR-0018](docs/adr/0018-modelo-de-lectura-del-dashboard.md)).
 * **Filtros por categoría y por texto**, que se comparten en la dirección. La búsqueda no distingue tildes ni mayúsculas: "panaderia" encuentra "Panadería".
 * **Cuenta y sesión** con usuario, contraseña y código de recuperación, sin email ([ADR-0007](docs/adr/0007-autenticacion.md)).
 * **Interfaz en español y en inglés**, con modo oscuro y claro.
 
 ## Qué falta
 
-* Totales y reportes en la moneda de referencia, con la cotización de la fecha de cada operación.
+* La pantalla del dashboard: gráficos con su tabla equivalente y filtros en la dirección.
 * El precio del Bitcoin.
 * Presupuestos mensuales con alertas.
 * Reportes en pesos constantes, ajustados por inflación.
