@@ -24,7 +24,8 @@ from rinde.rates.domain.errors import (
     RateNotFoundError,
     RatesUnavailableError,
 )
-from rinde.rates.domain.quote import Quote, argentine_day
+from rinde.rates.domain.quote import Quote
+from rinde.shared.domain.calendar import argentine_day
 from rinde.shared.domain.money import Currency, Money
 from rinde.shared.domain.rate_type import ALL_RATE_TYPES, RateType
 
