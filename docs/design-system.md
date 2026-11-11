@@ -45,7 +45,7 @@ Material Design 3 como gramática, con voz propia. Decisión y alternativas en [
 | Alerta | `#F5B83D` ámbar | `#FABC41` | `#7C5800` | ícono de advertencia |
 | Error | rojo de Material | `#FFB4AB` | `#BA1A1A` | ícono y mensaje con salida |
 
-**Lo que cambió después de medir.** El primer verde de ingreso (esmeralda `#57DF8D`) quedaba a 3,8 de distancia OKLab del coral bajo deuteranopía (mínimo 8) y a 10,4 del aqua de marca con visión normal (mínimo 15). El verde hoja sube la distancia con el coral a 8,5 y se aleja del aqua. Aun así, **ningún monto depende solo del color** (WCAG 1.4.1).
+**Lo que cambió después de medir.** El primer verde de ingreso (esmeralda `#57DF8D`) quedaba a 3,8 de distancia OKLab del coral bajo deuteranopía (mínimo 8) y a 10,4 del aqua de marca con visión normal (mínimo 15). El verde hoja sube la distancia con el coral a 8,5 en el tema oscuro y se aleja del aqua. En el tema claro, los tonos para texto de ingreso y gasto (`#386B00` y `#AE3026`) quedan a 3,9: por eso los gráficos no los distinguen solo por color (ADR-0020). Aun así, **ningún monto depende solo del color** (WCAG 1.4.1).
 
 Las variaciones de cotizaciones van en tinta neutra: que el dólar suba no es bueno ni malo para todos.
 
@@ -128,6 +128,7 @@ Se construyen sobre React Aria cuando una pantalla los necesita, cada uno con te
 | Lista de movimientos | Filas de 68 px, avatar de 44 px, monto a la derecha con signo y flecha; cuotas y dólar de conversión visibles. Las transferencias propias van en tinta neutra. |
 | Tabla | Encabezado fijo en `surface-container-high`, cifras de ancho fijo, estado con ícono y texto. |
 | Gráfico de magnitud | Un solo tono (`--rinde-chart-mark`), etiquetas directas, tooltip con porcentaje, tabla equivalente. |
+| Gráfico de flujo | Ingresos arriba del cero y gastos abajo: la posición dice qué es cada barra. El color acompaña, porque el par de ingreso y gasto del tema claro no se distingue con deuteranopía (ADR-0020). Leyenda en HTML y tabla equivalente. |
 | Skeleton | Pulso de opacidad (sin brillo en degradé) con la forma exacta del contenido. |
 | Estado vacío | Explica el porqué y ofrece la próxima acción. |
 | Snackbar | `inverse-surface`, `shape-field`, Deshacer durante 6 segundos. |
