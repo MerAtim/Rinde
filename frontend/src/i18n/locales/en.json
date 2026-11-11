@@ -1,8 +1,7 @@
 {
   "app": {
     "title": "Rinde",
-    "tagline": "Does my salary last the month?",
-    "intro": "Your accounts, installments and dollars in one place."
+    "tagline": "Does my salary last the month?"
   },
   "common": {
     "dismiss": "Dismiss"
@@ -104,7 +103,6 @@
       "continue": "Continue"
     },
     "home": {
-      "greeting": "Hi, {{username}}",
       "logout": "Sign out"
     },
     "session": {
@@ -441,6 +439,87 @@
       "CSRF_REJECTED": "We couldn't save. Reload the page and try again.",
       "NETWORK_ERROR": "No connection. Try again in a moment.",
       "UNKNOWN_ERROR": "We couldn't save your preferences."
+    }
+  },
+  "dashboard": {
+    "title": "Overview",
+    "subtitle": "In {{currency}}, at the {{rate}} dollar rate. Each amount is converted at the rate of its own day.",
+    "currency": {
+      "ARS": "pesos",
+      "USD": "dollars",
+      "BTC": "bitcoin"
+    },
+    "rate": {
+      "official": "official",
+      "mep": "MEP",
+      "ccl": "CCL",
+      "blue": "blue",
+      "card": "card",
+      "crypto": "crypto"
+    },
+    "filters": {
+      "label": "Overview filters",
+      "period": "Period",
+      "months_one": "Last month",
+      "months_other": "Last {{count}} months",
+      "account": "Accounts",
+      "allAccounts": "All accounts",
+      "archived": "{{name}} (archived)"
+    },
+    "loading": "Loading the overview…",
+    "updating": "Updating…",
+    "retry": "Try again",
+    "errors": {
+      "DASHBOARD_PERIOD_INVALID": "That period can't be shown. Choose another one.",
+      "NOT_AUTHENTICATED": "Your session ended. Sign in again.",
+      "NETWORK_ERROR": "You're offline. Check your connection and try again.",
+      "UNKNOWN_ERROR": "We couldn't build the overview."
+    },
+    "empty": {
+      "title": "Nothing to summarize yet",
+      "body": "Open an account and record your transactions: this is where you'll see where your money goes and how your net worth changes.",
+      "action": "Open an account"
+    },
+    "view": {
+      "label": "View as",
+      "chart": "Chart",
+      "table": "Table"
+    },
+    "netWorth": {
+      "heading": "Net worth",
+      "today": "Today",
+      "missingToday": "Today's rate is missing to value some account.",
+      "chartLabel": "Line chart of net worth at the close of each month. The values are in the table view.",
+      "caption": "Net worth at the close of each month. The current month closes today.",
+      "month": "Month",
+      "total": "Net worth",
+      "noQuote": "No rate"
+    },
+    "flow": {
+      "heading": "Income and expenses",
+      "chartLabel": "Bar chart of each month's income and expenses: income above zero and expenses below. The values are in the table view.",
+      "caption": "Income, expenses and net for each month. Transfers between your accounts don't count.",
+      "month": "Month",
+      "income": "Income",
+      "expense": "Expenses",
+      "net": "Net",
+      "above": "above zero",
+      "below": "below zero"
+    },
+    "spending": {
+      "heading": "Spending by category",
+      "caption": "Spending in the period by category, largest first.",
+      "category": "Category",
+      "total": "Total",
+      "none": "There was no spending in this period."
+    },
+    "unconverted": {
+      "heading": "Left out of the totals",
+      "body": "There's no rate to convert these amounts, so they aren't added to the figures above. They're shown in their own currency.",
+      "caption": "Amounts that couldn't be converted, by currency.",
+      "balance": "Balance",
+      "income": "Income",
+      "expense": "Expenses"
     }
   }
 }

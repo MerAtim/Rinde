@@ -95,3 +95,45 @@ export function useShortDateFormatter(): (iso: string) => string {
     };
   }, [locale]);
 }
+
+/**
+ * Un mes AAAA-MM del servidor. `short` es para ejes de gráficos ("jun"), con el
+ * año solo si se pide; `long`, para tablas ("junio de 2026").
+ */
+export function useMonthFormatter(): (
+  month: string,
+  style: "short" | "short-with-year" | "long",
+) => string {
+  const locale = useLocale();
+  return useMemo(() => {
+    const formatters = {
+      short: new Intl.DateTimeFormat(locale, { month: "short" }),
+      "short-with-year": new Intl.DateTimeFormat(locale, { month: "short", year: "2-digit" }),
+      long: new Intl.DateTimeFormat(locale, { month: "long", year: "numeric" }),
+    };
+    return (month, style) => {
+      // Se arma local, como las fechas: en UTC el primero del mes cae el día anterior.
+      const [year, index] = month.split("-").map(Number);
+      return formatters[style].format(new Date(year ?? 0, (index ?? 1) - 1, 1));
+    };
+  }, [locale]);
+}
+
+/**
+ * Las marcas de un eje de dinero, abreviadas: "$ 1,2 M". El número lo calcula
+ * el gráfico para ubicar la línea; nunca es un monto que se muestre como dato.
+ */
+export function useAxisMoneyFormatter(): (value: number, currency: string) => string {
+  const locale = useLocale();
+  return useMemo(() => {
+    const formatterFor = (currency: string) =>
+      new Intl.NumberFormat(locale, {
+        style: "currency",
+        currency,
+        notation: "compact",
+        maximumFractionDigits: 1,
+      });
+    const formatters = new Map(CURRENCIES.map((currency) => [currency, formatterFor(currency)]));
+    return (value, currency) => (formatters.get(currency) ?? formatterFor(currency)).format(value);
+  }, [locale]);
+}

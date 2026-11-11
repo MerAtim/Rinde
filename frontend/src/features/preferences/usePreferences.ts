@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { dashboardKeys } from "../dashboard/useDashboard";
 import { fetchPreferences, type Preferences, updatePreferences } from "./api";
 
 export const preferenceKeys = {
@@ -21,8 +22,10 @@ export function useUpdatePreferences() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (input: Preferences) => updatePreferences(input),
-    onSuccess: (preferences) => {
+    onSuccess: async (preferences) => {
       queryClient.setQueryData(preferenceKeys.all, preferences);
+      // El dashboard está en la moneda y el dólar de referencia: hay que rehacerlo.
+      await queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
     },
   });
 }

@@ -26,8 +26,8 @@ const ANCHOS = [360, 599, 600, 768, 1440];
 const TOLERANCIA = 0.5; // Redondeos subpíxel del navegador.
 
 const IDIOMAS = [
-  { codigo: "es-AR", nombre: "español", navegacion: "Navegación principal" },
-  { codigo: "en-US", nombre: "inglés", navegacion: "Main navigation" },
+  { codigo: "es-AR", nombre: "español", navegacion: "Navegación principal", dolar: "Dólar hoy" },
+  { codigo: "en-US", nombre: "inglés", navegacion: "Main navigation", dolar: "Dollar today" },
 ] as const;
 
 for (const idioma of IDIOMAS) {
@@ -71,8 +71,8 @@ for (const idioma of IDIOMAS) {
       });
     }
 
-    // El inicio tiene la tabla del dólar, con dos montos por fila que no se
-    // parten; Cuentas, el equivalente de un saldo largo; y Preferencias, el
+    // El inicio tiene el resumen, con montos largos, y la tabla del dólar, con
+    // dos montos por fila que no se parten; Cuentas, el equivalente de un saldo largo; y Preferencias, el
     // formulario. La barra superior está en todas.
     for (const ruta of ["/", "/accounts", "/preferences"]) {
       test(`${ruta} no se puede desplazar en horizontal`, async ({ page }) => {
@@ -82,7 +82,8 @@ for (const idioma of IDIOMAS) {
         await expect(page.getByRole("navigation", { name: idioma.navegacion })).toBeVisible();
         // Lo más ancho de cada pantalla tiene que estar a la vista antes de medir.
         if (ruta === "/") {
-          await expect(page.getByRole("table")).toBeVisible();
+          await expect(page.getByRole("region", { name: idioma.dolar })).toBeVisible();
+          await expect(page.locator("canvas").first()).toBeVisible();
         } else if (ruta === "/accounts") {
           await expect(page.getByText(/≈/)).toBeVisible();
         } else {

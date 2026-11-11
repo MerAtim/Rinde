@@ -24,10 +24,7 @@ describe("App", () => {
     renderWithProviders(<App />, { route: "/" });
     const user = userEvent.setup();
 
-    expect(await screen.findByText("Hola, mechi")).toBeInTheDocument();
-    expect(
-      screen.getByRole("heading", { level: 1, name: "¿Me rinde el sueldo?" }),
-    ).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Resumen" })).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Cerrar sesión" }));
 
@@ -39,7 +36,7 @@ describe("App", () => {
 
     renderWithProviders(<App />, { route: "/signup" });
 
-    expect(await screen.findByText("Hola, mechi")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Resumen" })).toBeInTheDocument();
   });
 
   it("la pantalla del código sin código lleva al inicio", async () => {
@@ -54,7 +51,7 @@ describe("App", () => {
     mockApi({ "GET /api/auth/me": jsonResponse(200, { username: "mechi" }) });
     const { container } = renderWithProviders(<App />, { route: "/" });
 
-    await screen.findByText("Hola, mechi");
+    await screen.findByRole("heading", { level: 1, name: "Resumen" });
 
     await expectNoA11yViolations(container);
   });

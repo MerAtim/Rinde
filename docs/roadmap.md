@@ -48,9 +48,10 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
   referencia por usuario (ADR-0017, reemplaza el snapshot por transacción)
 
 ## Fase 4: dashboard
-* [ ] Gasto por categoría, flujo mensual, patrimonio neto en ARS y en USD (tipo elegido).
-  El endpoint ya está (ADR-0018); falta la pantalla
-* [ ] Filtros globales sincronizados con la URL; alternativa en tabla para accesibilidad
+* [x] Gasto por categoría, flujo mensual, patrimonio neto en ARS y en USD (tipo elegido).
+  Endpoint en ADR-0018 y pantalla en el inicio en ADR-0020
+* [x] Filtros globales sincronizados con la URL; alternativa en tabla para accesibilidad
+  (ADR-0020)
 * [x] Objetivo medible: p95 < 300 ms del endpoint de dashboard con 50k transacciones
   (sembradas). Lo verifica una prueba en CI; medición local: p95 de 155 ms (ADR-0018)
 

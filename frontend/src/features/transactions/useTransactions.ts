@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 
 import { accountKeys } from "../accounts/useAccounts";
+import { dashboardKeys } from "../dashboard/useDashboard";
 import {
   type Balance,
   deleteTransaction,
@@ -87,13 +88,14 @@ export function useCategories() {
   });
 }
 
-/** Un movimiento nuevo cambia listas y saldos, y el saldo vive en otra consulta. */
+/** Un movimiento nuevo cambia listas, saldos y el dashboard, y cada uno vive en otra consulta. */
 function useInvalidateMoney() {
   const queryClient = useQueryClient();
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: transactionKeys.all }),
       queryClient.invalidateQueries({ queryKey: accountKeys.all }),
+      queryClient.invalidateQueries({ queryKey: dashboardKeys.all }),
     ]);
 }
 

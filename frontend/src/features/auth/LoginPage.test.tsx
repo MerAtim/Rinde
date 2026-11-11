@@ -47,7 +47,7 @@ describe("Ingresar", () => {
 
     await signIn(PASSPHRASE);
 
-    expect(await screen.findByText("Hola, mechi")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Resumen" })).toBeInTheDocument();
   });
 
   it("permite ver la contraseña para revisar lo escrito", async () => {

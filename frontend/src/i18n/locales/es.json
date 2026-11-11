@@ -1,8 +1,7 @@
 {
   "app": {
     "title": "Rinde",
-    "tagline": "¿Me rinde el sueldo?",
-    "intro": "Tus cuentas, tus cuotas y tus dólares en un solo lugar."
+    "tagline": "¿Me rinde el sueldo?"
   },
   "common": {
     "dismiss": "Cerrar el aviso"
@@ -104,7 +103,6 @@
       "continue": "Continuar"
     },
     "home": {
-      "greeting": "Hola, {{username}}",
       "logout": "Cerrar sesión"
     },
     "session": {
@@ -441,6 +439,87 @@
       "CSRF_REJECTED": "No pudimos guardar. Recargá la página y probá de nuevo.",
       "NETWORK_ERROR": "No hay conexión. Probá de nuevo en un momento.",
       "UNKNOWN_ERROR": "No pudimos guardar tus preferencias."
+    }
+  },
+  "dashboard": {
+    "title": "Resumen",
+    "subtitle": "En {{currency}}, con el dólar {{rate}}. Cada monto se convierte con la cotización de su día.",
+    "currency": {
+      "ARS": "pesos",
+      "USD": "dólares",
+      "BTC": "bitcoin"
+    },
+    "rate": {
+      "official": "oficial",
+      "mep": "MEP",
+      "ccl": "CCL",
+      "blue": "blue",
+      "card": "tarjeta",
+      "crypto": "cripto"
+    },
+    "filters": {
+      "label": "Filtros del resumen",
+      "period": "Período",
+      "months_one": "Último mes",
+      "months_other": "Últimos {{count}} meses",
+      "account": "Cuentas",
+      "allAccounts": "Todas las cuentas",
+      "archived": "{{name}} (archivada)"
+    },
+    "loading": "Cargando el resumen…",
+    "updating": "Actualizando…",
+    "retry": "Reintentar",
+    "errors": {
+      "DASHBOARD_PERIOD_INVALID": "Ese período no se puede mostrar. Elegí otro.",
+      "NOT_AUTHENTICATED": "Tu sesión terminó. Volvé a ingresar.",
+      "NETWORK_ERROR": "No hay conexión. Revisá tu red y reintentá.",
+      "UNKNOWN_ERROR": "No pudimos armar el resumen."
+    },
+    "empty": {
+      "title": "Todavía no hay nada que resumir",
+      "body": "Abrí una cuenta y registrá tus movimientos: acá vas a ver en qué se va la plata y cómo cambia tu patrimonio.",
+      "action": "Abrir una cuenta"
+    },
+    "view": {
+      "label": "Ver como",
+      "chart": "Gráfico",
+      "table": "Tabla"
+    },
+    "netWorth": {
+      "heading": "Patrimonio",
+      "today": "Hoy",
+      "missingToday": "Falta la cotización de hoy para valuar alguna cuenta.",
+      "chartLabel": "Gráfico de líneas del patrimonio al cierre de cada mes. Los valores están en la vista de tabla.",
+      "caption": "Patrimonio al cierre de cada mes. El mes en curso cierra hoy.",
+      "month": "Mes",
+      "total": "Patrimonio",
+      "noQuote": "Sin cotización"
+    },
+    "flow": {
+      "heading": "Ingresos y gastos",
+      "chartLabel": "Gráfico de barras de los ingresos y gastos de cada mes: los ingresos arriba del cero y los gastos abajo. Los valores están en la vista de tabla.",
+      "caption": "Ingresos, gastos y neto de cada mes. Las transferencias entre tus cuentas no cuentan.",
+      "month": "Mes",
+      "income": "Ingresos",
+      "expense": "Gastos",
+      "net": "Neto",
+      "above": "arriba del cero",
+      "below": "abajo del cero"
+    },
+    "spending": {
+      "heading": "Gastos por categoría",
+      "caption": "Gastos del período por categoría, de mayor a menor.",
+      "category": "Categoría",
+      "total": "Total",
+      "none": "No hubo gastos en este período."
+    },
+    "unconverted": {
+      "heading": "Fuera de los totales",
+      "body": "No hay cotización para convertir estos montos, así que no se suman a los números de arriba. Los ves en su moneda.",
+      "caption": "Montos que no se pudieron convertir, por moneda.",
+      "balance": "Saldo",
+      "income": "Ingresos",
+      "expense": "Gastos"
     }
   }
 }
