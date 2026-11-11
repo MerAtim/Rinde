@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 import { useRateFormatter, useShortDateFormatter } from "../../i18n/format";
+import { argentineDay } from "../../shared/time/argentina";
 import { cx } from "../../shared/ui/cx";
 import { isRatesApiError, type Quote } from "./api";
 import styles from "./RatesPanel.module.css";
@@ -93,19 +94,4 @@ function RateRow({ quote }: { quote: Quote }) {
       <td className={cx("numeric", styles.number)}>{rate(quote.sell)}</td>
     </tr>
   );
-}
-
-const ARGENTINE_DAY = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "America/Argentina/Buenos_Aires",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
-/**
- * El día de Argentina en que cae un momento, como AAAA-MM-DD (`en-CA` formatea
- * así). Es el mismo criterio que usa el servidor para decir qué día es "hoy".
- */
-function argentineDay(moment: string): string {
-  return ARGENTINE_DAY.format(new Date(moment));
 }
