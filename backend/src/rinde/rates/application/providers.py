@@ -14,6 +14,7 @@ from datetime import datetime, timedelta
 from rinde.rates.application.ports import (
     Clock,
     QuoteRequest,
+    RateHistoryProvider,
     RateProvider,
     RateSourceUnavailableError,
 )
@@ -119,3 +120,30 @@ class CachedRateProvider:
         # Un tope por si alguien recorre miles de fechas en pocos minutos.
         while len(self._entries) >= self._max_entries:
             del self._entries[next(iter(self._entries))]
+
+
+class CachedHistoryProvider:
+    """Decorador: la última serie de cada dólar, en memoria durante un rato (ADR-0018).
+
+    Una serie pesa unos cientos de KB y solo cambia una vez por día. Sin esto,
+    un período con días que la fuente no tiene (antes de 2018, por ejemplo)
+    pediría la serie entera en cada pedido. Un error no se guarda.
+    """
+
+    def __init__(self, inner: RateHistoryProvider, clock: Clock, *, ttl: timedelta) -> None:
+        self._inner = inner
+        self._clock = clock
+        self._ttl = ttl
+        self._entries: dict[RateType, tuple[datetime, list[Quote]]] = {}
+        self._lock = asyncio.Lock()
+
+    async def series(self, rate_type: RateType) -> list[Quote]:
+        async with self._lock:
+            now = self._clock.now()
+            entry = self._entries.get(rate_type)
+            if entry is not None and entry[0] > now:
+                return entry[1]
+            series = await self._inner.series(rate_type)
+            # Una por tipo de dólar: son seis como mucho, no hace falta tope.
+            self._entries[rate_type] = (now + self._ttl, series)
+            return series

@@ -6,12 +6,13 @@ que nadie use Rinde como intermediario gratis contra las fuentes (ADR-0016).
 """
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime, timedelta
 
 from rinde.rates.application.ports import (
     Clock,
     QuoteRepository,
     QuoteRequest,
+    RateHistoryProvider,
     RateProvider,
     RateSourceUnavailableError,
     Transaction,
@@ -22,6 +23,7 @@ from rinde.rates.domain.errors import (
     ConversionSameCurrencyError,
     RateDateInFutureError,
     RateNotFoundError,
+    RateRangeInvalidError,
     RatesUnavailableError,
 )
 from rinde.rates.domain.quote import Quote
@@ -36,6 +38,7 @@ _ORDER = {rate_type: index for index, rate_type in enumerate(RateType)}
 class RatesDependencies:
     quotes: QuoteRepository
     provider: RateProvider
+    history: RateHistoryProvider
     transaction: Transaction
     clock: Clock
 
@@ -96,7 +99,7 @@ class GetQuote:
 
 
 # Los pares que tienen cotización. Bitcoin necesita su propia fuente (ADR-0016).
-_CONVERTIBLE = frozenset({Currency.ARS, Currency.USD})
+CONVERTIBLE = frozenset({Currency.ARS, Currency.USD})
 
 
 class ConvertAmount:
@@ -114,6 +117,103 @@ class ConvertAmount:
     ) -> Conversion:
         if money.currency is target:
             raise ConversionSameCurrencyError
-        if money.currency not in _CONVERTIBLE or target not in _CONVERTIBLE:
+        if money.currency not in CONVERTIBLE or target not in CONVERTIBLE:
             raise ConversionNotSupportedError
         return convert(money, await self._quote.execute(rate_type, day))
+
+
+# Un día sin cotización propia (un feriado que la fuente no completó) toma la
+# del último día anterior que la tenga: sin operaciones, vale el último precio.
+# Es lo mismo que hace la fuente con los fines de semana. Más allá de este tope
+# ya no es el precio de ese día, y el dato falta: no se inventa (ADR-0018).
+MAX_CARRY_FORWARD = timedelta(days=6)
+# Dos años y algo: lo que muestra el dashboard como máximo. Acota la consulta y
+# la memoria de un pedido.
+MAX_RANGE = timedelta(days=800)
+_ONE_DAY = timedelta(days=1)
+
+
+class GetQuoteSeries:
+    """Un tipo de dólar para cada día de un rango (ADR-0018).
+
+    * Los días cerrados salen de la base. Si falta alguno, se trae la serie
+      completa de la fuente en un solo pedido y se guarda lo que faltaba.
+    * Hoy sale de las fuentes, como en `GetQuotes`, y no se guarda.
+    * Si una fuente no responde, sirve lo guardado: el día que no se pudo
+      completar queda afuera del resultado, y quien lo usa lo informa.
+    """
+
+    def __init__(self, deps: RatesDependencies) -> None:
+        self._deps = deps
+        self._quotes = GetQuotes(deps)
+
+    async def execute(self, rate_type: RateType, since: date, until: date) -> dict[date, Quote]:
+        now = self._deps.clock.now()
+        today = argentine_day(now)
+        if since > until or until - since > MAX_RANGE:
+            raise RateRangeInvalidError
+        if until > today:
+            raise RateDateInFutureError
+
+        lookback = since - MAX_CARRY_FORWARD
+        closed_until = min(until, today - _ONE_DAY)
+        by_day: dict[date, Quote] = {}
+        if lookback <= closed_until:
+            stored = await self._deps.quotes.for_range(rate_type, lookback, closed_until)
+            by_day = {quote.day: quote for quote in stored}
+            if len(_fill(by_day, since, closed_until)) < (closed_until - since).days + 1:
+                by_day |= await self._load(rate_type, now, by_day, lookback, closed_until)
+        if until == today:
+            by_day |= await self._current(rate_type)
+        return _fill(by_day, since, until)
+
+    async def _load(
+        self,
+        rate_type: RateType,
+        now: datetime,
+        stored: dict[date, Quote],
+        since: date,
+        until: date,
+    ) -> dict[date, Quote]:
+        try:
+            series = await self._deps.history.series(rate_type)
+        except RateSourceUnavailableError:
+            return {}
+        # Solo días cerrados del rango, del tipo pedido y que no estaban: una
+        # fila guardada no se pisa, y hoy todavía se mueve.
+        missing = {
+            quote.day: quote
+            for quote in series
+            if quote.rate_type is rate_type
+            and since <= quote.day <= until
+            and quote.day not in stored
+        }
+        if missing:
+            await self._deps.quotes.add_all(missing.values(), now)
+            await self._deps.transaction.commit()
+        return missing
+
+    async def _current(self, rate_type: RateType) -> dict[date, Quote]:
+        try:
+            quotes = await self._quotes.execute(None, frozenset({rate_type}))
+        except RatesUnavailableError:
+            return {}
+        return {quote.day: quote for quote in quotes}
+
+
+def _fill(by_day: dict[date, Quote], since: date, until: date) -> dict[date, Quote]:
+    """Cada día con su cotización o, si no tiene, con la última anterior dentro del tope.
+
+    La cotización arrastrada conserva su fecha: quien la mira sabe de qué día es.
+    """
+    result: dict[date, Quote] = {}
+    last: Quote | None = None
+    day = since - MAX_CARRY_FORWARD
+    while day <= until:
+        last = by_day.get(day, last)
+        if last is not None and day - last.day > MAX_CARRY_FORWARD:
+            last = None
+        if day >= since and last is not None:
+            result[day] = last
+        day += _ONE_DAY
+    return result

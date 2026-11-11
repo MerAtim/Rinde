@@ -28,6 +28,11 @@ from rinde.shared.domain.rate_type import RateType
 logger = logging.getLogger(__name__)
 
 TIMEOUT_SECONDS = 3.0
+# La serie completa de un dólar: unos 290 KB en noviembre de 2026, que crecen
+# unos 100 bytes por día. El tope deja lugar para décadas y sigue cortando una
+# respuesta que no es una serie. Más tiempo, porque es más grande (ADR-0018).
+SERIES_TIMEOUT_SECONDS = 10.0
+SERIES_MAX_BYTES = 2 * 1024 * 1024
 # Un valor "de hoy" que la fuente actualizó hace más de esto no es de hoy: la
 # fuente se trabó. Alcanza para un fin de semana largo con feriados puente.
 MAX_CURRENT_AGE = timedelta(days=6)
@@ -163,6 +168,38 @@ class ArgentinaDatosProvider:
         if types and failures == len(types):
             raise RateSourceUnavailableError(self._base_url)
         return found
+
+    async def series(self, rate_type: RateType) -> list[Quote]:
+        """Todos los días que la fuente tiene de ese dólar, en un solo pedido.
+
+        Un elemento inválido se descarta solo; un cuerpo que no es una lista
+        es otra forma de respuesta y la fuente cuenta como caída.
+        """
+        url = f"{self._base_url}/{_CASA_BY_TYPE[rate_type]}"
+        body = await get_json(
+            self._client, url, timeout_seconds=SERIES_TIMEOUT_SECONDS, max_bytes=SERIES_MAX_BYTES
+        )
+        if not isinstance(body, list):
+            raise RateSourceUnavailableError(url)
+        found: dict[date, Quote] = {}
+        for raw in body:
+            try:
+                item = _ArgentinaDatosItem.model_validate(raw)
+            except ValidationError:
+                continue
+            if _CASAS.get(item.casa) is not rate_type:
+                continue
+            quote = _build(
+                rate_type,
+                day=item.fecha,
+                prices=(item.compra, item.venta),
+                source=RateSource.ARGENTINADATOS,
+                updated_at=None,
+            )
+            # Si la fuente repite un día, vale el primero: nunca se pisa un dato.
+            if quote is not None:
+                found.setdefault(item.fecha, quote)
+        return sorted(found.values(), key=lambda quote: quote.day)
 
     async def _one(self, rate_type: RateType, day: date) -> Quote | None:
         url = f"{self._base_url}/{_CASA_BY_TYPE[rate_type]}/{day:%Y/%m/%d}"

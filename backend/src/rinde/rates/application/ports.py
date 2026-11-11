@@ -40,9 +40,24 @@ class RateProvider(Protocol):
         ...
 
 
+class RateHistoryProvider(Protocol):
+    async def series(self, rate_type: RateType) -> list[Quote]:
+        """Todos los días cerrados que la fuente tiene de ese dólar, en un solo pedido.
+
+        Es lo que permite convertir meses enteros sin preguntar día por día
+        (ADR-0018). Si la fuente no pudo responder, lanza
+        `RateSourceUnavailableError`.
+        """
+        ...
+
+
 class QuoteRepository(Protocol):
     async def for_day(self, day: date, types: frozenset[RateType]) -> list[Quote]:
         """Lo guardado de ese día. Si hay de varias fuentes, una por tipo."""
+        ...
+
+    async def for_range(self, rate_type: RateType, since: date, until: date) -> list[Quote]:
+        """Lo guardado entre las dos fechas, incluidas: una por día, ordenadas por día."""
         ...
 
     async def add_all(self, quotes: Iterable[Quote], fetched_at: datetime) -> None:

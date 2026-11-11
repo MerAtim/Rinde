@@ -7,8 +7,12 @@ from datetime import timedelta
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from rinde.rates.application.ports import Clock, RateProvider
-from rinde.rates.application.providers import CachedRateProvider, FallbackRateProvider
+from rinde.rates.application.ports import Clock, RateHistoryProvider, RateProvider
+from rinde.rates.application.providers import (
+    CachedHistoryProvider,
+    CachedRateProvider,
+    FallbackRateProvider,
+)
 from rinde.rates.application.unit import RatesUnit, build_rates_unit
 from rinde.rates.application.use_cases import RatesDependencies
 from rinde.rates.infrastructure.repositories import SqlAlchemyQuoteRepository
@@ -45,6 +49,19 @@ def build_rate_provider(
     return CachedRateProvider(chain, clock, ttl=CACHE_TTL)
 
 
+def build_history_provider(
+    client: httpx.AsyncClient, clock: Clock, *, argentinadatos_url: str
+) -> RateHistoryProvider:
+    """Solo ArgentinaDatos publica la serie completa de cada dólar (ADR-0018).
+
+    Sin respaldo: si no responde, los días que faltan quedan sin cotización y
+    la pantalla lo dice. Se vuelve a probar en el pedido siguiente.
+    """
+    return CachedHistoryProvider(
+        ArgentinaDatosProvider(client, base_url=argentinadatos_url), clock, ttl=CACHE_TTL
+    )
+
+
 class SqlAlchemyTransaction:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
@@ -58,10 +75,12 @@ class SqlAlchemyRatesUnitFactory:
         self,
         sessionmaker: async_sessionmaker[AsyncSession],
         provider: RateProvider,
+        history: RateHistoryProvider,
         clock: Clock,
     ) -> None:
         self._sessionmaker = sessionmaker
         self._provider = provider
+        self._history = history
         self._clock = clock
 
     @asynccontextmanager
@@ -71,6 +90,7 @@ class SqlAlchemyRatesUnitFactory:
                 RatesDependencies(
                     quotes=SqlAlchemyQuoteRepository(session),
                     provider=self._provider,
+                    history=self._history,
                     transaction=SqlAlchemyTransaction(session),
                     clock=self._clock,
                 )
