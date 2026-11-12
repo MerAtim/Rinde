@@ -8,6 +8,7 @@ from rinde.transactions.application.ports import (
     CategoryRepository,
     Clock,
     DatabaseTransaction,
+    EventPublisher,
     IdempotencyStore,
     TransactionRepository,
     TransferAuditLog,
@@ -28,3 +29,4 @@ class TransactionsDependencies:
     transfer_audit: TransferAuditLog
     transaction: DatabaseTransaction
     clock: Clock
+    events: EventPublisher

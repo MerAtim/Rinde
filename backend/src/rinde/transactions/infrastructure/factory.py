@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from rinde.transactions.application.dependencies import TransactionsDependencies
-from rinde.transactions.application.ports import AccountGateway, Clock
+from rinde.transactions.application.ports import AccountGateway, Clock, EventPublisher
 from rinde.transactions.application.unit import TransactionsUnit, build_transactions_unit
 from rinde.transactions.infrastructure.repositories import (
     SqlAlchemyAuditLog,
@@ -35,10 +35,12 @@ class SqlAlchemyTransactionsUnitFactory:
         # de cuentas, solo el puerto. Recibe la sesión para leer la cuenta dentro
         # de la misma transacción del pedido.
         account_gateway: Callable[[AsyncSession], AccountGateway],
+        events: EventPublisher,
     ) -> None:
         self._sessionmaker = sessionmaker
         self._clock = clock
         self._account_gateway = account_gateway
+        self._events = events
 
     @asynccontextmanager
     async def __call__(self) -> AsyncIterator[TransactionsUnit]:
@@ -55,5 +57,6 @@ class SqlAlchemyTransactionsUnitFactory:
                     transfer_audit=SqlAlchemyTransferAuditLog(session),
                     transaction=SqlAlchemyDatabaseTransaction(session),
                     clock=self._clock,
+                    events=self._events,
                 )
             )
