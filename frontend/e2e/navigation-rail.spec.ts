@@ -73,9 +73,10 @@ for (const idioma of IDIOMAS) {
 
     // El inicio tiene el resumen, con montos largos, y la tabla del dólar, con
     // dos montos por fila que no se parten; Cuentas, el equivalente de un saldo largo;
-    // Presupuestos, topes con montos largos; y Preferencias, el formulario. La barra
-    // superior está en todas.
-    for (const ruta of ["/", "/accounts", "/budgets", "/preferences"]) {
+    // Presupuestos, topes con montos largos; Alertas, los mismos montos en una
+    // frase; y Preferencias, el formulario. La barra superior está en todas, con la
+    // campana y su badge más ancho.
+    for (const ruta of ["/", "/accounts", "/budgets", "/alerts", "/preferences"]) {
       test(`${ruta} no se puede desplazar en horizontal`, async ({ page }) => {
         await page.setViewportSize({ width: 360, height: 900 });
         await mockSession(page);
@@ -89,6 +90,8 @@ for (const idioma of IDIOMAS) {
           await expect(page.getByText(/≈/)).toBeVisible();
         } else if (ruta === "/budgets") {
           await expect(page.getByRole("meter")).toHaveCount(2);
+        } else if (ruta === "/alerts") {
+          await expect(page.getByRole("main").getByRole("listitem")).toHaveCount(2);
         } else {
           await expect(page.getByRole("radiogroup").last()).toBeVisible();
         }
@@ -98,6 +101,61 @@ for (const idioma of IDIOMAS) {
           () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
         );
         expect(desborde).toBeLessThanOrEqual(0);
+      });
+    }
+
+    // La barra superior lleva la marca y cinco acciones. Con poco ancho, flexbox
+    // las achica antes que desbordar: la página no se desplaza, pero el área que
+    // se toca baja de 40 px y el badge de la campana pisa al vecino. Esto no lo
+    // ve el test de arriba; por eso se mide aparte.
+    for (const ancho of [360, 599]) {
+      test(`a ${String(ancho)} px la barra superior entra sin achicar ni encimar sus controles`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width: ancho, height: 900 });
+        await mockSession(page);
+        await page.goto("/alerts");
+        await expect(page.getByRole("link", { name: /\d+/ })).toBeVisible();
+        await page.evaluate(() => document.fonts.ready);
+
+        const problemas = await page.evaluate((tolerancia) => {
+          const encontrados: string[] = [];
+          const fin = document.querySelector("header")?.lastElementChild;
+          if (!fin) return ["no hay acciones en la barra"];
+          const cajas = Array.from(fin.children).map((hijo) => hijo.getBoundingClientRect());
+          for (const boton of fin.querySelectorAll<HTMLElement>("[class*='iconButton']")) {
+            const ancho = boton.getBoundingClientRect().width;
+            if (ancho < 40 - tolerancia) {
+              const nombre = boton.getAttribute("aria-label") ?? "";
+              encontrados.push(`"${nombre}" mide ${ancho.toFixed(1)} px`);
+            }
+          }
+          // Una acción achicada recorta lo suyo: "EN" del selector de idioma.
+          for (const hijo of Array.from(fin.children)) {
+            if (hijo.scrollWidth > hijo.clientWidth + tolerancia) {
+              encontrados.push(
+                `"${hijo.textContent.trim()}" necesita ${String(hijo.scrollWidth)} px y tiene ${String(hijo.clientWidth)}`,
+              );
+            }
+          }
+          // El badge incluido: es lo que más se acerca al vecino.
+          const badge = fin.querySelector("[class*='badge']")?.getBoundingClientRect();
+          const derechas = cajas.map((caja, i) =>
+            i === 0 && badge ? Math.max(caja.right, badge.right) : caja.right,
+          );
+          for (let i = 1; i < cajas.length; i++) {
+            const anterior = derechas[i - 1] ?? 0;
+            const actual = cajas[i]?.left ?? 0;
+            if (anterior > actual + tolerancia) {
+              encontrados.push(
+                `la acción ${String(i)} empieza en ${actual.toFixed(1)} y la anterior termina en ${anterior.toFixed(1)}`,
+              );
+            }
+          }
+          return encontrados;
+        }, TOLERANCIA);
+
+        expect(problemas).toEqual([]);
       });
     }
   });

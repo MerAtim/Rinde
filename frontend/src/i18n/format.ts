@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import { isLanguage, type Language } from "./index";
+import { ARGENTINA_TIME_ZONE } from "../shared/time/argentina";
 
 // El español es el de Argentina: punto para miles, coma para decimales (docs/design-system.md).
 const LOCALE_BY_LANGUAGE: Record<Language, string> = {
@@ -21,6 +22,22 @@ export function useDateFormatter(): (iso: string) => string {
   const locale = useLocale();
   return useMemo(() => {
     const formatter = new Intl.DateTimeFormat(locale, { dateStyle: "long" });
+    return (iso: string) => formatter.format(new Date(iso));
+  }, [locale]);
+}
+
+/**
+ * Un instante del servidor (ISO con zona) como "10 nov 2026, 12:00", en la hora
+ * de Argentina: es la del calendario de Rinde, viaje o no quien la mira.
+ */
+export function useDateTimeFormatter(): (iso: string) => string {
+  const locale = useLocale();
+  return useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(locale, {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: ARGENTINA_TIME_ZONE,
+    });
     return (iso: string) => formatter.format(new Date(iso));
   }, [locale]);
 }

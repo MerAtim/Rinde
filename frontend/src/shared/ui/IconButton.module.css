@@ -1,5 +1,6 @@
 .iconButton {
   display: inline-grid;
+  flex-shrink: 0;
   place-items: center;
   width: 40px;
   height: 40px;
@@ -15,4 +16,31 @@
 .iconButton[data-focus-visible] {
   outline: 3px solid var(--md-sys-color-primary);
   outline-offset: 2px;
+}
+
+.withBadge {
+  position: relative;
+  display: inline-grid;
+  flex-shrink: 0;
+}
+
+/*
+ * Badge grande de Material 3, arriba a la derecha del ícono. Crece hacia el
+ * ícono y no hacia afuera: "99+" no pisa al botón de al lado.
+ */
+.badge {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-end: 0;
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 16px;
+  block-size: 16px;
+  padding-inline: 4px;
+  border-radius: var(--rinde-shape-full);
+  background: var(--md-sys-color-error);
+  color: var(--md-sys-color-on-error);
+  font: 500 11px/16px var(--md-ref-typeface-plain);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
 }

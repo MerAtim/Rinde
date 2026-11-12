@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet, useLocation } from "react-router";
 
+import { AlertNotice } from "../alerts/AlertNotice";
+import { AlertsButton } from "../alerts/AlertsButton";
 import { logout } from "../auth/api";
 import { useSetSession } from "../auth/useSession";
 import { announcementFrom } from "../../shared/navigation/announcement";
@@ -51,6 +53,7 @@ export function AppShell() {
         start={<span className={cx(styles.brand)}>{t("app.title")}</span>}
         end={
           <>
+            <AlertsButton />
             <LanguageSelector />
             <ThemeToggle />
             <LinkIconButton to="/preferences" icon="tune" label={t("preferences.title")} />
@@ -94,6 +97,7 @@ export function AppShell() {
           >
             <Outlet />
           </Suspense>
+          <AlertNotice />
         </main>
       </div>
     </>

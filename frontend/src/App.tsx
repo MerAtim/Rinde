@@ -48,6 +48,9 @@ const BudgetFormPage = lazy(() =>
     default: module.BudgetFormPage,
   })),
 );
+const AlertsPage = lazy(() =>
+  import("./features/alerts/AlertsPage").then((module) => ({ default: module.AlertsPage })),
+);
 const EditTransactionPage = lazy(() =>
   import("./features/transactions/EditTransactionPage").then((module) => ({
     default: module.EditTransactionPage,
@@ -70,6 +73,7 @@ export function App() {
           <Route path="budgets" element={<BudgetsPage />} />
           <Route path="budgets/new" element={<BudgetFormPage />} />
           <Route path="budgets/:categoryId/edit" element={<BudgetFormPage />} />
+          <Route path="alerts" element={<AlertsPage />} />
           <Route path="preferences" element={<PreferencesPage />} />
         </Route>
       </Route>

@@ -14,6 +14,7 @@ Aplicación web de finanzas personales para Argentina y LatAm. Responde una preg
 * **Equivalentes y preferencias:** cada persona elige en qué moneda ve los totales y con qué dólar se convierte (por defecto, pesos al MEP). En Cuentas, el saldo de cada cuenta en la otra moneda muestra su equivalente. Se convierte con la cotización guardada del día y del lado prudente: nunca se valúa de más lo que tenés ni de menos lo que debés ([ADR-0017](docs/adr/0017-conversion-al-consultar.md)).
 * **Dashboard en el inicio:** patrimonio de hoy y al cierre de cada mes, ingresos y gastos de cada mes y gasto por categoría, en la moneda de referencia. Cada monto se convierte con la cotización de su día, y lo que no se puede convertir se muestra aparte en vez de inventarse. El período y la cuenta se eligen arriba y quedan en la dirección; cada gráfico tiene su tabla equivalente. La API responde en menos de 300 ms con 50.000 movimientos, y una prueba lo verifica en cada cambio ([ADR-0018](docs/adr/0018-modelo-de-lectura-del-dashboard.md), [ADR-0020](docs/adr/0020-pantalla-del-dashboard.md)).
 * **Presupuestos mensuales por categoría,** en pesos o en dólares. Cada tope muestra cuánto gastaste, cuánto queda y si estás cerca o te pasaste. Lo gastado en otra moneda se convierte con la cotización de su día. Cambiar un tope vale desde el mes en curso: los meses que ya pasaron conservan el que tenían ([ADR-0021](docs/adr/0021-modelo-de-presupuestos.md)).
+* **Alertas de presupuesto** cuando un gasto deja una categoría en el 80 % o en el 100 % de su tope: una campana con las que no leíste y un aviso en el momento. Cada umbral avisa una sola vez por mes, y solo el mes en curso. El aviso guarda lo que había al dispararse, aunque después cambie el tope ([ADR-0022](docs/adr/0022-alertas-de-presupuesto.md)).
 * **Filtros por categoría y por texto**, que se comparten en la dirección. La búsqueda no distingue tildes ni mayúsculas: "panaderia" encuentra "Panadería".
 * **Cuenta y sesión** con usuario, contraseña y código de recuperación, sin email ([ADR-0007](docs/adr/0007-autenticacion.md)).
 * **Interfaz en español y en inglés**, con modo oscuro y claro.
@@ -21,7 +22,6 @@ Aplicación web de finanzas personales para Argentina y LatAm. Responde una preg
 ## Qué falta
 
 * El precio del Bitcoin.
-* Alertas al llegar al 80 % y al 100 % de un presupuesto.
 * Reportes en pesos constantes, ajustados por inflación.
 * Importar resúmenes en CSV.
 

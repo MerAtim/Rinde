@@ -3,7 +3,7 @@ import { Button as AriaButton } from "react-aria-components";
 import { useTranslation } from "react-i18next";
 
 import { cx } from "./cx";
-import { Icon } from "./Icon";
+import { Icon, type IconName } from "./Icon";
 import styles from "./Snackbar.module.css";
 
 // Seis segundos: lo que recomienda Material 3 para un aviso con acción.
@@ -12,7 +12,8 @@ const VISIBLE_MS = 6000;
 interface SnackbarProps {
   message: string;
   onDismiss: () => void;
-  action?: { label: string; onPress: () => void };
+  /** Por defecto, deshacer: es para lo que existe este aviso. */
+  action?: { label: string; onPress: () => void; icon?: IconName };
 }
 
 /**
@@ -35,7 +36,7 @@ export function Snackbar({ message, onDismiss, action }: SnackbarProps) {
       <div className={cx(styles.actions)}>
         {action ? (
           <AriaButton className={cx(styles.action)} onPress={action.onPress}>
-            <Icon name="undo" size={18} />
+            <Icon name={action.icon ?? "undo"} size={18} />
             {action.label}
           </AriaButton>
         ) : null}

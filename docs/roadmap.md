@@ -58,7 +58,8 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 ## Fase 5: presupuestos y alertas
 * [x] Presupuestos mensuales por categoría, con vigencia desde el mes en curso y en
   su propia moneda (ADR-0021)
-* [ ] Alertas in-app al 80 % y 100 %, disparadas por eventos de dominio al registrar gastos
+* [x] Alertas in-app al 80 % y 100 %, disparadas por eventos de dominio al registrar gastos
+  (ADR-0022)
 
 ## Fase 6: importación
 * [ ] CSV/extractos: Strategy por formato, vista previa, deduplicación por hash, reglas de categorización

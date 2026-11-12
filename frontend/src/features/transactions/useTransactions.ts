@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 
 import { accountKeys } from "../accounts/useAccounts";
+import { alertKeys } from "../alerts/keys";
 import { budgetKeys } from "../budgets/keys";
 import { dashboardKeys } from "../dashboard/useDashboard";
 import {
@@ -91,7 +92,8 @@ export function useCategories() {
 
 /**
  * Un movimiento nuevo cambia listas, saldos, el dashboard y el gasto de los
- * presupuestos, y cada uno vive en otra consulta.
+ * presupuestos, y cada uno vive en otra consulta. Un gasto puede además
+ * disparar una alerta, que el servidor guarda antes de responder (ADR-0022).
  */
 function useInvalidateMoney() {
   const queryClient = useQueryClient();
@@ -101,6 +103,7 @@ function useInvalidateMoney() {
       queryClient.invalidateQueries({ queryKey: accountKeys.all }),
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all }),
       queryClient.invalidateQueries({ queryKey: budgetKeys.all }),
+      queryClient.invalidateQueries({ queryKey: alertKeys.all }),
     ]);
 }
 

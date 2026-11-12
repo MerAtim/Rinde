@@ -504,6 +504,46 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/alerts": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Ver mis alertas
+     * @description Las últimas alertas de presupuesto y cuántas hay sin leer.
+     */
+    get: operations["list_alerts_api_alerts_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/alerts/read": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Marcar alertas como leídas
+     * @description Repetirlo no cambia nada: una alerta leída sigue con su primera fecha de lectura.
+     */
+    post: operations["mark_read_api_alerts_read_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -531,6 +571,61 @@ export interface components {
       created_at: string;
       /** Archived At */
       archived_at: string | null;
+    };
+    /** AlertCategoryResponse */
+    AlertCategoryResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /**
+       * Slug
+       * @description Solo en las sembradas: la interfaz las traduce
+       */
+      slug: string | null;
+    };
+    /** AlertResponse */
+    AlertResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      category: components["schemas"]["AlertCategoryResponse"];
+      /**
+       * Month
+       * @description El mes del presupuesto
+       */
+      month: string;
+      /** @description warning al llegar al 80 %, over al 100 % */
+      threshold: components["schemas"]["Threshold"];
+      /** @description El tope cuando se disparó */
+      limit: components["schemas"]["MoneyResponse"];
+      /** @description Lo gastado cuando se disparó, en la moneda del tope */
+      spent: components["schemas"]["MoneyResponse"];
+      /**
+       * Raised At
+       * Format: date-time
+       */
+      raised_at: string;
+      /** Read */
+      read: boolean;
+    };
+    /** AlertsResponse */
+    AlertsResponse: {
+      /**
+       * Unread
+       * @description Todas las sin leer, aunque no entren en la lista
+       */
+      unread: number;
+      /**
+       * Alerts
+       * @description Las últimas 50, de la más nueva a la más vieja
+       */
+      alerts: components["schemas"]["AlertResponse"][];
     };
     /** BalanceResponse */
     BalanceResponse: {
@@ -794,6 +889,14 @@ export interface components {
       /** Version */
       version: string;
     };
+    /**
+     * MarkReadRequest
+     * @description Las alertas que la persona vio. Las de otra persona se ignoran: no cambian.
+     */
+    MarkReadRequest: {
+      /** Ids */
+      ids: string[];
+    };
     /** MeResponse */
     MeResponse: {
       /** Username */
@@ -983,6 +1086,11 @@ export interface components {
       /** Name */
       name: string;
     };
+    /**
+     * Threshold
+     * @enum {string}
+     */
+    Threshold: "warning" | "over";
     /**
      * TransactionKind
      * @description Vive acá porque una categoría también es de ingresos o de gastos.
@@ -3200,6 +3308,86 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_alerts_api_alerts_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["AlertsResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  mark_read_api_alerts_read_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MarkReadRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
         };
       };
     };

@@ -21,6 +21,8 @@ import Logout from "@material-symbols/svg-400/rounded/logout.svg?react";
 import Close from "@material-symbols/svg-400/rounded/close.svg?react";
 import Delete from "@material-symbols/svg-400/rounded/delete.svg?react";
 import Edit from "@material-symbols/svg-400/rounded/edit.svg?react";
+import Notifications from "@material-symbols/svg-400/rounded/notifications.svg?react";
+import NotificationsFill from "@material-symbols/svg-400/rounded/notifications-fill.svg?react";
 import NorthEast from "@material-symbols/svg-400/rounded/north_east.svg?react";
 import ReceiptLong from "@material-symbols/svg-400/rounded/receipt_long.svg?react";
 import ReceiptLongFill from "@material-symbols/svg-400/rounded/receipt_long-fill.svg?react";
@@ -65,6 +67,8 @@ const ICONS = {
   "movement-out": SouthWest,
   movements: ReceiptLong,
   "movements-fill": ReceiptLongFill,
+  notifications: Notifications,
+  "notifications-fill": NotificationsFill,
   savings: Savings,
   "savings-fill": SavingsFill,
   schedule: ScheduleFill,
