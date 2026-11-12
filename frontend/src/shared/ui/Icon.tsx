@@ -5,6 +5,7 @@ import Add from "@material-symbols/svg-400/rounded/add.svg?react";
 import ArrowBack from "@material-symbols/svg-400/rounded/arrow_back.svg?react";
 import Check from "@material-symbols/svg-400/rounded/check.svg?react";
 import CheckCircleFill from "@material-symbols/svg-400/rounded/check_circle-fill.svg?react";
+import ChevronLeft from "@material-symbols/svg-400/rounded/chevron_left.svg?react";
 import ChevronRight from "@material-symbols/svg-400/rounded/chevron_right.svg?react";
 import ContentCopy from "@material-symbols/svg-400/rounded/content_copy.svg?react";
 import CreditCard from "@material-symbols/svg-400/rounded/credit_card.svg?react";
@@ -28,6 +29,8 @@ import SwapHoriz from "@material-symbols/svg-400/rounded/swap_horiz.svg?react";
 import Tune from "@material-symbols/svg-400/rounded/tune.svg?react";
 import Undo from "@material-symbols/svg-400/rounded/undo.svg?react";
 import Payments from "@material-symbols/svg-400/rounded/payments.svg?react";
+import Savings from "@material-symbols/svg-400/rounded/savings.svg?react";
+import SavingsFill from "@material-symbols/svg-400/rounded/savings-fill.svg?react";
 import ScheduleFill from "@material-symbols/svg-400/rounded/schedule-fill.svg?react";
 import Visibility from "@material-symbols/svg-400/rounded/visibility.svg?react";
 import VisibilityOff from "@material-symbols/svg-400/rounded/visibility_off.svg?react";
@@ -45,6 +48,7 @@ const ICONS = {
   check: Check,
   close: Close,
   "check-circle": CheckCircleFill,
+  "chevron-left": ChevronLeft,
   "chevron-right": ChevronRight,
   "content-copy": ContentCopy,
   "credit-card": CreditCard,
@@ -61,6 +65,8 @@ const ICONS = {
   "movement-out": SouthWest,
   movements: ReceiptLong,
   "movements-fill": ReceiptLongFill,
+  savings: Savings,
+  "savings-fill": SavingsFill,
   schedule: ScheduleFill,
   swap: SwapHoriz,
   tune: Tune,

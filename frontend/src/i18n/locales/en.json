@@ -41,7 +41,8 @@
     "home": "Home",
     "accounts": "Accounts",
     "loading": "Loading…",
-    "transactions": "Transactions"
+    "transactions": "Transactions",
+    "budgets": "Budgets"
   },
   "auth": {
     "brand": {
@@ -520,6 +521,75 @@
       "balance": "Balance",
       "income": "Income",
       "expense": "Expenses"
+    }
+  },
+  "budgets": {
+    "title": "Budgets",
+    "subtitle": "A spending limit per category. Every month starts from zero.",
+    "new": "New budget",
+    "month": {
+      "label": "Month",
+      "previous": "Previous month",
+      "next": "Next month"
+    },
+    "loading": "Loading budgets…",
+    "loadError": "We couldn't load your budgets.",
+    "retry": "Try again",
+    "pastNote": "You're looking at a past month. Changes apply from the current month.",
+    "conversion": "Spending in another currency is converted at each day's {{rate}} dollar rate.",
+    "empty": {
+      "title": "You don't have any budgets yet",
+      "body": "Set a limit for a category and you'll see how much is left this month.",
+      "pastTitle": "That month had no budgets."
+    },
+    "status": {
+      "on_track": "On track",
+      "warning": "Close to the limit",
+      "over": "Limit reached"
+    },
+    "since": "Since {{month}}",
+    "spentOf": "You spent {{spent}} of {{limit}}",
+    "meter": "{{percent}} of the limit",
+    "remaining": "{{amount}} left",
+    "exceeded": "{{amount}} over",
+    "unconverted": "Not counting {{amounts}}: no exchange rate.",
+    "edit": "Change the limit for {{name}}",
+    "remove": "Remove the budget for {{name}}",
+    "removed": "You removed the budget for {{name}}.",
+    "removeError": "We couldn't remove the budget. Please try again.",
+    "undo": "Undo",
+    "form": {
+      "back": "Back to budgets",
+      "newTitle": "New budget",
+      "editTitle": "Limit for {{name}}",
+      "subtitle": "It applies from this month. Past months keep their limit.",
+      "notFound": "This category has no budget this month.",
+      "noCategories": "All your spending categories already have a budget. To change a limit, tap the pencil on its row.",
+      "category": "Category",
+      "categoryPlaceholder": "Choose a spending category",
+      "amount": "Monthly limit",
+      "amountHelp": "The most you want to spend in the month, for example 300,000.",
+      "currency": "Limit currency",
+      "currencyHelp": "Spending in another currency is converted at each day's rate.",
+      "submit": "Save budget",
+      "submitting": "Saving…",
+      "saved": "You saved the budget for {{name}}."
+    },
+    "errors": {
+      "AMOUNT_REQUIRED": "Enter the limit.",
+      "AMOUNT_INVALID": "Enter the limit as a number, for example 300000.50.",
+      "AMOUNT_TOO_PRECISE": "The limit allows up to two decimals.",
+      "BUDGET_AMOUNT_INVALID": "The limit has to be greater than zero.",
+      "CATEGORY_REQUIRED": "Choose a category.",
+      "BUDGET_CATEGORY_NOT_FOUND": "That category no longer exists. Choose another one.",
+      "BUDGET_CATEGORY_NOT_EXPENSE": "Only spending categories can have a budget.",
+      "BUDGET_CURRENCY_NOT_ALLOWED": "The limit goes in pesos or dollars.",
+      "BUDGET_NOT_FOUND": "This category has no budget this month.",
+      "BUDGET_MONTH_INVALID": "That month hasn't started yet.",
+      "NOT_AUTHENTICATED": "Your session ended. Please sign in again.",
+      "CSRF_REJECTED": "We couldn't verify the request. Reload the page and try again.",
+      "NETWORK_ERROR": "There's no connection to the server. Try again in a while.",
+      "UNKNOWN_ERROR": "Something went wrong. Please try again."
     }
   }
 }

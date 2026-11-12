@@ -48,6 +48,9 @@ export async function mockSession(page: Page): Promise<void> {
   // Un resumen con montos largos y una categoría de nombre largo: lo más ancho
   // que puede tener el inicio.
   await page.route("**/api/dashboard*", (route) => route.fulfill(json(DASHBOARD)));
+  // Montos largos, un tope pasado y una categoría propia de nombre largo: lo más
+  // ancho que puede tener una fila de presupuestos.
+  await page.route("**/api/budgets*", (route) => route.fulfill(json(BUDGETS)));
   await page.route("**/api/preferences", (route) =>
     route.fulfill(json({ reference_currency: "ARS", rate_type: "crypto" })),
   );
@@ -133,6 +136,37 @@ export const DASHBOARD = {
       income: { amount: "0.00000000", currency: "BTC" },
       expense: { amount: "0.00000000", currency: "BTC" },
       balance: { amount: "12.34567890", currency: "BTC" },
+    },
+  ],
+};
+
+export const BUDGETS = {
+  month: "2026-11",
+  rate_type: "crypto",
+  budgets: [
+    {
+      category: {
+        id: "6d5c4b3a-2918-4f07-8e6d-5c4b3a291807",
+        name: "Mantenimiento del departamento",
+        slug: null,
+      },
+      since: "2026-09",
+      limit: { amount: "12345678.90", currency: "ARS" },
+      spent: { amount: "10987654.32", currency: "ARS" },
+      remaining: { amount: "1358024.58", currency: "ARS" },
+      ratio: "0.8900",
+      status: "warning",
+      unconverted: [{ amount: "0.00150000", currency: "BTC" }],
+    },
+    {
+      category: { id: "7e6d5c4b-3a29-4f18-8f7e-6d5c4b3a2918", name: "Alquiler", slug: "alquiler" },
+      since: "2026-11",
+      limit: { amount: "1500.00", currency: "USD" },
+      spent: { amount: "1987654.32", currency: "USD" },
+      remaining: { amount: "-1986154.32", currency: "USD" },
+      ratio: "1325.1029",
+      status: "over",
+      unconverted: [],
     },
   ],
 };

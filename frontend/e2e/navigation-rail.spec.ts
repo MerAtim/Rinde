@@ -72,9 +72,10 @@ for (const idioma of IDIOMAS) {
     }
 
     // El inicio tiene el resumen, con montos largos, y la tabla del dólar, con
-    // dos montos por fila que no se parten; Cuentas, el equivalente de un saldo largo; y Preferencias, el
-    // formulario. La barra superior está en todas.
-    for (const ruta of ["/", "/accounts", "/preferences"]) {
+    // dos montos por fila que no se parten; Cuentas, el equivalente de un saldo largo;
+    // Presupuestos, topes con montos largos; y Preferencias, el formulario. La barra
+    // superior está en todas.
+    for (const ruta of ["/", "/accounts", "/budgets", "/preferences"]) {
       test(`${ruta} no se puede desplazar en horizontal`, async ({ page }) => {
         await page.setViewportSize({ width: 360, height: 900 });
         await mockSession(page);
@@ -86,6 +87,8 @@ for (const idioma of IDIOMAS) {
           await expect(page.locator("canvas").first()).toBeVisible();
         } else if (ruta === "/accounts") {
           await expect(page.getByText(/≈/)).toBeVisible();
+        } else if (ruta === "/budgets") {
+          await expect(page.getByRole("meter")).toHaveCount(2);
         } else {
           await expect(page.getByRole("radiogroup").last()).toBeVisible();
         }

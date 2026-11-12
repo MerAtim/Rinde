@@ -1,0 +1,199 @@
+/* Pantallas de presupuestos (ADR-0021). */
+
+.page {
+  display: grid;
+  gap: var(--rinde-space-5);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--rinde-space-4);
+}
+
+.heading {
+  display: grid;
+  gap: var(--rinde-space-1);
+}
+
+.title {
+  font: 500 28px/36px var(--md-ref-typeface-brand);
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.subtitle,
+.muted {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 16px/24px var(--md-ref-typeface-plain);
+}
+
+.muted {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.back {
+  justify-self: start;
+  margin-inline-start: calc(-1 * var(--rinde-space-3));
+}
+
+.announcement {
+  color: var(--md-sys-color-on-surface);
+  font: 500 14px/20px var(--md-ref-typeface-plain);
+}
+
+/* Mes anterior, el mes y el siguiente, en una fila arriba de lo que acota. */
+.months {
+  display: flex;
+  align-items: center;
+  gap: var(--rinde-space-2);
+  margin-inline-start: calc(-1 * var(--rinde-space-2));
+}
+
+.month {
+  min-inline-size: 11rem;
+  font: 600 16px/24px var(--md-ref-typeface-plain);
+  text-align: center;
+}
+
+.month::first-letter {
+  text-transform: uppercase;
+}
+
+.problem {
+  display: grid;
+  justify-items: start;
+  gap: var(--rinde-space-3);
+}
+
+.empty {
+  display: grid;
+  gap: var(--rinde-space-2);
+  padding: var(--rinde-space-5);
+  border-radius: var(--rinde-shape-card);
+  background: var(--md-sys-color-surface-container);
+}
+
+.emptyTitle {
+  font: 600 16px/24px var(--md-ref-typeface-plain);
+}
+
+.list {
+  display: grid;
+  gap: var(--rinde-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  transition: opacity var(--md-sys-motion-duration-medium1) var(--md-sys-motion-easing-standard);
+}
+
+/* El mes anterior queda a la vista, atenuado, hasta que llega el nuevo. */
+.list[data-updating="true"] {
+  opacity: 0.6;
+}
+
+.row {
+  display: grid;
+  gap: var(--rinde-space-3);
+  min-width: 0;
+  padding: var(--rinde-space-4);
+  border-radius: var(--rinde-shape-card);
+  background: var(--md-sys-color-surface-container);
+  box-shadow: inset 0 1px 0 var(--rinde-edge-light);
+}
+
+.rowHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rinde-space-3);
+}
+
+.text {
+  display: grid;
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+.name {
+  font: 600 16px/24px var(--md-ref-typeface-plain);
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 12px/16px var(--md-ref-typeface-plain);
+}
+
+.actions {
+  display: flex;
+  margin-inline-end: calc(-1 * var(--rinde-space-2));
+}
+
+.meter {
+  display: grid;
+  gap: var(--rinde-space-2);
+}
+
+.meterLabel {
+  font: 500 14px/20px var(--md-ref-typeface-plain);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  display: block;
+  block-size: var(--rinde-space-2);
+  overflow: hidden;
+  border-radius: var(--rinde-shape-full);
+  background: var(--md-sys-color-surface-container-highest);
+}
+
+.bar {
+  display: block;
+  block-size: 100%;
+  border-radius: var(--rinde-shape-full);
+  background: var(--md-sys-color-primary);
+}
+
+/* El color refuerza el estado; lo dicen también el chip y el texto. */
+.meter[data-status="warning"] .bar {
+  background: var(--rinde-warning);
+}
+
+.meter[data-status="over"] .bar {
+  background: var(--md-sys-color-error);
+}
+
+.remaining {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--rinde-space-2);
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 14px/20px var(--md-ref-typeface-plain);
+  font-variant-numeric: tabular-nums;
+}
+
+.remaining[data-over="true"] {
+  color: var(--md-sys-color-error);
+  font-weight: 600;
+}
+
+.percent {
+  color: var(--md-sys-color-on-surface-variant);
+  font-weight: 400;
+}
+
+.form {
+  display: grid;
+  gap: var(--rinde-space-5);
+  max-width: 44rem;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-start;
+}
