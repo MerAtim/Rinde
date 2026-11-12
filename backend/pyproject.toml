@@ -113,6 +113,7 @@ containers = [
     "rinde.rates",
     "rinde.preferences",
     "rinde.dashboard",
+    "rinde.budgets",
 ]
 layers = ["api | infrastructure", "application", "(domain)"]
 
@@ -133,6 +134,8 @@ source_modules = [
     "rinde.preferences.domain",
     "rinde.dashboard.application",
     "rinde.dashboard.domain",
+    "rinde.budgets.application",
+    "rinde.budgets.domain",
     "rinde.shared.domain",
 ]
 forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic", "httpx", "argon2"]
@@ -149,6 +152,7 @@ forbidden_modules = [
     "rinde.rates",
     "rinde.preferences",
     "rinde.dashboard",
+    "rinde.budgets",
 ]
 
 [[tool.importlinter.contracts]]
@@ -221,6 +225,39 @@ name = "Ningún módulo depende del dashboard: es un modelo de lectura sobre los
 type = "forbidden"
 source_modules = [
     "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
-    "rinde.health",
+    "rinde.health", "rinde.budgets",
 ]
 forbidden_modules = ["rinde.dashboard"]
+
+[[tool.importlinter.contracts]]
+name = "Solo los adaptadores de presupuestos conocen otros módulos: su dominio y su aplicación, no"
+type = "forbidden"
+source_modules = ["rinde.budgets.application", "rinde.budgets.domain"]
+forbidden_modules = [
+    "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
+    "rinde.health", "rinde.dashboard",
+]
+
+[[tool.importlinter.contracts]]
+name = "Presupuestos lee a los otros módulos por su capa de aplicación, nunca por su API, su base ni su dominio"
+type = "forbidden"
+# Solo las importaciones directas, como en el dashboard.
+allow_indirect_imports = true
+source_modules = ["rinde.budgets"]
+forbidden_modules = [
+    "rinde.auth",
+    "rinde.accounts",
+    "rinde.health",
+    "rinde.transactions.api", "rinde.transactions.infrastructure", "rinde.transactions.domain",
+    "rinde.rates.api", "rinde.rates.infrastructure", "rinde.rates.domain",
+    "rinde.preferences.api", "rinde.preferences.infrastructure", "rinde.preferences.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Ningún módulo depende de presupuestos: los demás no saben que existen topes"
+type = "forbidden"
+source_modules = [
+    "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
+    "rinde.health", "rinde.dashboard",
+]
+forbidden_modules = ["rinde.budgets"]

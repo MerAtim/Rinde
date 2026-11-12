@@ -15,6 +15,13 @@ from rinde.auth.application.unit import AuthUnit, build_auth_unit
 from rinde.auth.domain.errors import UsernameTakenError
 from rinde.auth.domain.user import User
 from rinde.auth.domain.username import Username
+from rinde.budgets.application.unit import BudgetsGateways, BudgetsUnit, build_budgets_unit
+from rinde.budgets.infrastructure.gateways import (
+    PreferencesRateTypeReader,
+    RatesConverterFactory,
+    TransactionsCategoryReader,
+    TransactionsSpendingReader,
+)
 from rinde.preferences.application.unit import PreferencesUnit, build_preferences_unit
 from rinde.preferences.application.use_cases import PreferencesDependencies
 from rinde.preferences.domain.preferences import Preferences
@@ -23,6 +30,7 @@ from rinde.rates.application.use_cases import RatesDependencies
 from rinde.transactions.application.dependencies import TransactionsDependencies
 from rinde.transactions.application.unit import TransactionsUnit, build_transactions_unit
 from rinde.transactions.infrastructure.accounts_gateway import AccountsApplicationGateway
+from tests.unit.budgets.fakes import InMemoryBudgetRepository
 from tests.unit.rates.fakes import FakeHistoryProvider, FakeRateProvider, InMemoryQuotes
 from tests.unit.transactions.fakes import (
     FakeAuditLog,
@@ -356,3 +364,28 @@ class InMemoryPreferencesUnitFactory:
                 preferences=self.preferences, transaction=self.transaction, clock=self.clock
             )
         )
+
+
+class InMemoryBudgetsUnitFactory:
+    """Presupuestos en memoria, con los adaptadores reales sobre los otros módulos en memoria."""
+
+    def __init__(
+        self,
+        transactions: InMemoryTransactionsUnitFactory,
+        preferences: InMemoryPreferencesUnitFactory,
+        rates: InMemoryRatesUnitFactory,
+        clock: FakeClock | None = None,
+    ) -> None:
+        self.budgets = InMemoryBudgetRepository()
+        self.transaction = FakeTransaction()
+        self.clock = clock or FakeClock()
+        self._gateways = BudgetsGateways(
+            categories=TransactionsCategoryReader(transactions),
+            spending=TransactionsSpendingReader(transactions),
+            rate_types=PreferencesRateTypeReader(preferences),
+            converters=RatesConverterFactory(rates),
+        )
+
+    @asynccontextmanager
+    async def __call__(self) -> AsyncIterator[BudgetsUnit]:
+        yield build_budgets_unit(self.budgets, self.transaction, self._gateways, self.clock)

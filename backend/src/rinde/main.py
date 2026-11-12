@@ -35,6 +35,19 @@ from rinde.auth.infrastructure.argon2_hasher import Argon2PasswordHasher
 from rinde.auth.infrastructure.factory import SqlAlchemyAuthUnitFactory
 from rinde.auth.infrastructure.pwned_passwords import PwnedPasswordsChecker
 from rinde.auth.infrastructure.system import SecureRandomSecrets
+from rinde.budgets.api.errors import budgets_error_handler
+from rinde.budgets.api.router import router as budgets_router
+from rinde.budgets.application.unit import BudgetsGateways, BudgetsUnitFactory
+from rinde.budgets.domain.errors import BudgetError
+from rinde.budgets.infrastructure.factory import SqlAlchemyBudgetsUnitFactory
+from rinde.budgets.infrastructure.gateways import (
+    PreferencesRateTypeReader,
+    TransactionsCategoryReader,
+    TransactionsSpendingReader,
+)
+from rinde.budgets.infrastructure.gateways import (
+    RatesConverterFactory as BudgetsConverterFactory,
+)
 from rinde.config import Settings, get_settings
 from rinde.dashboard.api.router import router as dashboard_router
 from rinde.dashboard.application.ports import Clock
@@ -90,6 +103,7 @@ def create_app(  # noqa: PLR0913
     transactions_factory: TransactionsUnitFactory | None = None,
     rates_factory: RatesUnitFactory | None = None,
     preferences_factory: PreferencesUnitFactory | None = None,
+    budgets_factory: BudgetsUnitFactory | None = None,
     dashboard_clock: Clock | None = None,
 ) -> FastAPI:
     """Crea la aplicación.
@@ -185,6 +199,13 @@ def create_app(  # noqa: PLR0913
         )
     )
 
+    budgets_factory = budgets_factory or _sql_budgets(
+        async_sessionmaker(shared_engine(), expire_on_commit=False),
+        transactions_factory,
+        preferences_factory,
+        rates_factory,
+    )
+
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
@@ -212,6 +233,7 @@ def create_app(  # noqa: PLR0913
     app.state.rates_factory = rates_factory
     app.state.preferences_factory = preferences_factory
     app.state.dashboard = dashboard
+    app.state.budgets_factory = budgets_factory
     app.state.session_cookie = SessionCookie(
         name=SECURE_COOKIE_NAME if config.session_cookie_secure else PLAIN_COOKIE_NAME,
         secure=config.session_cookie_secure,
@@ -219,6 +241,27 @@ def create_app(  # noqa: PLR0913
     )
     _register_modules(app)
     return app
+
+
+def _sql_budgets(
+    sessionmaker: async_sessionmaker[AsyncSession],
+    transactions: TransactionsUnitFactory,
+    preferences: PreferencesUnitFactory,
+    rates: RatesUnitFactory,
+) -> BudgetsUnitFactory:
+    """Presupuestos lee a los otros módulos por su capa de aplicación, con las mismas
+    fábricas que usan sus endpoints, como el dashboard.
+    """
+    return SqlAlchemyBudgetsUnitFactory(
+        sessionmaker,
+        BudgetsGateways(
+            categories=TransactionsCategoryReader(transactions),
+            spending=TransactionsSpendingReader(transactions),
+            rate_types=PreferencesRateTypeReader(preferences),
+            converters=BudgetsConverterFactory(rates),
+        ),
+        SystemClock(),
+    )
 
 
 def _register_modules(app: FastAPI) -> None:
@@ -234,6 +277,7 @@ def _register_modules(app: FastAPI) -> None:
     app.add_exception_handler(TransferError, transactions_error_handler)
     app.add_exception_handler(RateError, rates_error_handler)
     app.add_exception_handler(PreferencesError, preferences_error_handler)
+    app.add_exception_handler(BudgetError, budgets_error_handler)
     for router in (
         health_router,
         auth_router,
@@ -242,5 +286,6 @@ def _register_modules(app: FastAPI) -> None:
         rates_router,
         preferences_router,
         dashboard_router,
+        budgets_router,
     ):
         app.include_router(router, prefix=API_PREFIX)
