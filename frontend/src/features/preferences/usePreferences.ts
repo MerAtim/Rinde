@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { budgetKeys } from "../budgets/keys";
 import { dashboardKeys } from "../dashboard/useDashboard";
 import { fetchPreferences, type Preferences, updatePreferences } from "./api";
 
@@ -24,8 +25,12 @@ export function useUpdatePreferences() {
     mutationFn: (input: Preferences) => updatePreferences(input),
     onSuccess: async (preferences) => {
       queryClient.setQueryData(preferenceKeys.all, preferences);
-      // El dashboard está en la moneda y el dólar de referencia: hay que rehacerlo.
-      await queryClient.invalidateQueries({ queryKey: dashboardKeys.all });
+      // El dashboard está en la moneda y el dólar de referencia, y los presupuestos
+      // convierten con ese dólar: hay que rehacer los dos.
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: dashboardKeys.all }),
+        queryClient.invalidateQueries({ queryKey: budgetKeys.all }),
+      ]);
     },
   });
 }

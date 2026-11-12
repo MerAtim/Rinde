@@ -40,6 +40,14 @@ const NewTransferPage = lazy(() =>
 const PreferencesPage = lazy(() =>
   import("./features/preferences/PreferencesPage").then((m) => ({ default: m.PreferencesPage })),
 );
+const BudgetsPage = lazy(() =>
+  import("./features/budgets/BudgetsPage").then((module) => ({ default: module.BudgetsPage })),
+);
+const BudgetFormPage = lazy(() =>
+  import("./features/budgets/BudgetFormPage").then((module) => ({
+    default: module.BudgetFormPage,
+  })),
+);
 const EditTransactionPage = lazy(() =>
   import("./features/transactions/EditTransactionPage").then((module) => ({
     default: module.EditTransactionPage,
@@ -59,6 +67,9 @@ export function App() {
           <Route path="transactions/new" element={<NewTransactionPage />} />
           <Route path="transactions/:transactionId" element={<EditTransactionPage />} />
           <Route path="transfers/new" element={<NewTransferPage />} />
+          <Route path="budgets" element={<BudgetsPage />} />
+          <Route path="budgets/new" element={<BudgetFormPage />} />
+          <Route path="budgets/:categoryId/edit" element={<BudgetFormPage />} />
           <Route path="preferences" element={<PreferencesPage />} />
         </Route>
       </Route>

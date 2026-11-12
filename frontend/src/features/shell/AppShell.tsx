@@ -42,6 +42,7 @@ export function AppShell() {
       icon: "movements",
       activeIcon: "movements-fill",
     },
+    { to: "/budgets", label: t("nav.budgets"), icon: "savings", activeIcon: "savings-fill" },
   ];
 
   return (

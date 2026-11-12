@@ -129,6 +129,7 @@ Se construyen sobre React Aria cuando una pantalla los necesita, cada uno con te
 | Tabla | Encabezado fijo en `surface-container-high`, cifras de ancho fijo, estado con ícono y texto. |
 | Gráfico de magnitud | Un solo tono (`--rinde-chart-mark`), etiquetas directas, tooltip con porcentaje, tabla equivalente. |
 | Gráfico de flujo | Ingresos arriba del cero y gastos abajo: la posición dice qué es cada barra. El color acompaña, porque el par de ingreso y gasto del tema claro no se distingue con deuteranopía (ADR-0020). Leyenda en HTML y tabla equivalente. |
+| Medidor de presupuesto | `Meter` de React Aria: barra de 8 px sobre `surface-container-highest`, llena hasta el tope aunque se pase. Primario en camino, `--rinde-warning` desde el 80 % y error desde el 100 %; contraste de 5,5:1 o más contra la pista en los dos temas. El estado lo dicen también el chip y el texto ("Te pasaste por…"), así que no depende del color (ADR-0021). |
 | Skeleton | Pulso de opacidad (sin brillo en degradé) con la forma exacta del contenido. |
 | Estado vacío | Explica el porqué y ofrece la próxima acción. |
 | Snackbar | `inverse-surface`, `shape-field`, Deshacer durante 6 segundos. |

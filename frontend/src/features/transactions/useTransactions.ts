@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-query";
 
 import { accountKeys } from "../accounts/useAccounts";
+import { budgetKeys } from "../budgets/keys";
 import { dashboardKeys } from "../dashboard/useDashboard";
 import {
   type Balance,
@@ -88,7 +89,10 @@ export function useCategories() {
   });
 }
 
-/** Un movimiento nuevo cambia listas, saldos y el dashboard, y cada uno vive en otra consulta. */
+/**
+ * Un movimiento nuevo cambia listas, saldos, el dashboard y el gasto de los
+ * presupuestos, y cada uno vive en otra consulta.
+ */
 function useInvalidateMoney() {
   const queryClient = useQueryClient();
   return () =>
@@ -96,6 +100,7 @@ function useInvalidateMoney() {
       queryClient.invalidateQueries({ queryKey: transactionKeys.all }),
       queryClient.invalidateQueries({ queryKey: accountKeys.all }),
       queryClient.invalidateQueries({ queryKey: dashboardKeys.all }),
+      queryClient.invalidateQueries({ queryKey: budgetKeys.all }),
     ]);
 }
 

@@ -41,7 +41,8 @@
     "home": "Inicio",
     "accounts": "Cuentas",
     "loading": "Cargando…",
-    "transactions": "Movimientos"
+    "transactions": "Movimientos",
+    "budgets": "Presupuestos"
   },
   "auth": {
     "brand": {
@@ -520,6 +521,75 @@
       "balance": "Saldo",
       "income": "Ingresos",
       "expense": "Gastos"
+    }
+  },
+  "budgets": {
+    "title": "Presupuestos",
+    "subtitle": "Un tope de gasto por categoría. Cada mes arranca de cero.",
+    "new": "Nuevo presupuesto",
+    "month": {
+      "label": "Mes",
+      "previous": "Mes anterior",
+      "next": "Mes siguiente"
+    },
+    "loading": "Cargando los presupuestos…",
+    "loadError": "No pudimos cargar los presupuestos.",
+    "retry": "Reintentar",
+    "pastNote": "Estás mirando un mes que ya pasó. Los cambios valen desde el mes en curso.",
+    "conversion": "Lo gastado en otra moneda se convierte con el dólar {{rate}} de cada día.",
+    "empty": {
+      "title": "Todavía no tenés presupuestos",
+      "body": "Ponele un tope a una categoría y vas a ver cuánto te queda en el mes.",
+      "pastTitle": "Ese mes no tenía presupuestos."
+    },
+    "status": {
+      "on_track": "En camino",
+      "warning": "Cerca del tope",
+      "over": "Llegaste al tope"
+    },
+    "since": "Desde {{month}}",
+    "spentOf": "Gastaste {{spent}} de {{limit}}",
+    "meter": "{{percent}} del tope",
+    "remaining": "Quedan {{amount}}",
+    "exceeded": "Te pasaste por {{amount}}",
+    "unconverted": "Sin contar {{amounts}}: no tiene cotización.",
+    "edit": "Cambiar el tope de {{name}}",
+    "remove": "Quitar el presupuesto de {{name}}",
+    "removed": "Quitaste el presupuesto de {{name}}.",
+    "removeError": "No pudimos quitar el presupuesto. Probá de nuevo.",
+    "undo": "Deshacer",
+    "form": {
+      "back": "Volver a presupuestos",
+      "newTitle": "Nuevo presupuesto",
+      "editTitle": "Tope de {{name}}",
+      "subtitle": "Vale desde este mes. Los meses que ya pasaron conservan su tope.",
+      "notFound": "Esta categoría no tiene presupuesto este mes.",
+      "noCategories": "Todas tus categorías de gasto ya tienen presupuesto. Para cambiar un tope, tocá el lápiz en su fila.",
+      "category": "Categoría",
+      "categoryPlaceholder": "Elegí una categoría de gasto",
+      "amount": "Tope por mes",
+      "amountHelp": "Lo máximo que querés gastar en el mes, por ejemplo 300.000.",
+      "currency": "Moneda del tope",
+      "currencyHelp": "Lo gastado en otra moneda se convierte con la cotización de cada día.",
+      "submit": "Guardar presupuesto",
+      "submitting": "Guardando…",
+      "saved": "Guardaste el presupuesto de {{name}}."
+    },
+    "errors": {
+      "AMOUNT_REQUIRED": "Escribí el tope.",
+      "AMOUNT_INVALID": "Escribí el tope con números, por ejemplo 300.000,50.",
+      "AMOUNT_TOO_PRECISE": "El tope admite hasta dos decimales.",
+      "BUDGET_AMOUNT_INVALID": "El tope tiene que ser mayor que cero.",
+      "CATEGORY_REQUIRED": "Elegí una categoría.",
+      "BUDGET_CATEGORY_NOT_FOUND": "Esa categoría ya no existe. Elegí otra.",
+      "BUDGET_CATEGORY_NOT_EXPENSE": "Solo las categorías de gasto llevan presupuesto.",
+      "BUDGET_CURRENCY_NOT_ALLOWED": "El tope va en pesos o en dólares.",
+      "BUDGET_NOT_FOUND": "Esta categoría no tiene presupuesto este mes.",
+      "BUDGET_MONTH_INVALID": "Ese mes todavía no empezó.",
+      "NOT_AUTHENTICATED": "Tu sesión terminó. Volvé a ingresar.",
+      "CSRF_REJECTED": "No pudimos verificar el pedido. Recargá la página y probá de nuevo.",
+      "NETWORK_ERROR": "No hay conexión con el servidor. Probá de nuevo en un rato.",
+      "UNKNOWN_ERROR": "Algo salió mal. Probá de nuevo."
     }
   }
 }

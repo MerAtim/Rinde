@@ -56,7 +56,8 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
   (sembradas). Lo verifica una prueba en CI; medición local: p95 de 155 ms (ADR-0018)
 
 ## Fase 5: presupuestos y alertas
-* [ ] Presupuestos mensuales por categoría
+* [x] Presupuestos mensuales por categoría, con vigencia desde el mes en curso y en
+  su propia moneda (ADR-0021)
 * [ ] Alertas in-app al 80 % y 100 %, disparadas por eventos de dominio al registrar gastos
 
 ## Fase 6: importación
