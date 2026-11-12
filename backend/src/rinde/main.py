@@ -24,6 +24,14 @@ from rinde.accounts.infrastructure.factory import (
     SqlAlchemyTransaction,
 )
 from rinde.accounts.infrastructure.repositories import SqlAlchemyAccountRepository
+from rinde.alerts.api.router import router as alerts_router
+from rinde.alerts.application.unit import AlertsGateways, AlertsUnitFactory
+from rinde.alerts.infrastructure.factory import SqlAlchemyAlertsUnitFactory
+from rinde.alerts.infrastructure.gateways import BudgetsMonthReader
+from rinde.alerts.infrastructure.gateways import (
+    TransactionsCategoryReader as AlertsCategoryReader,
+)
+from rinde.alerts.infrastructure.subscriptions import EvaluateOnExpense
 from rinde.auth.api.cookies import SessionCookie
 from rinde.auth.api.errors import auth_error_handler
 from rinde.auth.api.identity import identify_user
@@ -81,6 +89,7 @@ from rinde.shared.infrastructure.clock import SystemClock
 from rinde.shared.infrastructure.events import InProcessEventBus
 from rinde.transactions.api.errors import transactions_error_handler
 from rinde.transactions.api.router import router as transactions_router
+from rinde.transactions.application.events import ExpenseRecorded
 from rinde.transactions.application.unit import TransactionsUnitFactory
 from rinde.transactions.domain.errors import CategoryError, TransactionError, TransferError
 from rinde.transactions.infrastructure.accounts_gateway import AccountsApplicationGateway
@@ -105,6 +114,7 @@ def create_app(  # noqa: PLR0913
     rates_factory: RatesUnitFactory | None = None,
     preferences_factory: PreferencesUnitFactory | None = None,
     budgets_factory: BudgetsUnitFactory | None = None,
+    alerts_factory: AlertsUnitFactory | None = None,
     dashboard_clock: Clock | None = None,
     event_bus: InProcessEventBus | None = None,
 ) -> FastAPI:
@@ -196,6 +206,16 @@ def create_app(  # noqa: PLR0913
         preferences_factory,
         rates_factory,
     )
+    alerts_factory = alerts_factory or SqlAlchemyAlertsUnitFactory(
+        async_sessionmaker(shared_engine(), expire_on_commit=False),
+        AlertsGateways(
+            budgets=BudgetsMonthReader(budgets_factory),
+            categories=AlertsCategoryReader(transactions_factory),
+        ),
+        SystemClock(),
+    )
+    # Un gasto evalúa las alertas de su dueño, después de confirmarse (ADR-0022).
+    events.subscribe(ExpenseRecorded, EvaluateOnExpense(alerts_factory))
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -225,6 +245,7 @@ def create_app(  # noqa: PLR0913
     app.state.preferences_factory = preferences_factory
     app.state.dashboard = dashboard
     app.state.budgets_factory = budgets_factory
+    app.state.alerts_factory = alerts_factory
     app.state.session_cookie = SessionCookie(
         name=SECURE_COOKIE_NAME if config.session_cookie_secure else PLAIN_COOKIE_NAME,
         secure=config.session_cookie_secure,
@@ -298,5 +319,6 @@ def _register_modules(app: FastAPI) -> None:
         preferences_router,
         dashboard_router,
         budgets_router,
+        alerts_router,
     ):
         app.include_router(router, prefix=API_PREFIX)

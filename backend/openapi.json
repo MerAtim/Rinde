@@ -3231,6 +3231,111 @@
           }
         }
       }
+    },
+    "/api/alerts": {
+      "get": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Ver mis alertas",
+        "description": "Las últimas alertas de presupuesto y cuántas hay sin leer.",
+        "operationId": "list_alerts_api_alerts_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AlertsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/alerts/read": {
+      "post": {
+        "tags": [
+          "alerts"
+        ],
+        "summary": "Marcar alertas como leídas",
+        "description": "Repetirlo no cambia nada: una alerta leída sigue con su primera fecha de lectura.",
+        "operationId": "mark_read_api_alerts_read_post",
+        "parameters": [
+          {
+            "name": "x-requested-with",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarkReadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3291,6 +3396,111 @@
           "archived_at"
         ],
         "title": "AccountResponse"
+      },
+      "AlertCategoryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug",
+            "description": "Solo en las sembradas: la interfaz las traduce"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ],
+        "title": "AlertCategoryResponse"
+      },
+      "AlertResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "category": {
+            "$ref": "#/components/schemas/AlertCategoryResponse"
+          },
+          "month": {
+            "type": "string",
+            "title": "Month",
+            "description": "El mes del presupuesto"
+          },
+          "threshold": {
+            "$ref": "#/components/schemas/Threshold",
+            "description": "warning al llegar al 80 %, over al 100 %"
+          },
+          "limit": {
+            "$ref": "#/components/schemas/MoneyResponse",
+            "description": "El tope cuando se disparó"
+          },
+          "spent": {
+            "$ref": "#/components/schemas/MoneyResponse",
+            "description": "Lo gastado cuando se disparó, en la moneda del tope"
+          },
+          "raised_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Raised At"
+          },
+          "read": {
+            "type": "boolean",
+            "title": "Read"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "category",
+          "month",
+          "threshold",
+          "limit",
+          "spent",
+          "raised_at",
+          "read"
+        ],
+        "title": "AlertResponse"
+      },
+      "AlertsResponse": {
+        "properties": {
+          "unread": {
+            "type": "integer",
+            "title": "Unread",
+            "description": "Todas las sin leer, aunque no entren en la lista"
+          },
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/AlertResponse"
+            },
+            "type": "array",
+            "title": "Alerts",
+            "description": "Las últimas 50, de la más nueva a la más vieja"
+          }
+        },
+        "type": "object",
+        "required": [
+          "unread",
+          "alerts"
+        ],
+        "title": "AlertsResponse"
       },
       "BalanceResponse": {
         "properties": {
@@ -3870,6 +4080,27 @@
         ],
         "title": "LivenessResponse"
       },
+      "MarkReadRequest": {
+        "properties": {
+          "ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Ids"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ids"
+        ],
+        "title": "MarkReadRequest",
+        "description": "Las alertas que la persona vio. Las de otra persona se ignoran: no cambian."
+      },
       "MeResponse": {
         "properties": {
           "username": {
@@ -4307,6 +4538,14 @@
           "name"
         ],
         "title": "RenameCategoryRequest"
+      },
+      "Threshold": {
+        "type": "string",
+        "enum": [
+          "warning",
+          "over"
+        ],
+        "title": "Threshold"
       },
       "TransactionKind": {
         "type": "string",

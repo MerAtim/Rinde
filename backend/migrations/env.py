@@ -10,6 +10,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import create_async_engine
 
 import rinde.accounts.infrastructure.tables
+import rinde.alerts.infrastructure.tables
 import rinde.auth.infrastructure.tables
 import rinde.budgets.infrastructure.tables
 import rinde.preferences.infrastructure.tables

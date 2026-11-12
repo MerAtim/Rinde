@@ -114,6 +114,7 @@ containers = [
     "rinde.preferences",
     "rinde.dashboard",
     "rinde.budgets",
+    "rinde.alerts",
 ]
 layers = ["api | infrastructure", "application", "(domain)"]
 
@@ -136,6 +137,8 @@ source_modules = [
     "rinde.dashboard.domain",
     "rinde.budgets.application",
     "rinde.budgets.domain",
+    "rinde.alerts.application",
+    "rinde.alerts.domain",
     "rinde.shared.domain",
 ]
 forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic", "httpx", "argon2"]
@@ -153,6 +156,7 @@ forbidden_modules = [
     "rinde.preferences",
     "rinde.dashboard",
     "rinde.budgets",
+    "rinde.alerts",
 ]
 
 [[tool.importlinter.contracts]]
@@ -225,7 +229,7 @@ name = "Ningún módulo depende del dashboard: es un modelo de lectura sobre los
 type = "forbidden"
 source_modules = [
     "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
-    "rinde.health", "rinde.budgets",
+    "rinde.health", "rinde.budgets", "rinde.alerts",
 ]
 forbidden_modules = ["rinde.dashboard"]
 
@@ -254,10 +258,45 @@ forbidden_modules = [
 ]
 
 [[tool.importlinter.contracts]]
-name = "Ningún módulo depende de presupuestos: los demás no saben que existen topes"
+name = "Ningún módulo depende de presupuestos salvo alertas: los demás no saben que existen topes"
 type = "forbidden"
 source_modules = [
     "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
     "rinde.health", "rinde.dashboard",
 ]
 forbidden_modules = ["rinde.budgets"]
+
+[[tool.importlinter.contracts]]
+name = "Solo los adaptadores de alertas conocen otros módulos: su dominio y su aplicación, no"
+type = "forbidden"
+source_modules = ["rinde.alerts.application", "rinde.alerts.domain"]
+forbidden_modules = [
+    "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
+    "rinde.health", "rinde.dashboard", "rinde.budgets",
+]
+
+[[tool.importlinter.contracts]]
+name = "Alertas lee a presupuestos y movimientos por su capa de aplicación, y a nadie más"
+type = "forbidden"
+# Solo las importaciones directas, como en presupuestos.
+allow_indirect_imports = true
+source_modules = ["rinde.alerts"]
+forbidden_modules = [
+    "rinde.auth",
+    "rinde.accounts",
+    "rinde.health",
+    "rinde.rates",
+    "rinde.preferences",
+    "rinde.dashboard",
+    "rinde.transactions.api", "rinde.transactions.infrastructure", "rinde.transactions.domain",
+    "rinde.budgets.api", "rinde.budgets.infrastructure", "rinde.budgets.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Ningún módulo depende de alertas: escuchan eventos, nadie las llama"
+type = "forbidden"
+source_modules = [
+    "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
+    "rinde.health", "rinde.dashboard", "rinde.budgets",
+]
+forbidden_modules = ["rinde.alerts"]

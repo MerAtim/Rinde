@@ -9,6 +9,11 @@ from uuid import UUID
 from rinde.accounts.application.unit import AccountsUnit, build_accounts_unit
 from rinde.accounts.application.use_cases import AccountsDependencies, GetAccount
 from rinde.accounts.domain.account import Account
+from rinde.alerts.application.unit import AlertsGateways, AlertsUnit, build_alerts_unit
+from rinde.alerts.infrastructure.gateways import BudgetsMonthReader
+from rinde.alerts.infrastructure.gateways import (
+    TransactionsCategoryReader as AlertsCategoryReader,
+)
 from rinde.auth.application.dependencies import AuthDependencies, AuthServices
 from rinde.auth.application.ports import ClientAction, Session
 from rinde.auth.application.unit import AuthUnit, build_auth_unit
@@ -31,6 +36,7 @@ from rinde.transactions.application.dependencies import TransactionsDependencies
 from rinde.transactions.application.ports import EventPublisher
 from rinde.transactions.application.unit import TransactionsUnit, build_transactions_unit
 from rinde.transactions.infrastructure.accounts_gateway import AccountsApplicationGateway
+from tests.unit.alerts.fakes import InMemoryAlertRepository
 from tests.unit.budgets.fakes import InMemoryBudgetRepository
 from tests.unit.rates.fakes import FakeHistoryProvider, FakeRateProvider, InMemoryQuotes
 from tests.unit.transactions.fakes import (
@@ -399,3 +405,25 @@ class InMemoryBudgetsUnitFactory:
     @asynccontextmanager
     async def __call__(self) -> AsyncIterator[BudgetsUnit]:
         yield build_budgets_unit(self.budgets, self.transaction, self._gateways, self.clock)
+
+
+class InMemoryAlertsUnitFactory:
+    """Alertas en memoria, con los adaptadores reales sobre presupuestos y movimientos."""
+
+    def __init__(
+        self,
+        transactions: InMemoryTransactionsUnitFactory,
+        budgets: InMemoryBudgetsUnitFactory,
+        clock: FakeClock | None = None,
+    ) -> None:
+        self.alerts = InMemoryAlertRepository()
+        self.transaction = FakeTransaction()
+        self.clock = clock or FakeClock()
+        self.gateways = AlertsGateways(
+            budgets=BudgetsMonthReader(budgets),
+            categories=AlertsCategoryReader(transactions),
+        )
+
+    @asynccontextmanager
+    async def __call__(self) -> AsyncIterator[AlertsUnit]:
+        yield build_alerts_unit(self.alerts, self.transaction, self.gateways, self.clock)
