@@ -23,3 +23,4 @@
 | [0019](0019-navegador-de-ci-en-contenedor.md) | El job de frontend corre en la imagen oficial de Playwright | Aceptado | 2026-11-11 |
 | [0020](0020-pantalla-del-dashboard.md) | Pantalla del dashboard: gráficos, tabla equivalente y filtros en la URL | Acepta y reemplaza en parte a ADR-0003 | 2026-11-11 |
 | [0021](0021-modelo-de-presupuestos.md) | Modelo de presupuestos: topes mensuales con vigencia, en su propia moneda | Aceptado | 2026-11-12 |
+| [0022](0022-alertas-de-presupuesto.md) | Alertas de presupuesto: eventos en el proceso, evaluación por estado | Aceptado | 2026-11-12 |
