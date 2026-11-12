@@ -27,6 +27,7 @@ from rinde.main import create_app
 from tests.fakes import (
     FakeDatabaseProbe,
     InMemoryAccountsUnitFactory,
+    InMemoryAlertsUnitFactory,
     InMemoryAuthUnitFactory,
     InMemoryBudgetsUnitFactory,
     InMemoryPreferencesUnitFactory,
@@ -151,6 +152,7 @@ def app(settings: Settings) -> FastAPI:
     transactions = InMemoryTransactionsUnitFactory(accounts_factory.accounts)
     preferences = InMemoryPreferencesUnitFactory()
     rates = InMemoryRatesUnitFactory()
+    budgets = InMemoryBudgetsUnitFactory(transactions, preferences, rates)
     return create_app(
         settings,
         database_probe=FakeDatabaseProbe(reachable=True),
@@ -159,7 +161,8 @@ def app(settings: Settings) -> FastAPI:
         transactions_factory=transactions,
         rates_factory=rates,
         preferences_factory=preferences,
-        budgets_factory=InMemoryBudgetsUnitFactory(transactions, preferences, rates),
+        budgets_factory=budgets,
+        alerts_factory=InMemoryAlertsUnitFactory(transactions, budgets),
     )
 
 
