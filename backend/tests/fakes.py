@@ -28,6 +28,7 @@ from rinde.preferences.domain.preferences import Preferences
 from rinde.rates.application.unit import RatesUnit, build_rates_unit
 from rinde.rates.application.use_cases import RatesDependencies
 from rinde.transactions.application.dependencies import TransactionsDependencies
+from rinde.transactions.application.ports import EventPublisher
 from rinde.transactions.application.unit import TransactionsUnit, build_transactions_unit
 from rinde.transactions.infrastructure.accounts_gateway import AccountsApplicationGateway
 from tests.unit.budgets.fakes import InMemoryBudgetRepository
@@ -39,6 +40,7 @@ from tests.unit.transactions.fakes import (
     FakeTransactionRepository,
     FakeTransferAuditLog,
     FakeTransferRepository,
+    RecordingPublisher,
 )
 
 
@@ -273,7 +275,12 @@ class InMemoryTransactionsUnitFactory:
     de API prueban también ese camino.
     """
 
-    def __init__(self, accounts: InMemoryAccounts, clock: FakeClock | None = None) -> None:
+    def __init__(
+        self,
+        accounts: InMemoryAccounts,
+        clock: FakeClock | None = None,
+        events: EventPublisher | None = None,
+    ) -> None:
         self.transactions = FakeTransactionRepository()
         self.transfers = FakeTransferRepository()
         self.categories = FakeCategoryRepository()
@@ -283,6 +290,8 @@ class InMemoryTransactionsUnitFactory:
         self.transaction = FakeTransaction()
         self.clock = clock or FakeClock()
         self._accounts = accounts
+        # Por defecto guarda lo publicado; los tests de alertas le pasan el bus real.
+        self.events = events or RecordingPublisher()
 
     @asynccontextmanager
     async def __call__(self) -> AsyncIterator[TransactionsUnit]:
@@ -305,6 +314,7 @@ class InMemoryTransactionsUnitFactory:
                 transfer_audit=self.transfer_audit,
                 transaction=self.transaction,
                 clock=self.clock,
+                events=self.events,
             )
         )
 

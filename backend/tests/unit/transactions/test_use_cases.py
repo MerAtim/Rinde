@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 import pytest
 
 from rinde.shared.domain.money import AmountTooPreciseError, Currency, Money
+from rinde.transactions.application.events import ExpenseRecorded
 from rinde.transactions.application.ports import AccountBalance, TransactionFilters
 from rinde.transactions.application.use_cases import TransactionInput
 from rinde.transactions.domain.category import Category, CategoryName, TransactionKind
@@ -230,3 +231,60 @@ async def test_nobody_sees_the_movements_of_another_person(setup: Setup) -> None
 
     assert page.items == []
     assert await setup.unit.balances.execute(STRANGER) == []
+
+
+async def test_registering_an_expense_publishes_it_after_committing(setup: Setup) -> None:
+    movement = await setup.unit.register.execute(OWNER, setup.an_input(day=10))
+
+    assert setup.events.events == [
+        ExpenseRecorded(
+            owner_id=OWNER,
+            transaction_id=movement.id,
+            category_id=setup.expense_category.id,
+            occurred_on=a_date(10),
+        )
+    ]
+    # Un suscriptor que falla no puede deshacer lo que ya está confirmado (ADR-0022).
+    assert setup.events.commits_at_publish == [1]
+
+
+async def test_an_income_is_not_published(setup: Setup) -> None:
+    await setup.unit.register.execute(OWNER, setup.an_input(kind=TransactionKind.INCOME))
+
+    assert setup.events.events == []
+
+
+async def test_repeating_a_request_with_the_same_key_does_not_publish_again(
+    setup: Setup,
+) -> None:
+    data = setup.an_input()
+
+    await setup.unit.register.execute(OWNER, data, "clave-1")
+    await setup.unit.register.execute(OWNER, data, "clave-1")
+
+    assert len(setup.events.events) == 1
+
+
+async def test_editing_and_restoring_publish_but_deleting_does_not(setup: Setup) -> None:
+    movement = await setup.unit.register.execute(OWNER, setup.an_input())
+
+    await setup.unit.edit.execute(OWNER, movement.id, setup.an_input(amount="900.00", day=12))
+    await setup.unit.delete.execute(OWNER, movement.id)
+    await setup.unit.restore.execute(OWNER, movement.id)
+    # Restaurar lo que no está borrado no cambia nada, así que no publica.
+    await setup.unit.restore.execute(OWNER, movement.id)
+
+    assert [event.occurred_on for event in setup.events.events] == [
+        a_date(18),
+        a_date(12),
+        a_date(12),
+    ]
+    assert setup.events.commits_at_publish == [1, 2, 4]
+
+
+async def test_editing_an_expense_into_an_income_is_not_published(setup: Setup) -> None:
+    movement = await setup.unit.register.execute(OWNER, setup.an_input())
+
+    await setup.unit.edit.execute(OWNER, movement.id, setup.an_input(kind=TransactionKind.INCOME))
+
+    assert len(setup.events.events) == 1

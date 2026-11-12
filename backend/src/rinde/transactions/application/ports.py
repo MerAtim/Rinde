@@ -12,6 +12,7 @@ from typing import Protocol
 from uuid import UUID
 
 from rinde.shared.domain.money import Currency, Money
+from rinde.transactions.application.events import ExpenseRecorded
 from rinde.transactions.domain.category import Category, TransactionKind
 from rinde.transactions.domain.transaction import AuditAction, TargetAccount, Transaction
 from rinde.transactions.domain.transfer import Transfer
@@ -275,6 +276,12 @@ class TransferAuditLog(Protocol):
 
 class Clock(Protocol):
     def now(self) -> datetime: ...
+
+
+class EventPublisher(Protocol):
+    """Avisa a otros módulos de un hecho ya confirmado. No sabe quién escucha (ADR-0022)."""
+
+    async def publish(self, event: ExpenseRecorded) -> None: ...
 
 
 class DatabaseTransaction(Protocol):

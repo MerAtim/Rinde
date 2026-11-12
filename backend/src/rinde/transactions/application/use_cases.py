@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 
 from rinde.shared.domain.money import Money
 from rinde.transactions.application.dependencies import TransactionsDependencies
+from rinde.transactions.application.events import expense_recorded
 from rinde.transactions.application.pagination import Cursor
 from rinde.transactions.application.ports import (
     AccountBalance,
@@ -120,6 +121,17 @@ async def _draft(
     )
 
 
+async def _published(deps: TransactionsDependencies, transaction: Transaction) -> None:
+    """Después de confirmar: un suscriptor no puede deshacer el movimiento (ADR-0022).
+
+    Un pedido repetido con la misma clave de idempotencia no publica de nuevo,
+    porque no cambió nada.
+    """
+    event = expense_recorded(transaction)
+    if event is not None:
+        await deps.events.publish(event)
+
+
 class RegisterTransaction:
     def __init__(self, deps: TransactionsDependencies) -> None:
         self._deps = deps
@@ -148,6 +160,7 @@ class RegisterTransaction:
             )
             await deps.idempotency.forget_expired(now - IDEMPOTENCY_TTL)
         await deps.transaction.commit()
+        await _published(deps, transaction)
         return transaction
 
     async def _repeated(
@@ -182,6 +195,7 @@ class EditTransaction:
         await deps.transactions.save(edited)
         await deps.audit.record(AuditAction.EDITED, edited, now)
         await deps.transaction.commit()
+        await _published(deps, edited)
         return edited
 
 
@@ -216,6 +230,7 @@ class RestoreTransaction:
             await deps.transactions.save(restored)
             await deps.audit.record(AuditAction.RESTORED, restored, now)
             await deps.transaction.commit()
+            await _published(deps, restored)
         return restored
 
 

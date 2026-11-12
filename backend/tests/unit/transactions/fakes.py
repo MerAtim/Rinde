@@ -10,6 +10,7 @@ from uuid import UUID
 from rinde.shared.domain.money import Currency, Money
 from rinde.shared.domain.text import fold
 from rinde.transactions.application.dependencies import TransactionsDependencies
+from rinde.transactions.application.events import ExpenseRecorded
 from rinde.transactions.application.pagination import Cursor
 from rinde.transactions.application.ports import (
     AccountBalance,
@@ -45,6 +46,19 @@ class FakeDatabaseTransaction:
 
     async def commit(self) -> None:
         self.commits += 1
+
+
+class RecordingPublisher:
+    """Guarda lo publicado y cuántas confirmaciones había en ese momento."""
+
+    def __init__(self, db: FakeDatabaseTransaction | None = None) -> None:
+        self._db = db
+        self.events: list[ExpenseRecorded] = []
+        self.commits_at_publish: list[int] = []
+
+    async def publish(self, event: ExpenseRecorded) -> None:
+        self.events.append(event)
+        self.commits_at_publish.append(0 if self._db is None else self._db.commits)
 
 
 def _in_scope(account_id: UUID, scope: LedgerScope) -> bool:
@@ -349,6 +363,7 @@ class Harness:
         self.audit = FakeAuditLog()
         self.transfer_audit = FakeTransferAuditLog()
         self.db = FakeDatabaseTransaction()
+        self.events = RecordingPublisher(self.db)
         self.unit: TransactionsUnit = build_transactions_unit(
             TransactionsDependencies(
                 transactions=self.transactions,
@@ -360,5 +375,6 @@ class Harness:
                 transfer_audit=self.transfer_audit,
                 transaction=self.db,
                 clock=self.clock,
+                events=self.events,
             )
         )

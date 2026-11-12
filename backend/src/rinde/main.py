@@ -78,6 +78,7 @@ from rinde.shared.api.csrf import CsrfRejectedError, csrf_error_handler
 from rinde.shared.api.errors import domain_error_handler
 from rinde.shared.domain.errors import DomainError
 from rinde.shared.infrastructure.clock import SystemClock
+from rinde.shared.infrastructure.events import InProcessEventBus
 from rinde.transactions.api.errors import transactions_error_handler
 from rinde.transactions.api.router import router as transactions_router
 from rinde.transactions.application.unit import TransactionsUnitFactory
@@ -105,6 +106,7 @@ def create_app(  # noqa: PLR0913
     preferences_factory: PreferencesUnitFactory | None = None,
     budgets_factory: BudgetsUnitFactory | None = None,
     dashboard_clock: Clock | None = None,
+    event_bus: InProcessEventBus | None = None,
 ) -> FastAPI:
     """Crea la aplicación.
 
@@ -125,6 +127,10 @@ def create_app(  # noqa: PLR0913
         if engine is None:
             engine = create_async_engine(config.database_url.get_secret_value(), pool_pre_ping=True)
         return engine
+
+    # Uno por aplicación: los módulos publican en él y acá se suscriben los
+    # interesados (ADR-0022). Los tests pasan el mismo a sus fábricas en memoria.
+    events = event_bus or InProcessEventBus()
 
     if database_probe is None:
         database_probe = SqlAlchemyDatabaseProbe(shared_engine())
@@ -147,24 +153,9 @@ def create_app(  # noqa: PLR0913
             async_sessionmaker(shared_engine(), expire_on_commit=False), SystemClock()
         )
 
-    if transactions_factory is None:
-        clock = SystemClock()
-
-        def account_gateway(session: AsyncSession) -> AccountsApplicationGateway:
-            """Movimientos ve las cuentas por el caso de uso de cuentas, en la misma sesión."""
-            return AccountsApplicationGateway(
-                GetAccount(
-                    AccountsDependencies(
-                        accounts=SqlAlchemyAccountRepository(session),
-                        transaction=SqlAlchemyTransaction(session),
-                        clock=clock,
-                    )
-                )
-            )
-
-        transactions_factory = SqlAlchemyTransactionsUnitFactory(
-            async_sessionmaker(shared_engine(), expire_on_commit=False), clock, account_gateway
-        )
+    transactions_factory = transactions_factory or _sql_transactions(
+        async_sessionmaker(shared_engine(), expire_on_commit=False), events
+    )
 
     if rates_factory is None:
         clock = SystemClock()
@@ -241,6 +232,26 @@ def create_app(  # noqa: PLR0913
     )
     _register_modules(app)
     return app
+
+
+def _sql_transactions(
+    sessionmaker: async_sessionmaker[AsyncSession], events: InProcessEventBus
+) -> TransactionsUnitFactory:
+    clock = SystemClock()
+
+    def account_gateway(session: AsyncSession) -> AccountsApplicationGateway:
+        """Movimientos ve las cuentas por el caso de uso de cuentas, en la misma sesión."""
+        return AccountsApplicationGateway(
+            GetAccount(
+                AccountsDependencies(
+                    accounts=SqlAlchemyAccountRepository(session),
+                    transaction=SqlAlchemyTransaction(session),
+                    clock=clock,
+                )
+            )
+        )
+
+    return SqlAlchemyTransactionsUnitFactory(sessionmaker, clock, account_gateway, events)
 
 
 def _sql_budgets(
