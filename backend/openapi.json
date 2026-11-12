@@ -2989,6 +2989,248 @@
           }
         }
       }
+    },
+    "/api/budgets": {
+      "get": {
+        "tags": [
+          "budgets"
+        ],
+        "summary": "Ver mis presupuestos de un mes",
+        "description": "El tope de cada categoría en ese mes, cuánto se gastó y cuánto queda.",
+        "operationId": "list_budgets_api_budgets_get",
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-(0[1-9]|1[0-2])$"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "AAAA-MM. Si falta, el mes en curso",
+              "title": "Month"
+            },
+            "description": "AAAA-MM. Si falta, el mes en curso"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetsResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
+    "/api/budgets/{category_id}": {
+      "put": {
+        "tags": [
+          "budgets"
+        ],
+        "summary": "Fijar el tope de una categoría desde este mes",
+        "operationId": "set_budget_api_budgets__category_id__put",
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Category Id"
+            }
+          },
+          {
+            "name": "x-requested-with",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BudgetRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BudgetLimitResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "budgets"
+        ],
+        "summary": "Quitar el tope de una categoría desde este mes",
+        "operationId": "remove_budget_api_budgets__category_id__delete",
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Category Id"
+            }
+          },
+          {
+            "name": "x-requested-with",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3072,6 +3314,168 @@
           "currency"
         ],
         "title": "BalanceResponse"
+      },
+      "BudgetCategoryResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug",
+            "description": "Solo en las sembradas: la interfaz las traduce"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "slug"
+        ],
+        "title": "BudgetCategoryResponse"
+      },
+      "BudgetLimitResponse": {
+        "properties": {
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Id"
+          },
+          "since": {
+            "type": "string",
+            "title": "Since"
+          },
+          "limit": {
+            "$ref": "#/components/schemas/MoneyResponse"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category_id",
+          "since",
+          "limit"
+        ],
+        "title": "BudgetLimitResponse"
+      },
+      "BudgetRequest": {
+        "properties": {
+          "amount": {
+            "type": "string",
+            "title": "Amount",
+            "description": "Monto positivo como string decimal, por ejemplo \"15300.50\""
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "amount",
+          "currency"
+        ],
+        "title": "BudgetRequest",
+        "description": "El tope entero, en su moneda: es reemplazarlo, no parchearlo."
+      },
+      "BudgetResponse": {
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/BudgetCategoryResponse"
+          },
+          "since": {
+            "type": "string",
+            "title": "Since",
+            "description": "El mes desde el que vale este tope"
+          },
+          "limit": {
+            "$ref": "#/components/schemas/MoneyResponse"
+          },
+          "spent": {
+            "$ref": "#/components/schemas/MoneyResponse",
+            "description": "En la moneda del tope, convertido día por día"
+          },
+          "remaining": {
+            "$ref": "#/components/schemas/MoneyResponse",
+            "description": "Negativo si el gasto pasó el tope"
+          },
+          "ratio": {
+            "type": "string",
+            "title": "Ratio",
+            "description": "Gastado sobre tope, como string: \"1\" es el tope"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BudgetStatus",
+            "description": "on_track, warning desde el 80 %, over desde el 100 %"
+          },
+          "unconverted": {
+            "items": {
+              "$ref": "#/components/schemas/MoneyResponse"
+            },
+            "type": "array",
+            "title": "Unconverted",
+            "description": "Gastos que no entraron en `spent` porque no tienen cotización"
+          }
+        },
+        "type": "object",
+        "required": [
+          "category",
+          "since",
+          "limit",
+          "spent",
+          "remaining",
+          "ratio",
+          "status",
+          "unconverted"
+        ],
+        "title": "BudgetResponse"
+      },
+      "BudgetStatus": {
+        "type": "string",
+        "enum": [
+          "on_track",
+          "warning",
+          "over"
+        ],
+        "title": "BudgetStatus"
+      },
+      "BudgetsResponse": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "rate_type": {
+            "$ref": "#/components/schemas/RateType",
+            "description": "El dólar con que se convierte otra moneda"
+          },
+          "budgets": {
+            "items": {
+              "$ref": "#/components/schemas/BudgetResponse"
+            },
+            "type": "array",
+            "title": "Budgets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "rate_type",
+          "budgets"
+        ],
+        "title": "BudgetsResponse"
       },
       "CategoryRequest": {
         "properties": {

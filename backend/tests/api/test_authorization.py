@@ -28,6 +28,9 @@ from tests.fakes import (
     FakeDatabaseProbe,
     InMemoryAccountsUnitFactory,
     InMemoryAuthUnitFactory,
+    InMemoryBudgetsUnitFactory,
+    InMemoryPreferencesUnitFactory,
+    InMemoryRatesUnitFactory,
     InMemoryTransactionsUnitFactory,
 )
 
@@ -131,6 +134,7 @@ VALID_BODIES: dict[tuple[str, str], dict[str, Any]] = {
         "category_id": str(uuid4()),
         "occurred_on": "2026-09-11",
     },
+    ("PUT", "/api/budgets/{category_id}"): {"amount": "1.00", "currency": "ARS"},
     ("PATCH", "/api/transfers/{transfer_id}"): {
         "from_account_id": str(uuid4()),
         "to_account_id": str(uuid4()),
@@ -144,12 +148,18 @@ VALID_BODIES: dict[tuple[str, str], dict[str, Any]] = {
 @pytest.fixture
 def app(settings: Settings) -> FastAPI:
     accounts_factory = InMemoryAccountsUnitFactory()
+    transactions = InMemoryTransactionsUnitFactory(accounts_factory.accounts)
+    preferences = InMemoryPreferencesUnitFactory()
+    rates = InMemoryRatesUnitFactory()
     return create_app(
         settings,
         database_probe=FakeDatabaseProbe(reachable=True),
         auth_factory=InMemoryAuthUnitFactory(),
         accounts_factory=accounts_factory,
-        transactions_factory=InMemoryTransactionsUnitFactory(accounts_factory.accounts),
+        transactions_factory=transactions,
+        rates_factory=rates,
+        preferences_factory=preferences,
+        budgets_factory=InMemoryBudgetsUnitFactory(transactions, preferences, rates),
     )
 
 

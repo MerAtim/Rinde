@@ -466,6 +466,44 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/budgets": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Ver mis presupuestos de un mes
+     * @description El tope de cada categoría en ese mes, cuánto se gastó y cuánto queda.
+     */
+    get: operations["list_budgets_api_budgets_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/budgets/{category_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    /** Fijar el tope de una categoría desde este mes */
+    put: operations["set_budget_api_budgets__category_id__put"];
+    post?: never;
+    /** Quitar el tope de una categoría desde este mes */
+    delete: operations["remove_budget_api_budgets__category_id__delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -504,6 +542,84 @@ export interface components {
       /** Amount */
       amount: string;
       currency: components["schemas"]["Currency"];
+    };
+    /** BudgetCategoryResponse */
+    BudgetCategoryResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /**
+       * Slug
+       * @description Solo en las sembradas: la interfaz las traduce
+       */
+      slug: string | null;
+    };
+    /** BudgetLimitResponse */
+    BudgetLimitResponse: {
+      /**
+       * Category Id
+       * Format: uuid
+       */
+      category_id: string;
+      /** Since */
+      since: string;
+      limit: components["schemas"]["MoneyResponse"];
+    };
+    /**
+     * BudgetRequest
+     * @description El tope entero, en su moneda: es reemplazarlo, no parchearlo.
+     */
+    BudgetRequest: {
+      /**
+       * Amount
+       * @description Monto positivo como string decimal, por ejemplo "15300.50"
+       */
+      amount: string;
+      currency: components["schemas"]["Currency"];
+    };
+    /** BudgetResponse */
+    BudgetResponse: {
+      category: components["schemas"]["BudgetCategoryResponse"];
+      /**
+       * Since
+       * @description El mes desde el que vale este tope
+       */
+      since: string;
+      limit: components["schemas"]["MoneyResponse"];
+      /** @description En la moneda del tope, convertido día por día */
+      spent: components["schemas"]["MoneyResponse"];
+      /** @description Negativo si el gasto pasó el tope */
+      remaining: components["schemas"]["MoneyResponse"];
+      /**
+       * Ratio
+       * @description Gastado sobre tope, como string: "1" es el tope
+       */
+      ratio: string;
+      /** @description on_track, warning desde el 80 %, over desde el 100 % */
+      status: components["schemas"]["BudgetStatus"];
+      /**
+       * Unconverted
+       * @description Gastos que no entraron en `spent` porque no tienen cotización
+       */
+      unconverted: components["schemas"]["MoneyResponse"][];
+    };
+    /**
+     * BudgetStatus
+     * @enum {string}
+     */
+    BudgetStatus: "on_track" | "warning" | "over";
+    /** BudgetsResponse */
+    BudgetsResponse: {
+      /** Month */
+      month: string;
+      /** @description El dólar con que se convierte otra moneda */
+      rate_type: components["schemas"]["RateType"];
+      /** Budgets */
+      budgets: components["schemas"]["BudgetResponse"][];
     };
     /** CategoryRequest */
     CategoryRequest: {
@@ -2921,6 +3037,169 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  list_budgets_api_budgets_get: {
+    parameters: {
+      query?: {
+        /** @description AAAA-MM. Si falta, el mes en curso */
+        month?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetsResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  set_budget_api_budgets__category_id__put: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path: {
+        category_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BudgetRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BudgetLimitResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  remove_budget_api_budgets__category_id__delete: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path: {
+        category_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
