@@ -5,13 +5,12 @@ Los montos viajan como string decimal (ADR-0002): un número en JSON pasa por el
 """
 
 from datetime import date, datetime
-from decimal import Decimal, InvalidOperation
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, PlainSerializer
+from pydantic import BaseModel, ConfigDict, Field
 
-from rinde.shared.api.schemas import AmountOut, decimal_text
+from rinde.shared.api.schemas import AmountIn, AmountOut
 from rinde.shared.domain.money import Currency
 from rinde.transactions.application.ports import (
     AccountBalance,
@@ -23,24 +22,6 @@ from rinde.transactions.application.use_cases import DEFAULT_PAGE_SIZE, MAX_PAGE
 from rinde.transactions.domain.category import Category, CategoryName, TransactionKind
 from rinde.transactions.domain.transaction import Description, Transaction
 from rinde.transactions.domain.transfer import Transfer
-
-
-def _decimal_from_string(value: object) -> Decimal:
-    """Solo string: un número en JSON pasa por el `double` y ya perdió precisión."""
-    if not isinstance(value, str):
-        raise ValueError("el monto viaja como string decimal, no como número")
-    try:
-        return Decimal(value)
-    except InvalidOperation:
-        raise ValueError("no es un monto decimal") from None
-
-
-AmountIn = Annotated[
-    Decimal,
-    BeforeValidator(_decimal_from_string, json_schema_input_type=str),
-    PlainSerializer(decimal_text, return_type=str),
-    Field(description='Monto positivo como string decimal, por ejemplo "15300.50"'),
-]
 
 
 class TransactionQuery(BaseModel):

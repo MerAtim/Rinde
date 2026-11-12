@@ -1,9 +1,9 @@
 """Esquemas web compartidos por todos los módulos."""
 
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Annotated, Any
 
-from pydantic import BaseModel, PlainSerializer
+from pydantic import BaseModel, BeforeValidator, Field, PlainSerializer
 
 from rinde.shared.domain.money import Currency, Money
 
@@ -19,6 +19,24 @@ def decimal_text(value: Decimal) -> str:
 
 # El dinero sale como string: un número de JSON lo leería como `float` del otro lado.
 AmountOut = Annotated[Decimal, PlainSerializer(decimal_text, return_type=str)]
+
+
+def _decimal_from_string(value: object) -> Decimal:
+    """Solo string: un número en JSON pasa por el `double` y ya perdió precisión."""
+    if not isinstance(value, str):
+        raise ValueError("el monto viaja como string decimal, no como número")
+    try:
+        return Decimal(value)
+    except InvalidOperation:
+        raise ValueError("no es un monto decimal") from None
+
+
+AmountIn = Annotated[
+    Decimal,
+    BeforeValidator(_decimal_from_string, json_schema_input_type=str),
+    PlainSerializer(decimal_text, return_type=str),
+    Field(description='Monto positivo como string decimal, por ejemplo "15300.50"'),
+]
 
 
 class ErrorResponse(BaseModel):
