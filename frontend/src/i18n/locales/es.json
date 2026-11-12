@@ -591,5 +591,34 @@
       "NETWORK_ERROR": "No hay conexión con el servidor. Probá de nuevo en un rato.",
       "UNKNOWN_ERROR": "Algo salió mal. Probá de nuevo."
     }
+  },
+  "alerts": {
+    "title": "Alertas",
+    "subtitle": "Te avisamos cuando un presupuesto del mes llega al 80 % y al 100 % del tope.",
+    "open": "Alertas",
+    "openUnread_one": "Alertas, {{count}} sin leer",
+    "openUnread_other": "Alertas, {{count}} sin leer",
+    "badgeOverflow": "{{max}}+",
+    "loading": "Cargando alertas…",
+    "loadError": "No pudimos cargar tus alertas.",
+    "retry": "Reintentar",
+    "empty": {
+      "title": "No tenés alertas",
+      "body": "Cuando un gasto deje un presupuesto cerca del tope, o lo pase, te avisamos acá."
+    },
+    "markRead": "Marcar como leídas",
+    "markReadError": "No pudimos marcarlas como leídas. Probá de nuevo.",
+    "unread": "Nueva",
+    "threshold": {
+      "warning": "Cerca del tope",
+      "over": "Llegaste al tope"
+    },
+    "message": {
+      "warning": "{{name}} llegó al 80 % del presupuesto",
+      "over": "{{name}} llegó al tope del presupuesto"
+    },
+    "detail": "Llevabas {{spent}} de {{limit}} en {{month}}.",
+    "viewBudgets": "Ver los presupuestos de {{month}}",
+    "noticeAction": "Ver"
   }
 }

@@ -591,5 +591,34 @@
       "NETWORK_ERROR": "There's no connection to the server. Try again in a while.",
       "UNKNOWN_ERROR": "Something went wrong. Please try again."
     }
+  },
+  "alerts": {
+    "title": "Alerts",
+    "subtitle": "We let you know when a budget for the month reaches 80% and 100% of its limit.",
+    "open": "Alerts",
+    "openUnread_one": "Alerts, {{count}} unread",
+    "openUnread_other": "Alerts, {{count}} unread",
+    "badgeOverflow": "{{max}}+",
+    "loading": "Loading alerts…",
+    "loadError": "We couldn't load your alerts.",
+    "retry": "Try again",
+    "empty": {
+      "title": "No alerts",
+      "body": "When an expense brings a budget close to its limit, or past it, you'll see it here."
+    },
+    "markRead": "Mark as read",
+    "markReadError": "We couldn't mark them as read. Try again.",
+    "unread": "New",
+    "threshold": {
+      "warning": "Close to the limit",
+      "over": "Limit reached"
+    },
+    "message": {
+      "warning": "{{name}} reached 80% of its budget",
+      "over": "{{name}} reached its budget limit"
+    },
+    "detail": "You had spent {{spent}} of {{limit}} in {{month}}.",
+    "viewBudgets": "See budgets for {{month}}",
+    "noticeAction": "View"
   }
 }

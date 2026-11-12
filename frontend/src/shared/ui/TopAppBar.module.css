@@ -22,6 +22,18 @@
   min-width: 0;
 }
 
+/*
+ * En un celular las acciones van pegadas, como los íconos de acción de una barra
+ * superior de Material 3: con cinco no entran separadas, y achicarlas sería
+ * achicar el área que se toca. Cada botón sigue midiendo 40 px, por encima de
+ * los 24 que pide WCAG 2.5.8, y el selector de idioma no recorta su texto.
+ */
+@media (max-width: 599px) {
+  .end {
+    gap: 0;
+  }
+}
+
 @media (min-width: 840px) {
   .bar {
     height: 72px;

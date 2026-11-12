@@ -132,7 +132,10 @@ Se construyen sobre React Aria cuando una pantalla los necesita, cada uno con te
 | Medidor de presupuesto | `Meter` de React Aria: barra de 8 px sobre `surface-container-highest`, llena hasta el tope aunque se pase. Primario en camino, `--rinde-warning` desde el 80 % y error desde el 100 %; contraste de 5,5:1 o más contra la pista en los dos temas. El estado lo dicen también el chip y el texto ("Te pasaste por…"), así que no depende del color (ADR-0021). |
 | Skeleton | Pulso de opacidad (sin brillo en degradé) con la forma exacta del contenido. |
 | Estado vacío | Explica el porqué y ofrece la próxima acción. |
-| Snackbar | `inverse-surface`, `shape-field`, Deshacer durante 6 segundos. |
+| Snackbar | `inverse-surface`, `shape-field`, Deshacer durante 6 segundos. Una alerta nueva usa el mismo aviso, con "Ver" en lugar de Deshacer. |
+| Badge | Grande de Material 3: 16 px de alto, píldora, `error` sobre `on-error`, cifras de ancho fijo. Va arriba a la derecha del ícono y crece hacia él; de 10 en adelante dice "9+". Es solo visual: el nombre accesible dice el número con palabras ("Alertas, 12 sin leer"). |
+| Barra superior | Marca a la izquierda y acciones a la derecha. Desde 600 px las acciones van separadas 12 px; abajo de eso van pegadas, para que los botones no bajen de 40 px ni el selector de idioma recorte su texto. Una prueba de navegador lo mide a 360 y a 599 px. |
+| Alerta de presupuesto | Fila de lista en `surface-container`; sin leer, un escalón más (`surface-container-high`) y la etiqueta "Nueva" con un punto. El umbral va en el mismo chip que el estado del presupuesto, con ícono y texto (ADR-0022). |
 | Diálogo | `shape-dialog`, elevación 5, velo con vidrio. Solo para acciones irreversibles. |
 | Hoja inferior | Solo en pantallas chicas; el botón dice el resultado ("Ver 42 movimientos"). |
 | Navigation rail | 88 px; en pantallas chicas pasa a barra inferior. |
