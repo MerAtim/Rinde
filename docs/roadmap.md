@@ -64,7 +64,8 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 ## Fase 6: importación
 * [x] CSV genérico con columnas a elegir: vista previa y deduplicación por huella (ADR-0023)
 * [x] Reglas de categorización que se guardan desde la vista previa (ADR-0024)
-* [ ] Resumen PDF de Banco Macro, verificado con sus totales de control
+* [x] Resumen PDF de Banco Macro, verificado con el saldo de cada línea y sus totales de
+  control (ADR-0023)
 
 ## Fase 7: diferenciales Argentina
 * [ ] Reportes en pesos constantes (ajuste por IPC)
