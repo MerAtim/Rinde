@@ -11,6 +11,7 @@ from rinde.transactions.domain.errors import (
     IdempotencyKeyReusedError,
     TransactionAccountArchivedError,
     TransactionAccountNotFoundError,
+    TransactionAlreadyImportedError,
     TransactionNotFoundError,
     TransferNotFoundError,
 )
@@ -25,6 +26,7 @@ _STATUS_BY_ERROR: tuple[tuple[type[DomainError], int], ...] = (
     (CategoryInUseError, status.HTTP_409_CONFLICT),
     (CategoryNameTakenError, status.HTTP_409_CONFLICT),
     (IdempotencyKeyReusedError, status.HTTP_409_CONFLICT),
+    (TransactionAlreadyImportedError, status.HTTP_409_CONFLICT),
 )
 
 

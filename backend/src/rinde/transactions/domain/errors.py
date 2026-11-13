@@ -55,6 +55,12 @@ class IdempotencyKeyReusedError(TransactionError):
     code = "IDEMPOTENCY_KEY_REUSED"
 
 
+class TransactionAlreadyImportedError(TransactionError):
+    """Otro pedido importó la misma línea al mismo tiempo (ADR-0023). Reintentar la saltea."""
+
+    code = "TRANSACTION_ALREADY_IMPORTED"
+
+
 class CursorInvalidError(TransactionError):
     code = "CURSOR_INVALID"
 

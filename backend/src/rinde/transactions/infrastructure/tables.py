@@ -79,6 +79,8 @@ transactions = Table(
     Column("created_at", DateTime(timezone=True), nullable=False),
     Column("updated_at", DateTime(timezone=True), nullable=False),
     Column("deleted_at", DateTime(timezone=True), nullable=True),
+    # Solo en los importados: SHA-256 de la línea del archivo, en hexadecimal (ADR-0023).
+    Column("source_fingerprint", String(64), nullable=True),
     ForeignKeyConstraint(
         ["account_id", "owner_id", "currency"],
         ["accounts.id", "accounts.owner_id", "accounts.currency"],
@@ -117,6 +119,19 @@ transactions = Table(
         "ix_transactions_category_id",
         "category_id",
         postgresql_where=text("deleted_at IS NULL"),
+    ),
+    CheckConstraint(
+        "source_fingerprint IS NULL OR source_fingerprint ~ '^[0-9a-f]{64}$'",
+        name="source_fingerprint_is_sha256",
+    ),
+    # Una línea se importa una sola vez por cuenta, aunque después se borre el
+    # movimiento: borrarlo fue una decisión, y reimportar no la deshace.
+    Index(
+        "uq_transactions_account_id_source_fingerprint",
+        "account_id",
+        "source_fingerprint",
+        unique=True,
+        postgresql_where=text("source_fingerprint IS NOT NULL"),
     ),
 )
 
