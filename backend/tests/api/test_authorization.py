@@ -13,6 +13,7 @@ registre acá cómo crear un recurso de otra persona para probarla. Así la regl
 no depende de acordarse de escribir el test.
 """
 
+import json
 import re
 from collections.abc import Callable, Iterator
 from typing import Any
@@ -30,6 +31,7 @@ from tests.fakes import (
     InMemoryAlertsUnitFactory,
     InMemoryAuthUnitFactory,
     InMemoryBudgetsUnitFactory,
+    InMemoryImportsUnitFactory,
     InMemoryPreferencesUnitFactory,
     InMemoryRatesUnitFactory,
     InMemoryTransactionsUnitFactory,
@@ -109,12 +111,35 @@ def _register_transfer(client: TestClient) -> str:
     return identifier
 
 
+def _upload_batch(client: TestClient) -> str:
+    layout = {
+        "delimiter": ";",
+        "encoding": "utf-8",
+        "decimal_mark": "comma",
+        "date_order": "dmy",
+        "has_header": False,
+        "date_column": 0,
+        "description_column": 1,
+        "amount": {"kind": "signed", "column": 2},
+    }
+    response = client.post(
+        "/api/imports",
+        data={"account_id": _open_account(client), "layout": json.dumps(layout)},
+        files={"file": ("extracto.csv", b"11/09/2026;COTO;-1500,00\n", "text/csv")},
+        headers=CSRF,
+    )
+    assert response.status_code == status.HTTP_201_CREATED, response.text
+    identifier: str = response.json()["id"]
+    return identifier
+
+
 # Cómo crear, con la sesión activa, un recurso para cada parámetro de camino.
 OWNED_RESOURCES: dict[str, Callable[[TestClient], str]] = {
     "account_id": _open_account,
     "category_id": _create_category,
     "transaction_id": _register_transaction,
     "transfer_id": _register_transfer,
+    "batch_id": _upload_batch,
 }
 
 # Parámetros de camino que no nombran algo de una persona: las cotizaciones son
@@ -136,6 +161,7 @@ VALID_BODIES: dict[tuple[str, str], dict[str, Any]] = {
         "occurred_on": "2026-09-11",
     },
     ("PUT", "/api/budgets/{category_id}"): {"amount": "1.00", "currency": "ARS"},
+    ("POST", "/api/imports/{batch_id}/confirm"): {"lines": []},
     ("PATCH", "/api/transfers/{transfer_id}"): {
         "from_account_id": str(uuid4()),
         "to_account_id": str(uuid4()),
@@ -163,6 +189,7 @@ def app(settings: Settings) -> FastAPI:
         preferences_factory=preferences,
         budgets_factory=budgets,
         alerts_factory=InMemoryAlertsUnitFactory(transactions, budgets),
+        imports_factory=InMemoryImportsUnitFactory(transactions),
     )
 
 
