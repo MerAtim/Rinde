@@ -74,6 +74,18 @@ export function createApiClient<Code extends string>(serverCodes: readonly Code[
     });
   }
 
+  /**
+   * Un formulario con archivos. El `Content-Type` no se fija: lo arma el
+   * navegador, con el separador de partes que necesita.
+   */
+  function postForm(path: string, form: FormData): Promise<Response> {
+    return send(path, {
+      method: "POST",
+      headers: { ...CSRF_HEADER, Accept: "application/json" },
+      body: form,
+    });
+  }
+
   /** Si el error salió de este cliente: su código es uno de este módulo o de transporte. */
   function isError(error: unknown): error is ApiRequestError<Code> {
     return (
@@ -87,6 +99,7 @@ export function createApiClient<Code extends string>(serverCodes: readonly Code[
     get,
     post: (path: string, body?: object, headers?: Record<string, string>) =>
       write("POST", path, body, headers),
+    postForm,
     put: (path: string, body: object) => write("PUT", path, body),
     patch: (path: string, body: object) => write("PATCH", path, body),
     delete: (path: string) => write("DELETE", path),

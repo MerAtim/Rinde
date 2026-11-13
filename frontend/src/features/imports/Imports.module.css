@@ -1,0 +1,223 @@
+/* Importar movimientos (ADR-0023). */
+
+.page {
+  display: grid;
+  gap: var(--rinde-space-5);
+  min-width: 0;
+}
+
+.back {
+  justify-self: start;
+  margin-inline-start: calc(-1 * var(--rinde-space-3));
+}
+
+.heading {
+  display: grid;
+  gap: var(--rinde-space-1);
+}
+
+.title {
+  font: 500 28px/36px var(--md-ref-typeface-brand);
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.subtitle,
+.muted {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 16px/24px var(--md-ref-typeface-plain);
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.meta {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 12px/16px var(--md-ref-typeface-plain);
+}
+
+.form {
+  display: grid;
+  gap: var(--rinde-space-5);
+  min-width: 0;
+  max-width: 44rem;
+}
+
+.fieldset {
+  display: grid;
+  gap: var(--rinde-space-4);
+  min-width: 0;
+  margin: 0;
+  padding: var(--rinde-space-4);
+  border: 0;
+  border-radius: var(--rinde-shape-card);
+  background: var(--md-sys-color-surface-container);
+}
+
+.legend {
+  float: left;
+  width: 100%;
+  font: 600 16px/24px var(--md-ref-typeface-plain);
+}
+
+.file {
+  display: grid;
+  justify-items: start;
+  gap: var(--rinde-space-2);
+}
+
+.label {
+  font: 500 14px/20px var(--md-ref-typeface-plain);
+}
+
+.fileButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--rinde-space-2);
+  min-height: 40px;
+  padding-inline: var(--rinde-space-4) var(--rinde-space-5);
+  border: 1px solid var(--md-sys-color-outline);
+  border-radius: var(--rinde-shape-full);
+  background: transparent;
+  color: var(--md-sys-color-primary);
+  font: 600 14px/20px var(--md-ref-typeface-plain);
+  cursor: pointer;
+  outline: none;
+}
+
+.fileButton[data-focus-visible] {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.fileName {
+  font: 500 14px/20px var(--md-ref-typeface-plain);
+  overflow-wrap: anywhere;
+}
+
+/* Las primeras filas: una tabla ancha se desplaza dentro de su tarjeta, nunca la página. */
+.sample {
+  position: relative;
+  min-width: 0;
+  overflow-x: auto;
+  padding: var(--rinde-space-4);
+  border-radius: var(--rinde-shape-card);
+  background: var(--md-sys-color-surface-container);
+}
+
+.sample:focus-visible {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+}
+
+.table {
+  border-collapse: collapse;
+}
+
+.caption {
+  margin-block-end: var(--rinde-space-3);
+  caption-side: top;
+  text-align: start;
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 13px/18px var(--md-ref-typeface-plain);
+}
+
+.table th,
+.table td {
+  padding: var(--rinde-space-2) var(--rinde-space-3);
+  text-align: start;
+  white-space: nowrap;
+  font: 400 14px/20px var(--md-ref-typeface-plain);
+  font-variant-numeric: tabular-nums;
+}
+
+.table th {
+  color: var(--md-sys-color-on-surface-variant);
+  font-weight: 600;
+}
+
+.table tbody tr > * {
+  border-block-start: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rinde-space-3);
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rinde-space-2) var(--rinde-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 600 14px/20px var(--md-ref-typeface-plain);
+}
+
+.problems {
+  display: grid;
+  gap: var(--rinde-space-2);
+  padding: var(--rinde-space-4);
+  border-radius: var(--rinde-shape-card);
+  background: var(--md-sys-color-surface-container);
+  font: 400 14px/20px var(--md-ref-typeface-plain);
+}
+
+.problems ul {
+  margin: 0;
+  padding-inline-start: var(--rinde-space-5);
+}
+
+.sectionTitle {
+  font: 600 16px/24px var(--md-ref-typeface-plain);
+}
+
+.lines {
+  display: grid;
+  gap: var(--rinde-space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.line {
+  display: grid;
+  gap: var(--rinde-space-3);
+  min-width: 0;
+  padding: var(--rinde-space-4);
+  border-radius: var(--rinde-shape-card);
+  background: var(--md-sys-color-surface-container);
+  box-shadow: inset 0 1px 0 var(--rinde-edge-light);
+}
+
+/* Lo que entra, un escalón más: lo dice también la casilla marcada. */
+.line[data-included="true"] {
+  background: var(--md-sys-color-surface-container-high);
+}
+
+.lineHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rinde-space-3);
+}
+
+.lineHeader > :first-child {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.lineText {
+  display: grid;
+  min-width: 0;
+}
+
+.lineDescription {
+  font: 600 15px/20px var(--md-ref-typeface-plain);
+  overflow-wrap: anywhere;
+}

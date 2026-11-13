@@ -95,7 +95,7 @@ export function useCategories() {
  * presupuestos, y cada uno vive en otra consulta. Un gasto puede además
  * disparar una alerta, que el servidor guarda antes de responder (ADR-0022).
  */
-function useInvalidateMoney() {
+export function useInvalidateMoney() {
   const queryClient = useQueryClient();
   return () =>
     Promise.all([

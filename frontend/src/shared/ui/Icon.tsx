@@ -30,6 +30,7 @@ import SouthWest from "@material-symbols/svg-400/rounded/south_west.svg?react";
 import SwapHoriz from "@material-symbols/svg-400/rounded/swap_horiz.svg?react";
 import Tune from "@material-symbols/svg-400/rounded/tune.svg?react";
 import Undo from "@material-symbols/svg-400/rounded/undo.svg?react";
+import Upload from "@material-symbols/svg-400/rounded/upload.svg?react";
 import Payments from "@material-symbols/svg-400/rounded/payments.svg?react";
 import Savings from "@material-symbols/svg-400/rounded/savings.svg?react";
 import SavingsFill from "@material-symbols/svg-400/rounded/savings-fill.svg?react";
@@ -77,6 +78,7 @@ const ICONS = {
   visibility: Visibility,
   "visibility-off": VisibilityOff,
   undo: Undo,
+  upload: Upload,
   wallet: AccountBalanceWallet,
   "wallet-fill": AccountBalanceWalletFill,
   warning: WarningFill,

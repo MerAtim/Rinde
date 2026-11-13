@@ -53,6 +53,8 @@ export async function mockSession(page: Page): Promise<void> {
   await page.route("**/api/budgets*", (route) => route.fulfill(json(BUDGETS)));
   // Más de 9 sin leer: el badge más ancho que puede tener la campana.
   await page.route("**/api/alerts", (route) => route.fulfill(json(ALERTS)));
+  // Descripciones y montos largos: lo más ancho que puede tener una vista previa.
+  await page.route("**/api/imports/*", (route) => route.fulfill(json(BATCH)));
   await page.route("**/api/preferences", (route) =>
     route.fulfill(json({ reference_currency: "ARS", rate_type: "crypto" })),
   );
@@ -201,4 +203,41 @@ export const ALERTS = {
       read: true,
     },
   ],
+};
+
+export const BATCH = {
+  id: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  account_id: "6d5c4b3a-2918-4f07-8e6d-5c4b3a291807",
+  file_name: "resumen-de-movimientos-caja-de-ahorro-en-pesos-octubre-2026.csv",
+  created_at: "2026-11-10T15:00:00Z",
+  expires_at: "2026-11-11T15:00:00Z",
+  confirmed: false,
+  lines: [
+    {
+      number: 2,
+      occurred_on: "2026-11-03",
+      description:
+        "TRANSFERENCIA A TERCEROS REF 0000000000000000000000 ALQUILER DEPARTAMENTO CENTRO",
+      amount: { amount: "-12345678.90", currency: "ARS" },
+      status: "new",
+      category_id: null,
+    },
+    {
+      number: 3,
+      occurred_on: "2026-11-05",
+      description: "INTERESES CAJA DE AHORRO",
+      amount: { amount: "12.34", currency: "ARS" },
+      status: "possible_duplicate",
+      category_id: null,
+    },
+    {
+      number: 4,
+      occurred_on: "2026-11-06",
+      description: "DEBITO AUTOMATICO SEGURO DE VIDA",
+      amount: { amount: "-4321.09", currency: "ARS" },
+      status: "duplicate",
+      category_id: null,
+    },
+  ],
+  errors: [{ line: 5, problem: "LINE_AMOUNT_TOO_PRECISE" }],
 };

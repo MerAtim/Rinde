@@ -23,6 +23,11 @@ export interface SelectOption {
 
 interface SelectProps {
   label: string;
+  /**
+   * Un nombre más completo para el lector de pantalla, cuando hay varios campos
+   * con la misma etiqueta visible: "Categoría de COTO" en cada fila de una lista.
+   */
+  accessibleLabel?: string;
   placeholder: string;
   options: readonly SelectOption[];
   value: string | null;
@@ -35,6 +40,7 @@ interface SelectProps {
 /** Lista desplegable de Material 3 sobre React Aria: teclado y foco resueltos. */
 export function Select({
   label,
+  accessibleLabel,
   placeholder,
   options,
   value,
@@ -54,7 +60,16 @@ export function Select({
         onChange(String(key));
       }}
     >
-      <Label className={cx(styles.label)}>{label}</Label>
+      <Label className={cx(styles.label)}>
+        {accessibleLabel ? (
+          <>
+            <span aria-hidden="true">{label}</span>
+            <span className="visually-hidden">{accessibleLabel}</span>
+          </>
+        ) : (
+          label
+        )}
+      </Label>
       <AriaButton className={cx("state-layer", styles.trigger)}>
         <SelectValue className={cx(styles.value)}>
           {({ isPlaceholder, selectedText }) => (

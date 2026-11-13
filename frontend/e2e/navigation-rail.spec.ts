@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { mockSession } from "./session";
+import { BATCH, mockSession } from "./session";
 
 /**
  * La navegación principal no se puede recortar.
@@ -76,7 +76,15 @@ for (const idioma of IDIOMAS) {
     // Presupuestos, topes con montos largos; Alertas, los mismos montos en una
     // frase; y Preferencias, el formulario. La barra superior está en todas, con la
     // campana y su badge más ancho.
-    for (const ruta of ["/", "/accounts", "/budgets", "/alerts", "/preferences"]) {
+    for (const ruta of [
+      "/",
+      "/accounts",
+      "/budgets",
+      "/alerts",
+      "/transactions/import",
+      `/imports/${BATCH.id}`,
+      "/preferences",
+    ]) {
       test(`${ruta} no se puede desplazar en horizontal`, async ({ page }) => {
         await page.setViewportSize({ width: 360, height: 900 });
         await mockSession(page);
@@ -92,6 +100,10 @@ for (const idioma of IDIOMAS) {
           await expect(page.getByRole("meter")).toHaveCount(2);
         } else if (ruta === "/alerts") {
           await expect(page.getByRole("main").getByRole("listitem")).toHaveCount(2);
+        } else if (ruta === "/transactions/import") {
+          await expect(page.getByRole("button", { name: /CSV|file/ })).toBeVisible();
+        } else if (ruta.startsWith("/imports/")) {
+          await expect(page.getByRole("checkbox")).toHaveCount(3);
         } else {
           await expect(page.getByRole("radiogroup").last()).toBeVisible();
         }
