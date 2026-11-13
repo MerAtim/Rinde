@@ -719,6 +719,11 @@ export interface components {
        * @description La categoría propuesta
        */
       category_id: string | null;
+      /**
+       * Rule
+       * @description El texto de la regla que la propuso; sin regla, es la de otros
+       */
+      rule: string | null;
     };
     /** BatchResponse */
     BatchResponse: {
@@ -883,6 +888,11 @@ export interface components {
        * Format: uuid
        */
       category_id: string;
+      /**
+       * Remember
+       * @description Un texto para recordar esta categoría en las próximas importaciones
+       */
+      remember?: string | null;
     };
     /** @enum {string} */
     ComponentStatus: "ok" | "unavailable";

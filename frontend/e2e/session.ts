@@ -221,6 +221,7 @@ export const BATCH = {
       amount: { amount: "-12345678.90", currency: "ARS" },
       status: "new",
       category_id: null,
+      rule: null,
     },
     {
       number: 3,
@@ -229,6 +230,7 @@ export const BATCH = {
       amount: { amount: "12.34", currency: "ARS" },
       status: "possible_duplicate",
       category_id: null,
+      rule: null,
     },
     {
       number: 4,
@@ -237,6 +239,7 @@ export const BATCH = {
       amount: { amount: "-4321.09", currency: "ARS" },
       status: "duplicate",
       category_id: null,
+      rule: null,
     },
   ],
   errors: [{ line: 5, problem: "LINE_AMOUNT_TOO_PRECISE" }],

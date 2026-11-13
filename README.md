@@ -16,6 +16,7 @@ Aplicación web de finanzas personales para Argentina y LatAm. Responde una preg
 * **Presupuestos mensuales por categoría,** en pesos o en dólares. Cada tope muestra cuánto gastaste, cuánto queda y si estás cerca o te pasaste. Lo gastado en otra moneda se convierte con la cotización de su día. Cambiar un tope vale desde el mes en curso: los meses que ya pasaron conservan el que tenían ([ADR-0021](docs/adr/0021-modelo-de-presupuestos.md)).
 * **Alertas de presupuesto** cuando un gasto deja una categoría en el 80 % o en el 100 % de su tope: una campana con las que no leíste y un aviso en el momento. Cada umbral avisa una sola vez por mes, y solo el mes en curso. El aviso guarda lo que había al dispararse, aunque después cambie el tope ([ADR-0022](docs/adr/0022-alertas-de-presupuesto.md)).
 * **Importar movimientos desde un CSV** del banco. Elegís cómo está escrito (separador, codificación, formato de montos y fechas) y qué columna es cada cosa, con el monto en una columna o en débito y crédito. Antes de guardar ves todo: lo que ya importaste queda afuera, lo que se parece a algo cargado a mano se marca, y una línea que no se entiende se informa en lugar de adivinarse. Reimportar el mismo archivo no duplica nada ([ADR-0023](docs/adr/0023-modelo-de-importacion.md)).
+* **Reglas de categoría al importar:** en la vista previa podés recordar "si dice COTO, es Supermercado", y las próximas importaciones lo aplican solas. Si coinciden dos reglas gana la más específica, y cada categoría propuesta dice qué regla la eligió ([ADR-0024](docs/adr/0024-reglas-de-categoria.md)).
 * **Filtros por categoría y por texto**, que se comparten en la dirección. La búsqueda no distingue tildes ni mayúsculas: "panaderia" encuentra "Panadería".
 * **Cuenta y sesión** con usuario, contraseña y código de recuperación, sin email ([ADR-0007](docs/adr/0007-autenticacion.md)).
 * **Interfaz en español y en inglés**, con modo oscuro y claro.
@@ -24,7 +25,7 @@ Aplicación web de finanzas personales para Argentina y LatAm. Responde una preg
 
 * El precio del Bitcoin.
 * Reportes en pesos constantes, ajustados por inflación.
-* Reglas de categoría al importar, y el resumen PDF de Banco Macro.
+* Importar el resumen PDF de Banco Macro.
 
 El detalle y el orden están en el [roadmap](docs/roadmap.md).
 

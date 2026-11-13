@@ -12,6 +12,7 @@ export function aLine(overrides: Partial<BatchLine> = {}): BatchLine {
     amount: { amount: "-1500.50", currency: "ARS" },
     status: "new",
     category_id: EXPENSE_CATEGORY.id,
+    rule: null,
     ...overrides,
   };
 }

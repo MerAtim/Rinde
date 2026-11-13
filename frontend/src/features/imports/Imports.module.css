@@ -221,3 +221,9 @@
   font: 600 15px/20px var(--md-ref-typeface-plain);
   overflow-wrap: anywhere;
 }
+
+.lineChoices {
+  display: grid;
+  gap: var(--rinde-space-3);
+  max-width: 28rem;
+}
