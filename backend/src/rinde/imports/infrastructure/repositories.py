@@ -5,12 +5,17 @@ from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import delete, insert, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rinde.imports.domain.batch import BATCH_TTL, BatchLine, ImportBatch, LineStatus
+from rinde.imports.domain.rules import CategoryRule
 from rinde.imports.domain.statement import LineError, LineProblem
-from rinde.imports.infrastructure.tables import import_batches, import_lines
+from rinde.imports.infrastructure.tables import category_rules, import_batches, import_lines
 from rinde.shared.domain.money import Currency
+
+EXPENSE = "expense"
+INCOME = "income"
 
 
 class SqlAlchemyBatchRepository:
@@ -120,5 +125,46 @@ class SqlAlchemyBatchRepository:
             delete(import_batches).where(
                 import_batches.c.confirmed_at.is_(None),
                 import_batches.c.created_at <= now - BATCH_TTL,
+            )
+        )
+
+
+class SqlAlchemyRuleRepository:
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def for_owner(self, owner_id: UUID) -> list[CategoryRule]:
+        result = await self._session.execute(
+            select(category_rules).where(category_rules.c.owner_id == owner_id)
+        )
+        return [
+            CategoryRule(
+                id=row["id"],
+                owner_id=row["owner_id"],
+                pattern=row["pattern"],
+                category_id=row["category_id"],
+                is_expense=row["kind"] == EXPENSE,
+                updated_at=row["updated_at"],
+            )
+            for row in result.mappings()
+        ]
+
+    async def save(self, rule: CategoryRule) -> None:
+        statement = pg_insert(category_rules).values(
+            id=rule.id,
+            owner_id=rule.owner_id,
+            category_id=rule.category_id,
+            kind=EXPENSE if rule.is_expense else INCOME,
+            pattern=rule.pattern,
+            updated_at=rule.updated_at,
+        )
+        # El mismo texto en el mismo tipo reemplaza la categoría (ADR-0024).
+        await self._session.execute(
+            statement.on_conflict_do_update(
+                constraint="uq_category_rules_owner_kind_pattern",
+                set_={
+                    "category_id": statement.excluded.category_id,
+                    "updated_at": statement.excluded.updated_at,
+                },
             )
         )

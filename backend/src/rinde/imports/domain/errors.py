@@ -51,3 +51,9 @@ class ImportLineNotFoundError(StatementImportError):
     """La confirmación nombra una línea que el lote no tiene, o que no se pudo leer."""
 
     code = "IMPORT_LINE_NOT_FOUND"
+
+
+class RulePatternInvalidError(StatementImportError):
+    """El texto a recordar tiene menos de 3 caracteres o más de 60 (ADR-0024)."""
+
+    code = "IMPORT_RULE_PATTERN_INVALID"

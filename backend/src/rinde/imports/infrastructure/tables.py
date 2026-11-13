@@ -16,6 +16,7 @@ from sqlalchemy import (
     PrimaryKeyConstraint,
     String,
     Table,
+    UniqueConstraint,
     Uuid,
     text,
 )
@@ -79,4 +80,29 @@ import_lines = Table(
     CheckConstraint("amount <> 0", name="amount_not_zero"),
     CheckConstraint("fingerprint ~ '^[0-9a-f]{64}$'", name="fingerprint_is_sha256"),
     CheckConstraint("status IN ('new', 'duplicate', 'possible_duplicate')", name="status_known"),
+)
+
+# Reglas de categoría (ADR-0024): una por persona, tipo y texto.
+category_rules = Table(
+    "category_rules",
+    metadata,
+    Column("id", Uuid, primary_key=True),
+    Column("owner_id", Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+    Column("category_id", Uuid, nullable=False),
+    # El tipo de la categoría: la clave foránea pide que coincidan.
+    Column("kind", String(8), nullable=False),
+    # Ya plegado: sin tildes, en minúsculas y con un solo espacio entre palabras.
+    Column("pattern", String(60), nullable=False),
+    Column("updated_at", DateTime(timezone=True), nullable=False),
+    ForeignKeyConstraint(
+        ["category_id", "owner_id", "kind"],
+        ["categories.id", "categories.owner_id", "categories.kind"],
+        name="category_of_the_same_owner_and_kind",
+        # Como los topes y las alertas, una categoría borrada se lleva sus reglas.
+        ondelete="CASCADE",
+    ),
+    CheckConstraint("kind IN ('income', 'expense')", name="kind_known"),
+    CheckConstraint("char_length(pattern) BETWEEN 3 AND 60", name="pattern_length"),
+    CheckConstraint("pattern = lower(pattern)", name="pattern_folded"),
+    UniqueConstraint("owner_id", "kind", "pattern", name="uq_category_rules_owner_kind_pattern"),
 )

@@ -46,7 +46,7 @@ from rinde.transactions.application.unit import TransactionsUnit, build_transact
 from rinde.transactions.infrastructure.accounts_gateway import AccountsApplicationGateway
 from tests.unit.alerts.fakes import InMemoryAlertRepository
 from tests.unit.budgets.fakes import InMemoryBudgetRepository
-from tests.unit.imports.fakes import InMemoryBatchRepository
+from tests.unit.imports.fakes import InMemoryBatchRepository, InMemoryRuleRepository
 from tests.unit.rates.fakes import FakeHistoryProvider, FakeRateProvider, InMemoryQuotes
 from tests.unit.transactions.fakes import (
     FakeAuditLog,
@@ -445,6 +445,7 @@ class InMemoryImportsUnitFactory:
         self, transactions: InMemoryTransactionsUnitFactory, clock: FakeClock | None = None
     ) -> None:
         self.batches = InMemoryBatchRepository()
+        self.rules = InMemoryRuleRepository()
         self.transaction = FakeTransaction()
         self.clock = clock or FakeClock()
         self.gateways = ImportsGateways(
@@ -455,4 +456,6 @@ class InMemoryImportsUnitFactory:
 
     @asynccontextmanager
     async def __call__(self) -> AsyncIterator[ImportsUnit]:
-        yield build_imports_unit(self.batches, self.transaction, self.gateways, self.clock)
+        yield build_imports_unit(
+            self.batches, self.rules, self.transaction, self.gateways, self.clock
+        )

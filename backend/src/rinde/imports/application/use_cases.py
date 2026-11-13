@@ -11,6 +11,7 @@ from rinde.imports.application.ports import (
     Clock,
     LineToRegister,
     MovementRegistrar,
+    RuleRepository,
     StatementReader,
     Transaction,
 )
@@ -20,6 +21,7 @@ from rinde.imports.domain.errors import (
     ImportFileTooLargeError,
     ImportLineNotFoundError,
 )
+from rinde.imports.domain.rules import CategoryRule, best_rule, pattern_from
 from rinde.imports.domain.statement import MAX_BYTES
 from rinde.shared.domain.calendar import argentine_day
 
@@ -38,13 +40,21 @@ class ImportsDependencies:
     accounts: AccountInspector
     registrar: MovementRegistrar
     categories: CategoryReader
+    rules: RuleRepository
     clock: Clock
+
+
+@dataclass(frozen=True, slots=True)
+class Suggestion:
+    category_id: UUID | None
+    rule: str | None
+    """El texto de la regla que la eligió, o `None` si es la de "otros" (ADR-0024)."""
 
 
 @dataclass(frozen=True, slots=True)
 class BatchPreview:
     batch: ImportBatch
-    suggestions: dict[int, UUID | None]
+    suggestions: dict[int, Suggestion]
     """La categoría propuesta para cada línea, por número de línea."""
 
 
@@ -54,12 +64,21 @@ async def _preview(deps: ImportsDependencies, batch: ImportBatch) -> BatchPrevie
         for item in await deps.categories.categories(batch.owner_id)
         if item.slug
     }
-    expense = by_slug.get((DEFAULT_EXPENSE, True))
-    income = by_slug.get((DEFAULT_INCOME, False))
-    return BatchPreview(
-        batch,
-        {line.number: expense if line.signed_amount < 0 else income for line in batch.lines},
-    )
+    defaults = {
+        True: by_slug.get((DEFAULT_EXPENSE, True)),
+        False: by_slug.get((DEFAULT_INCOME, False)),
+    }
+    rules = await deps.rules.for_owner(batch.owner_id)
+    suggestions = {}
+    for line in batch.lines:
+        is_expense = line.signed_amount < 0
+        rule = best_rule(rules, line.description, is_expense)
+        suggestions[line.number] = (
+            Suggestion(rule.category_id, rule.pattern)
+            if rule
+            else Suggestion(defaults[is_expense], None)
+        )
+    return BatchPreview(batch, suggestions)
 
 
 async def _owned(deps: ImportsDependencies, batch_id: UUID, owner_id: UUID) -> ImportBatch:
@@ -124,6 +143,8 @@ class GetBatch:
 class Choice:
     number: int
     category_id: UUID
+    remember: str | None = None
+    """Un texto para recordar esta categoría en las próximas importaciones (ADR-0024)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,10 +166,24 @@ class ConfirmBatch:
             return Confirmation(batch.imported, batch.skipped)
         lines = {line.number: line for line in batch.lines}
         to_register = []
+        # Se validan antes de registrar nada: un texto inválido no deja un lote a medias.
+        rules: dict[tuple[str, bool], CategoryRule] = {}
+        now = deps.clock.now()
         for choice in choices:
             line = lines.get(choice.number)
             if line is None:
                 raise ImportLineNotFoundError
+            if choice.remember is not None:
+                rule = CategoryRule(
+                    id=uuid4(),
+                    owner_id=owner_id,
+                    pattern=pattern_from(choice.remember),
+                    category_id=choice.category_id,
+                    is_expense=line.signed_amount < 0,
+                    updated_at=now,
+                )
+                # El mismo texto dos veces en un lote: vale la última elección.
+                rules[(rule.pattern, rule.is_expense)] = rule
             # Un duplicado ya entró: movimientos lo saltearía igual, pero no se manda.
             if line.status is LineStatus.DUPLICATE:
                 continue
@@ -166,11 +201,14 @@ class ConfirmBatch:
         registered = await deps.registrar.register(owner_id, batch.account_id, to_register)
         confirmed = replace(
             batch,
-            confirmed_at=deps.clock.now(),
+            confirmed_at=now,
             imported=registered.imported,
             skipped=registered.skipped,
         )
         await deps.batches.save_confirmation(confirmed)
+        # En la misma transacción que el lote: si no se confirma, no se recuerda.
+        for rule in rules.values():
+            await deps.rules.save(rule)
         await deps.transaction.commit()
         return Confirmation(registered.imported, registered.skipped)
 

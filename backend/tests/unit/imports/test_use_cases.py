@@ -22,11 +22,18 @@ from rinde.imports.domain.errors import (
     ImportBatchNotFoundError,
     ImportFileTooLargeError,
     ImportLineNotFoundError,
+    RulePatternInvalidError,
 )
+from rinde.imports.domain.rules import CategoryRule
 from rinde.imports.domain.statement import MAX_BYTES, LineError, LineProblem
 from rinde.shared.domain.money import Currency
 from tests.fakes import FakeClock, FakeTransaction
-from tests.unit.imports.fakes import FakeAccount, FixedCategories, InMemoryBatchRepository
+from tests.unit.imports.fakes import (
+    FakeAccount,
+    FixedCategories,
+    InMemoryBatchRepository,
+    InMemoryRuleRepository,
+)
 
 pytestmark = pytest.mark.anyio
 
@@ -64,6 +71,7 @@ class Setup:
         self.clock = FakeClock()
         self.clock.current = NOW
         self.batches = InMemoryBatchRepository()
+        self.rules = InMemoryRuleRepository()
         self.db = FakeTransaction()
         # El café ya está cargado a mano.
         self.account = FakeAccount(
@@ -75,6 +83,7 @@ class Setup:
         )
         self.unit = build_imports_unit(
             self.batches,
+            self.rules,
             self.db,
             ImportsGateways(
                 accounts=self.account,
@@ -108,7 +117,11 @@ async def test_uploading_reads_classifies_and_suggests(setup: Setup) -> None:
     ]
     assert batch.errors == [LineError(5, LineProblem.AMOUNT_INVALID)]
     # Cada línea arranca en "otros" de su tipo.
-    assert preview.suggestions == {2: OTHER_EXPENSES.id, 3: OTHER_INCOMES.id, 4: OTHER_EXPENSES.id}
+    assert {number: item.category_id for number, item in preview.suggestions.items()} == {
+        2: OTHER_EXPENSES.id,
+        3: OTHER_INCOMES.id,
+        4: OTHER_EXPENSES.id,
+    }
     # Se pregunta por la cuenta solo en el período del archivo.
     assert setup.account.periods == [(date(2026, 11, 3), date(2026, 11, 6))]
     assert setup.db.commits == 1
@@ -217,3 +230,64 @@ async def test_too_large_is_rejected_before_reading(setup: Setup) -> None:
 async def test_an_account_of_another_person_is_rejected_by_movements(setup: Setup) -> None:
     with pytest.raises(LookupError):
         await setup.upload(owner_id=STRANGER)
+
+
+class TestReglas:
+    """Reglas de categoría al confirmar y al proponer (ADR-0024)."""
+
+    async def test_remembering_saves_a_rule_that_the_next_batch_uses(self, setup: Setup) -> None:
+        batch = (await setup.upload()).batch
+        await setup.unit.confirm.execute(OWNER, batch.id, [Choice(2, FOOD.id, remember=" Coto ")])
+
+        preview = await setup.upload()
+
+        [saved] = setup.rules.rows
+        assert (saved.pattern, saved.category_id, saved.is_expense) == ("coto", FOOD.id, True)
+        assert preview.suggestions[2].category_id == FOOD.id
+        assert preview.suggestions[2].rule == "coto"
+        # Las que no coinciden siguen en "otros", sin regla.
+        assert preview.suggestions[4].category_id == OTHER_EXPENSES.id
+        assert preview.suggestions[4].rule is None
+
+    async def test_remembering_the_same_text_replaces_the_category(self, setup: Setup) -> None:
+        first = (await setup.upload()).batch
+        await setup.unit.confirm.execute(OWNER, first.id, [Choice(2, FOOD.id, remember="coto")])
+        second = (await setup.upload()).batch
+
+        await setup.unit.confirm.execute(
+            OWNER, second.id, [Choice(2, OTHER_EXPENSES.id, remember="COTO")]
+        )
+
+        [saved] = setup.rules.rows
+        assert saved.category_id == OTHER_EXPENSES.id
+
+    async def test_an_invalid_text_rejects_before_registering(self, setup: Setup) -> None:
+        batch = (await setup.upload()).batch
+
+        with pytest.raises(RulePatternInvalidError):
+            await setup.unit.confirm.execute(
+                OWNER, batch.id, [Choice(2, FOOD.id), Choice(3, OTHER_INCOMES.id, remember="ab")]
+            )
+
+        assert setup.account.registered == []
+        assert setup.rules.rows == []
+        assert setup.batches.rows[batch.id].confirmed_at is None
+
+    async def test_the_rule_takes_the_kind_of_its_line(self, setup: Setup) -> None:
+        batch = (await setup.upload()).batch
+
+        await setup.unit.confirm.execute(
+            OWNER, batch.id, [Choice(3, OTHER_INCOMES.id, remember="sueldo")]
+        )
+
+        [saved] = setup.rules.rows
+        assert saved.is_expense is False
+
+    async def test_rules_of_another_person_are_not_used(self, setup: Setup) -> None:
+        setup.rules.rows.append(
+            CategoryRule(uuid4(), STRANGER, "coto", FOOD.id, is_expense=True, updated_at=NOW)
+        )
+
+        preview = await setup.upload()
+
+        assert preview.suggestions[2].rule is None

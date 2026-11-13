@@ -10,6 +10,7 @@ from rinde.imports.application.ports import (
     Registered,
 )
 from rinde.imports.domain.batch import BATCH_TTL, AccountState, ImportBatch
+from rinde.imports.domain.rules import CategoryRule
 from rinde.shared.domain.money import Currency
 
 
@@ -45,6 +46,26 @@ class InMemoryBatchRepository:
             for key, batch in self.rows.items()
             if batch.confirmed_at is not None or batch.created_at > now - BATCH_TTL
         }
+
+
+class InMemoryRuleRepository:
+    """Con la misma regla que la restricción única: texto y tipo por persona."""
+
+    def __init__(self) -> None:
+        self.rows: list[CategoryRule] = []
+
+    async def for_owner(self, owner_id: UUID) -> list[CategoryRule]:
+        return [rule for rule in self.rows if rule.owner_id == owner_id]
+
+    async def save(self, rule: CategoryRule) -> None:
+        key = (rule.owner_id, rule.pattern, rule.is_expense)
+        for index, row in enumerate(self.rows):
+            if (row.owner_id, row.pattern, row.is_expense) == key:
+                self.rows[index] = replace(
+                    row, category_id=rule.category_id, updated_at=rule.updated_at
+                )
+                return
+        self.rows.append(rule)
 
 
 class FakeAccount:

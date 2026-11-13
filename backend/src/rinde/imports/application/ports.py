@@ -12,6 +12,7 @@ from typing import Protocol
 from uuid import UUID
 
 from rinde.imports.domain.batch import AccountState, ImportBatch
+from rinde.imports.domain.rules import CategoryRule
 from rinde.imports.domain.statement import Statement
 
 
@@ -69,6 +70,14 @@ class MovementRegistrar(Protocol):
         self, owner_id: UUID, account_id: UUID, lines: list[LineToRegister]
     ) -> Registered:
         """Todas o ninguna, en una sola transacción de movimientos."""
+        ...
+
+
+class RuleRepository(Protocol):
+    async def for_owner(self, owner_id: UUID) -> list[CategoryRule]: ...
+
+    async def save(self, rule: CategoryRule) -> None:
+        """Agrega la regla, o reemplaza la categoría si ya había una con ese texto y tipo."""
         ...
 
 
