@@ -13,6 +13,7 @@ import rinde.accounts.infrastructure.tables
 import rinde.alerts.infrastructure.tables
 import rinde.auth.infrastructure.tables
 import rinde.budgets.infrastructure.tables
+import rinde.imports.infrastructure.tables
 import rinde.preferences.infrastructure.tables
 import rinde.rates.infrastructure.tables
 import rinde.transactions.infrastructure.tables  # noqa: F401  (registra las tablas en el MetaData)

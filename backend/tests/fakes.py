@@ -27,6 +27,14 @@ from rinde.budgets.infrastructure.gateways import (
     TransactionsCategoryReader,
     TransactionsSpendingReader,
 )
+from rinde.imports.application.unit import ImportsGateways, ImportsUnit, build_imports_unit
+from rinde.imports.infrastructure.gateways import (
+    TransactionsAccountInspector,
+    TransactionsRegistrar,
+)
+from rinde.imports.infrastructure.gateways import (
+    TransactionsCategoryReader as ImportsCategoryReader,
+)
 from rinde.preferences.application.unit import PreferencesUnit, build_preferences_unit
 from rinde.preferences.application.use_cases import PreferencesDependencies
 from rinde.preferences.domain.preferences import Preferences
@@ -38,6 +46,7 @@ from rinde.transactions.application.unit import TransactionsUnit, build_transact
 from rinde.transactions.infrastructure.accounts_gateway import AccountsApplicationGateway
 from tests.unit.alerts.fakes import InMemoryAlertRepository
 from tests.unit.budgets.fakes import InMemoryBudgetRepository
+from tests.unit.imports.fakes import InMemoryBatchRepository
 from tests.unit.rates.fakes import FakeHistoryProvider, FakeRateProvider, InMemoryQuotes
 from tests.unit.transactions.fakes import (
     FakeAuditLog,
@@ -427,3 +436,23 @@ class InMemoryAlertsUnitFactory:
     @asynccontextmanager
     async def __call__(self) -> AsyncIterator[AlertsUnit]:
         yield build_alerts_unit(self.alerts, self.transaction, self.gateways, self.clock)
+
+
+class InMemoryImportsUnitFactory:
+    """Lotes en memoria, con los adaptadores reales sobre movimientos en memoria."""
+
+    def __init__(
+        self, transactions: InMemoryTransactionsUnitFactory, clock: FakeClock | None = None
+    ) -> None:
+        self.batches = InMemoryBatchRepository()
+        self.transaction = FakeTransaction()
+        self.clock = clock or FakeClock()
+        self.gateways = ImportsGateways(
+            accounts=TransactionsAccountInspector(transactions),
+            registrar=TransactionsRegistrar(transactions),
+            categories=ImportsCategoryReader(transactions),
+        )
+
+    @asynccontextmanager
+    async def __call__(self) -> AsyncIterator[ImportsUnit]:
+        yield build_imports_unit(self.batches, self.transaction, self.gateways, self.clock)

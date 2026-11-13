@@ -68,6 +68,12 @@ pip.conf
 
 data/
 imports/
+# El módulo de importación se llama igual que una carpeta de datos: se
+# exceptúa solo su código, por ruta exacta. Cualquier otra carpeta imports/
+# sigue ignorada.
+!backend/src/rinde/imports/
+!backend/tests/unit/imports/
+!frontend/src/features/imports/
 uploads/
 media/
 exports/

@@ -3336,6 +3336,369 @@
           }
         }
       }
+    },
+    "/api/imports": {
+      "post": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Subir un archivo y ver la vista previa",
+        "description": "El archivo no se guarda: se guarda lo que se leyó, su nombre y su huella.",
+        "operationId": "create_import_api_imports_post",
+        "parameters": [
+          {
+            "name": "x-requested-with",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_import_api_imports_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Content Too Large"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
+    "/api/imports/{batch_id}": {
+      "get": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Ver la vista previa de un lote",
+        "operationId": "get_import_api_imports__batch_id__get",
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Batch Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BatchResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Descartar un lote sin confirmar",
+        "operationId": "discard_import_api_imports__batch_id__delete",
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Batch Id"
+            }
+          },
+          {
+            "name": "x-requested-with",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/imports/{batch_id}/confirm": {
+      "post": {
+        "tags": [
+          "imports"
+        ],
+        "summary": "Registrar las líneas elegidas",
+        "description": "Confirmar otra vez el mismo lote devuelve lo mismo y no duplica nada.",
+        "operationId": "confirm_import_api_imports__batch_id__confirm_post",
+        "parameters": [
+          {
+            "name": "batch_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Batch Id"
+            }
+          },
+          {
+            "name": "x-requested-with",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfirmResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3524,6 +3887,149 @@
           "currency"
         ],
         "title": "BalanceResponse"
+      },
+      "BatchLineResponse": {
+        "properties": {
+          "number": {
+            "type": "integer",
+            "title": "Number",
+            "description": "La línea en el archivo, contando el encabezado"
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "amount": {
+            "$ref": "#/components/schemas/MoneyResponse",
+            "description": "Con signo: negativo es gasto"
+          },
+          "status": {
+            "$ref": "#/components/schemas/LineStatus",
+            "description": "new; duplicate, que ya entró y no se importa; possible_duplicate, que queda afuera salvo que se incluya"
+          },
+          "category_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Id",
+            "description": "La categoría propuesta"
+          }
+        },
+        "type": "object",
+        "required": [
+          "number",
+          "occurred_on",
+          "description",
+          "amount",
+          "status",
+          "category_id"
+        ],
+        "title": "BatchLineResponse"
+      },
+      "BatchResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "confirmed": {
+            "type": "boolean",
+            "title": "Confirmed"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/BatchLineResponse"
+            },
+            "type": "array",
+            "title": "Lines"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/LineErrorResponse"
+            },
+            "type": "array",
+            "title": "Errors",
+            "description": "Las líneas que no se pudieron leer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "account_id",
+          "file_name",
+          "created_at",
+          "expires_at",
+          "confirmed",
+          "lines",
+          "errors"
+        ],
+        "title": "BatchResponse"
+      },
+      "Body_create_import_api_imports_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File",
+            "description": "CSV, hasta 1 MB y 2.000 líneas"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "layout": {
+            "type": "string",
+            "maxLength": 2000,
+            "title": "Layout",
+            "description": "CsvLayoutRequest en JSON"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file",
+          "account_id",
+          "layout"
+        ],
+        "title": "Body_create_import_api_imports_post"
       },
       "BudgetCategoryResponse": {
         "properties": {
@@ -3758,12 +4264,71 @@
         ],
         "title": "CategorySpendingResponse"
       },
+      "ChoiceRequest": {
+        "properties": {
+          "number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Number"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "number",
+          "category_id"
+        ],
+        "title": "ChoiceRequest"
+      },
       "ComponentStatus": {
         "type": "string",
         "enum": [
           "ok",
           "unavailable"
         ]
+      },
+      "ConfirmRequest": {
+        "properties": {
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/ChoiceRequest"
+            },
+            "type": "array",
+            "maxItems": 2000,
+            "title": "Lines"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "lines"
+        ],
+        "title": "ConfirmRequest",
+        "description": "Las líneas que entran, cada una con su categoría. Las que no figuran quedan afuera."
+      },
+      "ConfirmResponse": {
+        "properties": {
+          "imported": {
+            "type": "integer",
+            "title": "Imported"
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped",
+            "description": "Las que ya habían entrado: confirmar de nuevo no duplica"
+          }
+        },
+        "type": "object",
+        "required": [
+          "imported",
+          "skipped"
+        ],
+        "title": "ConfirmResponse"
       },
       "ConversionResponse": {
         "properties": {
@@ -4060,6 +4625,45 @@
         ],
         "title": "HistoryTransfer",
         "description": "Una transferencia dentro del historial."
+      },
+      "LineErrorResponse": {
+        "properties": {
+          "line": {
+            "type": "integer",
+            "title": "Line"
+          },
+          "problem": {
+            "$ref": "#/components/schemas/LineProblem"
+          }
+        },
+        "type": "object",
+        "required": [
+          "line",
+          "problem"
+        ],
+        "title": "LineErrorResponse"
+      },
+      "LineProblem": {
+        "type": "string",
+        "enum": [
+          "LINE_COLUMNS_MISSING",
+          "LINE_DATE_INVALID",
+          "LINE_AMOUNT_INVALID",
+          "LINE_AMOUNT_ZERO",
+          "LINE_DEBIT_AND_CREDIT",
+          "LINE_AMOUNT_TOO_PRECISE",
+          "LINE_DATE_IN_FUTURE"
+        ],
+        "title": "LineProblem"
+      },
+      "LineStatus": {
+        "type": "string",
+        "enum": [
+          "new",
+          "duplicate",
+          "possible_duplicate"
+        ],
+        "title": "LineStatus"
       },
       "LivenessResponse": {
         "properties": {

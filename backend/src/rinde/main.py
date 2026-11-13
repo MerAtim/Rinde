@@ -68,6 +68,19 @@ from rinde.dashboard.infrastructure.gateways import (
 from rinde.health.api.router import router as health_router
 from rinde.health.application.check_readiness import CheckReadiness, DatabaseProbe
 from rinde.health.infrastructure.database_probe import SqlAlchemyDatabaseProbe
+from rinde.imports.api.errors import imports_error_handler
+from rinde.imports.api.router import router as imports_router
+from rinde.imports.application.unit import ImportsGateways, ImportsUnitFactory
+from rinde.imports.domain.errors import StatementImportError
+from rinde.imports.domain.statement import MAX_BYTES as MAX_IMPORT_BYTES
+from rinde.imports.infrastructure.factory import SqlAlchemyImportsUnitFactory
+from rinde.imports.infrastructure.gateways import (
+    TransactionsAccountInspector,
+    TransactionsRegistrar,
+)
+from rinde.imports.infrastructure.gateways import (
+    TransactionsCategoryReader as ImportsCategoryReader,
+)
 from rinde.preferences.api.errors import preferences_error_handler
 from rinde.preferences.api.router import router as preferences_router
 from rinde.preferences.application.unit import PreferencesUnitFactory
@@ -82,6 +95,7 @@ from rinde.rates.infrastructure.factory import (
     build_history_provider,
     build_rate_provider,
 )
+from rinde.shared.api.body_limit import BodySizeLimitMiddleware
 from rinde.shared.api.csrf import CsrfRejectedError, csrf_error_handler
 from rinde.shared.api.errors import domain_error_handler
 from rinde.shared.domain.errors import DomainError
@@ -100,6 +114,9 @@ API_PREFIX = "/api"
 SECURE_COOKIE_NAME = "__Host-rinde_session"
 PLAIN_COOKIE_NAME = "rinde_session"
 SECONDS_PER_DAY = 24 * 60 * 60
+# El cuerpo más grande que se acepta: un archivo de importación y lo que lo
+# envuelve en el formulario. Los demás pedidos son JSON de pocos kilobytes.
+MAX_BODY_BYTES = MAX_IMPORT_BYTES + 64 * 1024
 
 
 # Un parámetro por módulo con infraestructura reemplazable: la cantidad crece con
@@ -115,6 +132,7 @@ def create_app(  # noqa: PLR0913
     preferences_factory: PreferencesUnitFactory | None = None,
     budgets_factory: BudgetsUnitFactory | None = None,
     alerts_factory: AlertsUnitFactory | None = None,
+    imports_factory: ImportsUnitFactory | None = None,
     dashboard_clock: Clock | None = None,
     event_bus: InProcessEventBus | None = None,
 ) -> FastAPI:
@@ -158,36 +176,21 @@ def create_app(  # noqa: PLR0913
             ),
         )
 
-    if accounts_factory is None:
-        accounts_factory = SqlAlchemyAccountsUnitFactory(
-            async_sessionmaker(shared_engine(), expire_on_commit=False), SystemClock()
-        )
+    accounts_factory = accounts_factory or SqlAlchemyAccountsUnitFactory(
+        async_sessionmaker(shared_engine(), expire_on_commit=False), SystemClock()
+    )
 
     transactions_factory = transactions_factory or _sql_transactions(
         async_sessionmaker(shared_engine(), expire_on_commit=False), events
     )
 
-    if rates_factory is None:
-        clock = SystemClock()
-        rates_factory = SqlAlchemyRatesUnitFactory(
-            async_sessionmaker(shared_engine(), expire_on_commit=False),
-            build_rate_provider(
-                shared_http_client(),
-                clock,
-                dolarapi_url=config.dolarapi_url,
-                argentinadatos_url=config.argentinadatos_url,
-                criptoya_url=config.criptoya_url,
-            ),
-            build_history_provider(
-                shared_http_client(), clock, argentinadatos_url=config.argentinadatos_url
-            ),
-            clock,
-        )
+    rates_factory = rates_factory or _sql_rates(
+        async_sessionmaker(shared_engine(), expire_on_commit=False), shared_http_client(), config
+    )
 
-    if preferences_factory is None:
-        preferences_factory = SqlAlchemyPreferencesUnitFactory(
-            async_sessionmaker(shared_engine(), expire_on_commit=False), SystemClock()
-        )
+    preferences_factory = preferences_factory or SqlAlchemyPreferencesUnitFactory(
+        async_sessionmaker(shared_engine(), expire_on_commit=False), SystemClock()
+    )
 
     # El dashboard no tiene infraestructura propia: lee a los otros módulos por
     # su capa de aplicación, con las mismas fábricas que usan sus endpoints.
@@ -206,13 +209,13 @@ def create_app(  # noqa: PLR0913
         preferences_factory,
         rates_factory,
     )
-    alerts_factory = alerts_factory or SqlAlchemyAlertsUnitFactory(
+    alerts_factory = alerts_factory or _sql_alerts(
         async_sessionmaker(shared_engine(), expire_on_commit=False),
-        AlertsGateways(
-            budgets=BudgetsMonthReader(budgets_factory),
-            categories=AlertsCategoryReader(transactions_factory),
-        ),
-        SystemClock(),
+        budgets_factory,
+        transactions_factory,
+    )
+    imports_factory = imports_factory or _sql_imports(
+        async_sessionmaker(shared_engine(), expire_on_commit=False), transactions_factory
     )
     # Un gasto evalúa las alertas de su dueño, después de confirmarse (ADR-0022).
     events.subscribe(ExpenseRecorded, EvaluateOnExpense(alerts_factory))
@@ -246,6 +249,8 @@ def create_app(  # noqa: PLR0913
     app.state.dashboard = dashboard
     app.state.budgets_factory = budgets_factory
     app.state.alerts_factory = alerts_factory
+    app.state.imports_factory = imports_factory
+    app.add_middleware(BodySizeLimitMiddleware, max_bytes=MAX_BODY_BYTES)
     app.state.session_cookie = SessionCookie(
         name=SECURE_COOKIE_NAME if config.session_cookie_secure else PLAIN_COOKIE_NAME,
         secure=config.session_cookie_secure,
@@ -253,6 +258,24 @@ def create_app(  # noqa: PLR0913
     )
     _register_modules(app)
     return app
+
+
+def _sql_rates(
+    sessionmaker: async_sessionmaker[AsyncSession], client: httpx.AsyncClient, config: Settings
+) -> RatesUnitFactory:
+    clock = SystemClock()
+    return SqlAlchemyRatesUnitFactory(
+        sessionmaker,
+        build_rate_provider(
+            client,
+            clock,
+            dolarapi_url=config.dolarapi_url,
+            argentinadatos_url=config.argentinadatos_url,
+            criptoya_url=config.criptoya_url,
+        ),
+        build_history_provider(client, clock, argentinadatos_url=config.argentinadatos_url),
+        clock,
+    )
 
 
 def _sql_transactions(
@@ -296,6 +319,36 @@ def _sql_budgets(
     )
 
 
+def _sql_alerts(
+    sessionmaker: async_sessionmaker[AsyncSession],
+    budgets: BudgetsUnitFactory,
+    transactions: TransactionsUnitFactory,
+) -> AlertsUnitFactory:
+    return SqlAlchemyAlertsUnitFactory(
+        sessionmaker,
+        AlertsGateways(
+            budgets=BudgetsMonthReader(budgets),
+            categories=AlertsCategoryReader(transactions),
+        ),
+        SystemClock(),
+    )
+
+
+def _sql_imports(
+    sessionmaker: async_sessionmaker[AsyncSession], transactions: TransactionsUnitFactory
+) -> ImportsUnitFactory:
+    """Importación escribe en movimientos por su capa de aplicación (ADR-0023)."""
+    return SqlAlchemyImportsUnitFactory(
+        sessionmaker,
+        ImportsGateways(
+            accounts=TransactionsAccountInspector(transactions),
+            registrar=TransactionsRegistrar(transactions),
+            categories=ImportsCategoryReader(transactions),
+        ),
+        SystemClock(),
+    )
+
+
 def _register_modules(app: FastAPI) -> None:
     """Los manejadores de errores y los routers de cada módulo."""
     # Del más general al más específico: Starlette elige el manejador más cercano
@@ -310,6 +363,7 @@ def _register_modules(app: FastAPI) -> None:
     app.add_exception_handler(RateError, rates_error_handler)
     app.add_exception_handler(PreferencesError, preferences_error_handler)
     app.add_exception_handler(BudgetError, budgets_error_handler)
+    app.add_exception_handler(StatementImportError, imports_error_handler)
     for router in (
         health_router,
         auth_router,
@@ -320,5 +374,6 @@ def _register_modules(app: FastAPI) -> None:
         dashboard_router,
         budgets_router,
         alerts_router,
+        imports_router,
     ):
         app.include_router(router, prefix=API_PREFIX)
