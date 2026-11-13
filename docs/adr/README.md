@@ -25,3 +25,4 @@
 | [0021](0021-modelo-de-presupuestos.md) | Modelo de presupuestos: topes mensuales con vigencia, en su propia moneda | Aceptado | 2026-11-12 |
 | [0022](0022-alertas-de-presupuesto.md) | Alertas de presupuesto: eventos en el proceso, evaluación por estado | Aceptado | 2026-11-12 |
 | [0023](0023-modelo-de-importacion.md) | Importación de movimientos: lote guardado, vista previa y huella por línea | Aceptado | 2026-11-12 |
+| [0024](0024-reglas-de-categoria.md) | Reglas de categoría al importar: texto contenido, gana la más específica | Aceptado | 2026-11-12 |
