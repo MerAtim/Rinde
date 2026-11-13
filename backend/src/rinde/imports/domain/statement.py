@@ -12,6 +12,8 @@ from datetime import date
 from decimal import Decimal
 from enum import StrEnum
 
+from rinde.shared.domain.money import Currency
+
 MAX_BYTES = 1024 * 1024
 """1 MB: un año de movimientos en CSV ocupa una fracción de esto."""
 
@@ -51,6 +53,8 @@ class LineError:
 class Statement:
     lines: list[ParsedLine]
     errors: list[LineError]
+    currency: Currency | None = None
+    """La moneda que dice el archivo, si la dice. Un CSV no la dice."""
 
 
 _SPACES = re.compile(r"\s+")

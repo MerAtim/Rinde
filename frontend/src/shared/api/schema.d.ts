@@ -763,7 +763,7 @@ export interface components {
     Body_create_import_api_imports_post: {
       /**
        * File
-       * @description CSV, hasta 1 MB y 2.000 líneas
+       * @description CSV o PDF, hasta 1 MB, 2.000 líneas y 20 páginas
        */
       file: string;
       /**
@@ -771,11 +771,13 @@ export interface components {
        * Format: uuid
        */
       account_id: string;
+      /** @default csv */
+      format: components["schemas"]["FileFormat"];
       /**
        * Layout
-       * @description CsvLayoutRequest en JSON
+       * @description CsvLayoutRequest en JSON; solo con CSV
        */
-      layout: string;
+      layout?: string | null;
     };
     /** BudgetCategoryResponse */
     BudgetCategoryResponse: {
@@ -1010,6 +1012,11 @@ export interface components {
       /** Code */
       code: string;
     };
+    /**
+     * FileFormat
+     * @enum {string}
+     */
+    FileFormat: "csv" | "macro_pdf";
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */

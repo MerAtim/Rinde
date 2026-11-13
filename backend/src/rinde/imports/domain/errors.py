@@ -57,3 +57,43 @@ class RulePatternInvalidError(StatementImportError):
     """El texto a recordar tiene menos de 3 caracteres o más de 60 (ADR-0024)."""
 
     code = "IMPORT_RULE_PATTERN_INVALID"
+
+
+class ImportPdfInvalidError(StatementImportError):
+    """No es un PDF, está dañado o tiene contraseña."""
+
+    code = "IMPORT_PDF_INVALID"
+
+
+class ImportPdfTooManyPagesError(StatementImportError):
+    """Más páginas de las que tiene un resumen mensual (ADR-0023)."""
+
+    code = "IMPORT_PDF_TOO_MANY_PAGES"
+
+
+class ImportStatementUnknownError(StatementImportError):
+    """El PDF no tiene la forma del resumen: otro banco, otro documento o una imagen escaneada."""
+
+    code = "IMPORT_STATEMENT_UNKNOWN"
+
+
+class ImportStatementUnbalancedError(StatementImportError):
+    """Las líneas leídas no cierran con los saldos o los totales del resumen.
+
+    Se rechaza el lote entero: una línea perdida o leída en la columna
+    equivocada no se nota en la vista previa, y sí en el saldo.
+    """
+
+    code = "IMPORT_STATEMENT_UNBALANCED"
+
+
+class ImportStatementMultipleAccountsError(StatementImportError):
+    """El resumen trae más de una cuenta, y un lote es de una sola."""
+
+    code = "IMPORT_STATEMENT_MULTIPLE_ACCOUNTS"
+
+
+class ImportCurrencyMismatchError(StatementImportError):
+    """El resumen es de una moneda y la cuenta elegida, de otra."""
+
+    code = "IMPORT_CURRENCY_MISMATCH"

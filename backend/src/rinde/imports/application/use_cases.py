@@ -1,5 +1,6 @@
 """Casos de uso de importación. Todos reciben el dueño: es el filtro de autorización."""
 
+import asyncio
 from dataclasses import dataclass, replace
 from hashlib import sha256
 from uuid import UUID, uuid4
@@ -18,6 +19,7 @@ from rinde.imports.application.ports import (
 from rinde.imports.domain.batch import ImportBatch, LineStatus, classify, fingerprints
 from rinde.imports.domain.errors import (
     ImportBatchNotFoundError,
+    ImportCurrencyMismatchError,
     ImportFileTooLargeError,
     ImportLineNotFoundError,
 )
@@ -105,12 +107,16 @@ class CreateBatch:
         deps = self._deps
         if len(content) > MAX_BYTES:
             raise ImportFileTooLargeError
-        statement = reader.read(content)
+        # Leer es trabajo de CPU (un PDF, sobre todo): en un hilo, para no frenar
+        # los otros pedidos mientras tanto.
+        statement = await asyncio.to_thread(reader.read, content)
         hashes = fingerprints(account_id, statement.lines)
         dates = [line.occurred_on for line in statement.lines]
         account = await deps.accounts.inspect(
             owner_id, account_id, hashes, (min(dates), max(dates))
         )
+        if statement.currency is not None and statement.currency != account.currency:
+            raise ImportCurrencyMismatchError
         now = deps.clock.now()
         classified = classify(statement, hashes, account, argentine_day(now))
         batch = ImportBatch(
