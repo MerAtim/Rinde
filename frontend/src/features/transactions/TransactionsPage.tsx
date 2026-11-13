@@ -39,11 +39,16 @@ export function TransactionsPage() {
           <h1 className={cx(styles.title)}>{t("transactions.list.title")}</h1>
           <p className={cx(styles.subtitle)}>{t("transactions.list.subtitle")}</p>
         </div>
-        {rows.length > 0 || hasFilters ? (
-          <LinkButton to="/transactions/new" icon="add">
-            {t("transactions.list.add")}
+        <div className={cx(styles.headerActions)}>
+          <LinkButton to="/transactions/import" variant="tonal" icon="upload">
+            {t("imports.open")}
           </LinkButton>
-        ) : null}
+          {rows.length > 0 || hasFilters ? (
+            <LinkButton to="/transactions/new" icon="add">
+              {t("transactions.list.add")}
+            </LinkButton>
+          ) : null}
+        </div>
       </header>
       {categories.isSuccess && (categories.data.length > 0 || hasFilters) ? (
         <HistoryFilters

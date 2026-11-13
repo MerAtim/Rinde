@@ -13,6 +13,12 @@
   gap: var(--rinde-space-4);
 }
 
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rinde-space-3);
+}
+
 .heading {
   display: grid;
   gap: var(--rinde-space-1);

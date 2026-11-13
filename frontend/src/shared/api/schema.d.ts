@@ -544,6 +544,64 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/imports": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Subir un archivo y ver la vista previa
+     * @description El archivo no se guarda: se guarda lo que se leyó, su nombre y su huella.
+     */
+    post: operations["create_import_api_imports_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/imports/{batch_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Ver la vista previa de un lote */
+    get: operations["get_import_api_imports__batch_id__get"];
+    put?: never;
+    post?: never;
+    /** Descartar un lote sin confirmar */
+    delete: operations["discard_import_api_imports__batch_id__delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/imports/{batch_id}/confirm": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Registrar las líneas elegidas
+     * @description Confirmar otra vez el mismo lote devuelve lo mismo y no duplica nada.
+     */
+    post: operations["confirm_import_api_imports__batch_id__confirm_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -637,6 +695,82 @@ export interface components {
       /** Amount */
       amount: string;
       currency: components["schemas"]["Currency"];
+    };
+    /** BatchLineResponse */
+    BatchLineResponse: {
+      /**
+       * Number
+       * @description La línea en el archivo, contando el encabezado
+       */
+      number: number;
+      /**
+       * Occurred On
+       * Format: date
+       */
+      occurred_on: string;
+      /** Description */
+      description: string | null;
+      /** @description Con signo: negativo es gasto */
+      amount: components["schemas"]["MoneyResponse"];
+      /** @description new; duplicate, que ya entró y no se importa; possible_duplicate, que queda afuera salvo que se incluya */
+      status: components["schemas"]["LineStatus"];
+      /**
+       * Category Id
+       * @description La categoría propuesta
+       */
+      category_id: string | null;
+    };
+    /** BatchResponse */
+    BatchResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Account Id
+       * Format: uuid
+       */
+      account_id: string;
+      /** File Name */
+      file_name: string;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Expires At
+       * Format: date-time
+       */
+      expires_at: string;
+      /** Confirmed */
+      confirmed: boolean;
+      /** Lines */
+      lines: components["schemas"]["BatchLineResponse"][];
+      /**
+       * Errors
+       * @description Las líneas que no se pudieron leer
+       */
+      errors: components["schemas"]["LineErrorResponse"][];
+    };
+    /** Body_create_import_api_imports_post */
+    Body_create_import_api_imports_post: {
+      /**
+       * File
+       * @description CSV, hasta 1 MB y 2.000 líneas
+       */
+      file: string;
+      /**
+       * Account Id
+       * Format: uuid
+       */
+      account_id: string;
+      /**
+       * Layout
+       * @description CsvLayoutRequest en JSON
+       */
+      layout: string;
     };
     /** BudgetCategoryResponse */
     BudgetCategoryResponse: {
@@ -740,8 +874,36 @@ export interface components {
       category: components["schemas"]["DashboardCategoryResponse"];
       total: components["schemas"]["MoneyResponse"];
     };
+    /** ChoiceRequest */
+    ChoiceRequest: {
+      /** Number */
+      number: number;
+      /**
+       * Category Id
+       * Format: uuid
+       */
+      category_id: string;
+    };
     /** @enum {string} */
     ComponentStatus: "ok" | "unavailable";
+    /**
+     * ConfirmRequest
+     * @description Las líneas que entran, cada una con su categoría. Las que no figuran quedan afuera.
+     */
+    ConfirmRequest: {
+      /** Lines */
+      lines: components["schemas"]["ChoiceRequest"][];
+    };
+    /** ConfirmResponse */
+    ConfirmResponse: {
+      /** Imported */
+      imported: number;
+      /**
+       * Skipped
+       * @description Las que ya habían entrado: confirmar de nuevo no duplica
+       */
+      skipped: number;
+    };
     /** ConversionResponse */
     ConversionResponse: {
       original: components["schemas"]["MoneyResponse"];
@@ -879,6 +1041,29 @@ export interface components {
       type: "transfer";
       transfer: components["schemas"]["TransferResponse"];
     };
+    /** LineErrorResponse */
+    LineErrorResponse: {
+      /** Line */
+      line: number;
+      problem: components["schemas"]["LineProblem"];
+    };
+    /**
+     * LineProblem
+     * @enum {string}
+     */
+    LineProblem:
+      | "LINE_COLUMNS_MISSING"
+      | "LINE_DATE_INVALID"
+      | "LINE_AMOUNT_INVALID"
+      | "LINE_AMOUNT_ZERO"
+      | "LINE_DEBIT_AND_CREDIT"
+      | "LINE_AMOUNT_TOO_PRECISE"
+      | "LINE_DATE_IN_FUTURE";
+    /**
+     * LineStatus
+     * @enum {string}
+     */
+    LineStatus: "new" | "duplicate" | "possible_duplicate";
     /** LivenessResponse */
     LivenessResponse: {
       /**
@@ -3374,6 +3559,266 @@ export interface operations {
       };
       /** @description Forbidden */
       403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  create_import_api_imports_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "multipart/form-data": components["schemas"]["Body_create_import_api_imports_post"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BatchResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Content Too Large */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  get_import_api_imports__batch_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        batch_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["BatchResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  discard_import_api_imports__batch_id__delete: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path: {
+        batch_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  confirm_import_api_imports__batch_id__confirm_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path: {
+        batch_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ConfirmRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ConfirmResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
         headers: {
           [name: string]: unknown;
         };
