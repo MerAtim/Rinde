@@ -12,6 +12,7 @@ from typing import Protocol
 from uuid import UUID
 
 from rinde.imports.domain.batch import AccountState, ImportBatch
+from rinde.imports.domain.macro_pdf import Word
 from rinde.imports.domain.rules import CategoryRule
 from rinde.imports.domain.statement import Statement
 
@@ -20,6 +21,17 @@ class StatementReader(Protocol):
     """Un formato de archivo (patrón Strategy): bytes adentro, líneas afuera."""
 
     def read(self, content: bytes) -> Statement: ...
+
+
+class PdfText(Protocol):
+    """La capa de texto de un PDF: las palabras de cada página, con su posición.
+
+    No interpreta nada: qué es un monto o una fecha lo decide el dominio.
+    """
+
+    def pages(self, content: bytes, max_pages: int) -> list[list[Word]]:
+        """`ImportPdfInvalidError` si no se puede abrir; `ImportPdfTooManyPagesError` si se pasa."""
+        ...
 
 
 class BatchRepository(Protocol):

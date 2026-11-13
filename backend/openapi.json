@@ -4022,25 +4022,35 @@
             "type": "string",
             "contentMediaType": "application/octet-stream",
             "title": "File",
-            "description": "CSV, hasta 1 MB y 2.000 líneas"
+            "description": "CSV o PDF, hasta 1 MB, 2.000 líneas y 20 páginas"
           },
           "account_id": {
             "type": "string",
             "format": "uuid",
             "title": "Account Id"
           },
+          "format": {
+            "$ref": "#/components/schemas/FileFormat",
+            "default": "csv"
+          },
           "layout": {
-            "type": "string",
-            "maxLength": 2000,
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 2000
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Layout",
-            "description": "CsvLayoutRequest en JSON"
+            "description": "CsvLayoutRequest en JSON; solo con CSV"
           }
         },
         "type": "object",
         "required": [
           "file",
-          "account_id",
-          "layout"
+          "account_id"
         ],
         "title": "Body_create_import_api_imports_post"
       },
@@ -4557,6 +4567,14 @@
         ],
         "title": "ErrorResponse",
         "description": "Toda respuesta de error: un código estable, nunca un mensaje traducido ni una traza."
+      },
+      "FileFormat": {
+        "type": "string",
+        "enum": [
+          "csv",
+          "macro_pdf"
+        ],
+        "title": "FileFormat"
       },
       "HTTPValidationError": {
         "properties": {
