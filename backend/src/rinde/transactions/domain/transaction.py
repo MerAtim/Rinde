@@ -98,6 +98,11 @@ class Transaction:
     updated_at: datetime
     description: Description | None = None
     deleted_at: datetime | None = None
+    source_fingerprint: str | None = None
+    """Solo en los importados: la huella de su línea en el archivo (ADR-0023).
+
+    Editar el movimiento la conserva, así reimportar el mismo archivo no lo duplica.
+    """
 
     def __post_init__(self) -> None:
         # En todo movimiento, no solo al registrarlo: también en el que se lee de la base.
@@ -137,8 +142,14 @@ class Transaction:
         return self if not self.is_deleted else replace(self, deleted_at=None, updated_at=at)
 
 
-def register(
-    draft: Draft, account: TargetAccount, *, transaction_id: UUID, owner_id: UUID, at: datetime
+def register(  # noqa: PLR0913  (todos por nombre: es el constructor del agregado)
+    draft: Draft,
+    account: TargetAccount,
+    *,
+    transaction_id: UUID,
+    owner_id: UUID,
+    at: datetime,
+    source_fingerprint: str | None = None,
 ) -> Transaction:
     """Crea un movimiento válido o no lo crea."""
     draft.check(account.currency, at)
@@ -153,4 +164,5 @@ def register(
         created_at=at,
         updated_at=at,
         description=draft.description,
+        source_fingerprint=source_fingerprint,
     )

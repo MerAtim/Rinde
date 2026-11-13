@@ -4,6 +4,7 @@ Ninguna lectura arma su propia consulta: todas parten de `_alive`, que ya excluy
 los movimientos borrados. Es la mitigación del borrado lógico (ADR-0011).
 """
 
+from collections.abc import Collection
 from datetime import date, datetime
 from decimal import Decimal
 from uuid import UUID, uuid4
@@ -25,6 +26,7 @@ from sqlalchemy import (
     update,
 )
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rinde.shared.domain.money import Currency, Money
@@ -43,6 +45,7 @@ from rinde.transactions.application.ports import (
     TransferPage,
 )
 from rinde.transactions.domain.category import Category, CategoryName, TransactionKind
+from rinde.transactions.domain.errors import TransactionAlreadyImportedError
 from rinde.transactions.domain.transaction import (
     AuditAction,
     Description,
@@ -89,6 +92,7 @@ def _to_transaction(row: RowMapping) -> Transaction:
         created_at=row["created_at"],
         updated_at=row["updated_at"],
         deleted_at=row["deleted_at"],
+        source_fingerprint=row["source_fingerprint"],
     )
 
 
@@ -109,7 +113,12 @@ def _values(transaction: Transaction) -> dict[str, object]:
         "created_at": transaction.created_at,
         "updated_at": transaction.updated_at,
         "deleted_at": transaction.deleted_at,
+        "source_fingerprint": transaction.source_fingerprint,
     }
+
+
+# El índice único de las huellas importadas (ADR-0023).
+_IMPORTED_ONCE = "uq_transactions_account_id_source_fingerprint"
 
 
 class SqlAlchemyTransactionRepository:
@@ -123,7 +132,39 @@ class SqlAlchemyTransactionRepository:
         )
 
     async def add(self, transaction: Transaction) -> None:
-        await self._session.execute(insert(transactions).values(**_values(transaction)))
+        try:
+            await self._session.execute(insert(transactions).values(**_values(transaction)))
+        except IntegrityError as error:
+            # Otro pedido importó la misma línea entre la consulta y la escritura.
+            if _IMPORTED_ONCE in str(error.orig):
+                raise TransactionAlreadyImportedError from error
+            raise
+
+    async def imported_fingerprints(
+        self, owner_id: UUID, account_id: UUID, fingerprints: Collection[str]
+    ) -> set[str]:
+        # Con los borrados: un importado que se borró no vuelve a entrar (ADR-0023).
+        if not fingerprints:
+            return set()
+        result = await self._session.scalars(
+            select(transactions.c.source_fingerprint).where(
+                transactions.c.owner_id == owner_id,
+                transactions.c.account_id == account_id,
+                transactions.c.source_fingerprint.in_(list(fingerprints)),
+            )
+        )
+        return {value for value in result if value is not None}
+
+    async def in_account_between(
+        self, owner_id: UUID, account_id: UUID, since: date, until: date
+    ) -> list[Transaction]:
+        result = await self._session.execute(
+            self._alive(owner_id).where(
+                transactions.c.account_id == account_id,
+                transactions.c.occurred_on.between(since, until),
+            )
+        )
+        return [_to_transaction(row) for row in result.mappings()]
 
     async def get(self, transaction_id: UUID, owner_id: UUID) -> Transaction | None:
         # La única lectura que incluye borrados: hace falta para deshacer.
@@ -564,6 +605,7 @@ class SqlAlchemyAuditLog:
                     "deleted_at": transaction.deleted_at.isoformat()
                     if transaction.deleted_at
                     else None,
+                    "source_fingerprint": transaction.source_fingerprint,
                 },
             )
         )

@@ -11,6 +11,7 @@ from rinde.transactions.application.categories import (
     RenameCategory,
 )
 from rinde.transactions.application.dependencies import TransactionsDependencies
+from rinde.transactions.application.imported import InspectImport, RegisterImported
 from rinde.transactions.application.summary import SummarizeLedger
 from rinde.transactions.application.use_cases import (
     DeleteTransaction,
@@ -51,6 +52,8 @@ class TransactionsUnit:
     create_category: CreateCategory
     rename_category: RenameCategory
     delete_category: DeleteCategory
+    inspect_import: InspectImport
+    register_imported: RegisterImported
 
 
 class TransactionsUnitFactory(Protocol):
@@ -80,4 +83,6 @@ def build_transactions_unit(deps: TransactionsDependencies) -> TransactionsUnit:
         create_category=CreateCategory(deps),
         rename_category=RenameCategory(deps),
         delete_category=DeleteCategory(deps),
+        inspect_import=InspectImport(deps),
+        register_imported=RegisterImported(deps),
     )

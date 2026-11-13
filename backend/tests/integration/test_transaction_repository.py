@@ -22,6 +22,7 @@ from rinde.transactions.application.ports import (
     TransactionFilters,
 )
 from rinde.transactions.domain.category import Category, CategoryName, TransactionKind
+from rinde.transactions.domain.errors import TransactionAlreadyImportedError
 from rinde.transactions.domain.transaction import (
     AuditAction,
     Description,
@@ -544,3 +545,91 @@ async def test_flows_in_the_reference_currency_are_added_by_month(session: Async
         (Currency.USD, date(2026, 9, 11), Decimal("3.00")),
         (Currency.USD, date(2026, 9, 12), Decimal("4.00")),
     ]
+
+
+class TestImportados:
+    """La huella de importación (ADR-0023)."""
+
+    async def test_la_huella_se_guarda_y_vuelve(self, session: AsyncSession) -> None:
+        owner_id = await _user(session, "mechi")
+        account = await _account(session, owner_id)
+        category = await _category(session, owner_id)
+        repository = SqlAlchemyTransactionRepository(session)
+        movement = replace(_a_transaction(owner_id, account, category), source_fingerprint="a" * 64)
+
+        await repository.add(movement)
+
+        assert await repository.get(movement.id, owner_id) == movement
+
+    async def test_las_huellas_incluyen_los_borrados_y_son_del_dueno(
+        self, session: AsyncSession
+    ) -> None:
+        owner_id = await _user(session, "mechi")
+        stranger = await _user(session, "otra")
+        account = await _account(session, owner_id)
+        category = await _category(session, owner_id)
+        repository = SqlAlchemyTransactionRepository(session)
+        movement = replace(_a_transaction(owner_id, account, category), source_fingerprint="a" * 64)
+        await repository.add(movement)
+        await repository.save(movement.deleted(NOW))
+
+        assert await repository.imported_fingerprints(
+            owner_id, account.id, ["a" * 64, "b" * 64]
+        ) == {"a" * 64}
+        assert await repository.imported_fingerprints(stranger, account.id, ["a" * 64]) == set()
+        assert await repository.imported_fingerprints(owner_id, account.id, []) == set()
+
+    async def test_la_misma_huella_dos_veces_en_una_cuenta_es_un_conflicto(
+        self, session: AsyncSession
+    ) -> None:
+        owner_id = await _user(session, "mechi")
+        account = await _account(session, owner_id)
+        other = await _account(session, owner_id)
+        category = await _category(session, owner_id)
+        repository = SqlAlchemyTransactionRepository(session)
+        first = replace(_a_transaction(owner_id, account, category), source_fingerprint="a" * 64)
+        await repository.add(first)
+        # En otra cuenta la misma línea es otra cosa: puede ser el mismo archivo
+        # importado por error en la cuenta equivocada.
+        await repository.add(
+            replace(_a_transaction(owner_id, other, category), source_fingerprint="a" * 64)
+        )
+
+        with pytest.raises(TransactionAlreadyImportedError):
+            async with session.begin_nested():
+                await repository.add(
+                    replace(
+                        _a_transaction(owner_id, account, category), source_fingerprint="a" * 64
+                    )
+                )
+
+    async def test_la_base_solo_acepta_un_sha256(self, session: AsyncSession) -> None:
+        owner_id = await _user(session, "mechi")
+        account = await _account(session, owner_id)
+        category = await _category(session, owner_id)
+        movement = replace(_a_transaction(owner_id, account, category), source_fingerprint="xyz")
+
+        with pytest.raises(IntegrityError):
+            async with session.begin_nested():
+                await SqlAlchemyTransactionRepository(session).add(movement)
+
+    async def test_los_de_una_cuenta_entre_dos_fechas(self, session: AsyncSession) -> None:
+        owner_id = await _user(session, "mechi")
+        account = await _account(session, owner_id)
+        other = await _account(session, owner_id)
+        category = await _category(session, owner_id)
+        repository = SqlAlchemyTransactionRepository(session)
+        inside = _a_transaction(owner_id, account, category, day=10)
+        border = _a_transaction(owner_id, account, category, day=12)
+        outside = _a_transaction(owner_id, account, category, day=13)
+        elsewhere = _a_transaction(owner_id, other, category, day=11)
+        deleted = _a_transaction(owner_id, account, category, day=11)
+        for movement in (inside, border, outside, elsewhere, deleted):
+            await repository.add(movement)
+        await repository.save(deleted.deleted(NOW))
+
+        found = await repository.in_account_between(
+            owner_id, account.id, date(2026, 9, 10), date(2026, 9, 12)
+        )
+
+        assert {movement.id for movement in found} == {inside.id, border.id}

@@ -4,6 +4,7 @@ Son fakes y no mocks: se comportan como la cosa real (guardan, filtran, ordenan)
 así los tests describen reglas y no llamadas.
 """
 
+from collections.abc import Collection
 from datetime import UTC, date, datetime, timedelta
 from uuid import UUID
 
@@ -25,6 +26,7 @@ from rinde.transactions.application.ports import (
 )
 from rinde.transactions.application.unit import TransactionsUnit, build_transactions_unit
 from rinde.transactions.domain.category import Category, TransactionKind
+from rinde.transactions.domain.errors import TransactionAlreadyImportedError
 from rinde.transactions.domain.transaction import AuditAction, TargetAccount, Transaction
 from rinde.transactions.domain.transfer import Transfer
 
@@ -81,7 +83,35 @@ class FakeTransactionRepository:
         self.rows: dict[UUID, Transaction] = {}
 
     async def add(self, transaction: Transaction) -> None:
+        # Como el índice único de la base (ADR-0023).
+        if transaction.source_fingerprint is not None and any(
+            row.account_id == transaction.account_id
+            and row.source_fingerprint == transaction.source_fingerprint
+            for row in self.rows.values()
+        ):
+            raise TransactionAlreadyImportedError
         self.rows[transaction.id] = transaction
+
+    async def imported_fingerprints(
+        self, owner_id: UUID, account_id: UUID, fingerprints: Collection[str]
+    ) -> set[str]:
+        return {
+            row.source_fingerprint
+            for row in self.rows.values()
+            if row.owner_id == owner_id
+            and row.account_id == account_id
+            and row.source_fingerprint is not None
+            and row.source_fingerprint in fingerprints
+        }
+
+    async def in_account_between(
+        self, owner_id: UUID, account_id: UUID, since: date, until: date
+    ) -> list[Transaction]:
+        return [
+            row
+            for row in self._alive(owner_id)
+            if row.account_id == account_id and since <= row.occurred_on <= until
+        ]
 
     async def get(self, transaction_id: UUID, owner_id: UUID) -> Transaction | None:
         found = self.rows.get(transaction_id)

@@ -5,6 +5,7 @@ también el dueño, así un caso de uso no puede olvidarse de filtrar por el
 usuario autenticado. Y ningún listado devuelve movimientos borrados (ADR-0011).
 """
 
+from collections.abc import Collection
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import StrEnum
@@ -173,6 +174,18 @@ class TransactionRepository(Protocol):
     async def count_by_category(self, category_id: UUID, owner_id: UUID) -> int: ...
 
     async def save(self, transaction: Transaction) -> None: ...
+
+    async def imported_fingerprints(
+        self, owner_id: UUID, account_id: UUID, fingerprints: Collection[str]
+    ) -> set[str]:
+        """Las huellas que ya entraron en esa cuenta, incluidos los borrados (ADR-0023)."""
+        ...
+
+    async def in_account_between(
+        self, owner_id: UUID, account_id: UUID, since: date, until: date
+    ) -> list[Transaction]:
+        """Los vivos de una cuenta entre dos fechas, incluidas las dos."""
+        ...
 
 
 class CategoryRepository(Protocol):
