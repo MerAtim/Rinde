@@ -694,7 +694,8 @@
       "NOT_AUTHENTICATED": "Your session expired. Sign in again.",
       "CSRF_REJECTED": "We couldn't confirm the request. Reload the page.",
       "NETWORK_ERROR": "No connection. Try again.",
-      "UNKNOWN_ERROR": "Something went wrong. Try again."
+      "UNKNOWN_ERROR": "Something went wrong. Try again.",
+      "IMPORT_RULE_PATTERN_INVALID": "The text to remember must have between 3 and 60 characters."
     },
     "batch": {
       "back": "Back to import",
@@ -735,6 +736,11 @@
       "category": "Category for {{description}}",
       "categoryPlaceholder": "Choose a category",
       "missingCategory": "Choose a category for every transaction that goes in.",
+      "byRule": "By the rule “{{rule}}”",
+      "remember": "Remember for future imports",
+      "rulePattern": "If the description says",
+      "rulePatternHint": "Regardless of accents or case. It also changes the other lines that say it.",
+      "rulePatternInvalid": "Write between 3 and 60 characters.",
       "confirm_one": "Import {{count}} transaction",
       "confirm_other": "Import {{count}} transactions",
       "discard": "Discard",

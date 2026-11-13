@@ -11,18 +11,16 @@ import { cx } from "../../shared/ui/cx";
 import { MoneyAmount } from "../../shared/ui/MoneyAmount";
 import { Select } from "../../shared/ui/Select";
 import { StatusChip } from "../../shared/ui/StatusChip";
+import { TextField } from "../../shared/ui/TextField";
 import { useAccounts } from "../accounts/useAccounts";
 import type { Category } from "../transactions/api";
 import { useCategoryName } from "../transactions/presentation";
 import { useCategories } from "../transactions/useTransactions";
 import { type BatchLine, type ImportBatch, type ImportErrorCode, isImportsApiError } from "./api";
+import { type Effective, effectiveCategories, isExpense, type LineChoice } from "./effective";
 import styles from "./Imports.module.css";
+import { patternFrom, proposedPattern } from "./rules";
 import { useBatch, useConfirmBatch, useDiscardBatch } from "./useImports";
-
-/** El signo se lee del string: restar en el frontend sería aritmética de dinero. */
-function isExpense(line: BatchLine): boolean {
-  return line.amount.amount.startsWith("-");
-}
 
 /** La vista previa de un lote: qué entra y con qué categoría (ADR-0023). */
 export function BatchPage() {
@@ -65,11 +63,6 @@ export function BatchPage() {
   );
 }
 
-interface Decision {
-  included: boolean;
-  categoryId: string | null;
-}
-
 interface BatchReviewProps {
   batch: ImportBatch;
   categories: Category[];
@@ -82,14 +75,15 @@ function BatchReview({ batch, categories, accountName }: BatchReviewProps) {
   const confirm = useConfirmBatch(batch.id);
   const discard = useDiscardBatch(batch.id);
   // Entran las nuevas; un posible duplicado, solo si la persona lo elige.
-  const [decisions, setDecisions] = useState<Record<number, Decision>>(() =>
+  const [choices, setChoices] = useState<Record<number, LineChoice>>(() =>
     Object.fromEntries(
       batch.lines.map((line) => [
         line.number,
-        { included: line.status === "new", categoryId: line.category_id },
+        { included: line.status === "new", categoryId: null, remember: null },
       ]),
     ),
   );
+  const effective = effectiveCategories(batch.lines, choices);
 
   const counts = {
     new: batch.lines.filter((line) => line.status === "new").length,
@@ -97,8 +91,12 @@ function BatchReview({ batch, categories, accountName }: BatchReviewProps) {
     possible: batch.lines.filter((line) => line.status === "possible_duplicate").length,
     errors: batch.errors.length,
   };
-  const chosen = batch.lines.filter((line) => decisions[line.number]?.included);
-  const missingCategory = chosen.some((line) => !decisions[line.number]?.categoryId);
+  const chosen = batch.lines.filter((line) => choices[line.number]?.included);
+  const missingCategory = chosen.some((line) => !effective.get(line.number)?.categoryId);
+  const invalidRule = chosen.some((line) => {
+    const remember = choices[line.number]?.remember ?? null;
+    return remember !== null && patternFrom(remember) === null;
+  });
   const error = confirm.error ?? discard.error;
   const code: ImportErrorCode | null = error
     ? isImportsApiError(error)
@@ -106,10 +104,16 @@ function BatchReview({ batch, categories, accountName }: BatchReviewProps) {
       : "UNKNOWN_ERROR"
     : null;
 
-  function decide(number: number, change: Partial<Decision>) {
-    setDecisions((current) => ({
+  function decide(number: number, change: Partial<LineChoice>) {
+    setChoices((current) => ({
       ...current,
-      [number]: { included: false, categoryId: null, ...current[number], ...change },
+      [number]: {
+        included: false,
+        categoryId: null,
+        remember: null,
+        ...current[number],
+        ...change,
+      },
     }));
     confirm.reset();
   }
@@ -173,7 +177,8 @@ function BatchReview({ batch, categories, accountName }: BatchReviewProps) {
             key={line.number}
             line={line}
             categories={categories}
-            decision={decisions[line.number] ?? { included: false, categoryId: null }}
+            choice={choices[line.number] ?? { included: false, categoryId: null, remember: null }}
+            effective={effective.get(line.number) ?? { categoryId: null, rule: null }}
             onChange={(change) => {
               decide(line.number, change);
             }}
@@ -186,13 +191,17 @@ function BatchReview({ batch, categories, accountName }: BatchReviewProps) {
       <div className={cx(styles.actions)}>
         <Button
           icon="check"
-          isDisabled={chosen.length === 0 || missingCategory || confirm.isPending}
+          isDisabled={chosen.length === 0 || missingCategory || invalidRule || confirm.isPending}
           onPress={() => {
             confirm.mutate(
-              chosen.map((line) => ({
-                number: line.number,
-                category_id: decisions[line.number]?.categoryId ?? "",
-              })),
+              chosen.map((line) => {
+                const remember = choices[line.number]?.remember ?? null;
+                return {
+                  number: line.number,
+                  category_id: effective.get(line.number)?.categoryId ?? "",
+                  ...(remember === null ? {} : { remember }),
+                };
+              }),
               {
                 onSuccess: (result) => {
                   void navigate("/transactions", {
@@ -228,11 +237,12 @@ function BatchReview({ batch, categories, accountName }: BatchReviewProps) {
 interface LineRowProps {
   line: BatchLine;
   categories: Category[];
-  decision: Decision;
-  onChange: (change: Partial<Decision>) => void;
+  choice: LineChoice;
+  effective: Effective;
+  onChange: (change: Partial<LineChoice>) => void;
 }
 
-function LineRow({ line, categories, decision, onChange }: LineRowProps) {
+function LineRow({ line, categories, choice, effective, onChange }: LineRowProps) {
   const { t } = useTranslation();
   const formatDate = useShortDateFormatter();
   const categoryName = useCategoryName();
@@ -242,12 +252,14 @@ function LineRow({ line, categories, decision, onChange }: LineRowProps) {
     .filter((category) => category.kind === (expense ? "expense" : "income"))
     .map((category) => ({ id: category.id, label: categoryName(category) }));
   const isDuplicate = line.status === "duplicate";
+  const remembering = choice.remember !== null;
+  const ruleIsInvalid = remembering && patternFrom(choice.remember ?? "") === null;
 
   return (
-    <li className={cx(styles.line)} data-included={decision.included || undefined}>
+    <li className={cx(styles.line)} data-included={choice.included || undefined}>
       <div className={cx(styles.lineHeader)}>
         <Checkbox
-          isSelected={decision.included}
+          isSelected={choice.included}
           isDisabled={isDuplicate}
           onChange={(included) => {
             onChange({ included });
@@ -274,17 +286,43 @@ function LineRow({ line, categories, decision, onChange }: LineRowProps) {
           tone={expense ? "expense" : "income"}
         />
       </div>
-      {decision.included ? (
-        <Select
-          label={t("imports.batch.categoryLabel")}
-          accessibleLabel={t("imports.batch.category", { description })}
-          placeholder={t("imports.batch.categoryPlaceholder")}
-          options={options}
-          value={decision.categoryId}
-          onChange={(categoryId) => {
-            onChange({ categoryId });
-          }}
-        />
+      {choice.included ? (
+        <div className={cx(styles.lineChoices)}>
+          <Select
+            label={t("imports.batch.categoryLabel")}
+            accessibleLabel={t("imports.batch.category", { description })}
+            placeholder={t("imports.batch.categoryPlaceholder")}
+            options={options}
+            value={effective.categoryId}
+            onChange={(categoryId) => {
+              onChange({ categoryId });
+            }}
+            {...(effective.rule
+              ? { description: t("imports.batch.byRule", { rule: effective.rule }) }
+              : {})}
+          />
+          <Checkbox
+            isSelected={remembering}
+            onChange={(remember) => {
+              onChange({ remember: remember ? proposedPattern(line.description) : null });
+            }}
+          >
+            {t("imports.batch.remember")}
+            {/* Cada fila tiene la suya: el lector de pantalla escucha también la descripción. */}
+            <span className="visually-hidden">{`: ${description}`}</span>
+          </Checkbox>
+          {remembering ? (
+            <TextField
+              label={t("imports.batch.rulePattern")}
+              value={choice.remember ?? ""}
+              onChange={(remember) => {
+                onChange({ remember });
+              }}
+              description={t("imports.batch.rulePatternHint")}
+              {...(ruleIsInvalid ? { errorMessage: t("imports.batch.rulePatternInvalid") } : {})}
+            />
+          ) : null}
+        </div>
       ) : null}
     </li>
   );

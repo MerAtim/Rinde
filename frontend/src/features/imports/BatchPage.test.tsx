@@ -10,7 +10,7 @@ import { jsonResponse, renderWithProviders } from "../../test/render";
 import { anAccount } from "../accounts/fixtures";
 import { EXPENSE_CATEGORY, INCOME_CATEGORY } from "../transactions/fixtures";
 import { BatchPage } from "./BatchPage";
-import { aBatch, BATCH_ID } from "./fixtures";
+import { aBatch, aLine, BATCH_ID } from "./fixtures";
 
 const FOOD = {
   ...EXPENSE_CATEGORY,
@@ -56,6 +56,13 @@ function rowOf(description: string): HTMLElement {
   return row;
 }
 
+/** La casilla que incluye la línea: su nombre empieza por la descripción. */
+function includeBox(description: string): HTMLElement {
+  return within(rowOf(description)).getByRole("checkbox", {
+    name: new RegExp(`^${description}`),
+  });
+}
+
 describe("BatchPage", () => {
   it("muestra el resumen, las líneas ilegibles y qué entra por defecto", async () => {
     mockApi(routes());
@@ -75,11 +82,11 @@ describe("BatchPage", () => {
     expect(screen.getByText("Línea 6: la fecha no se entiende.")).toBeInTheDocument();
 
     // Las nuevas entran; un posible duplicado, no; un duplicado no se puede elegir.
-    expect(within(rowOf("COTO SUC 123")).getByRole("checkbox")).toBeChecked();
-    expect(within(rowOf("HABERES")).getByRole("checkbox")).toBeChecked();
-    expect(within(rowOf("CAFE")).getByRole("checkbox")).not.toBeChecked();
+    expect(includeBox("COTO SUC 123")).toBeChecked();
+    expect(includeBox("HABERES")).toBeChecked();
+    expect(includeBox("CAFE")).not.toBeChecked();
     expect(within(rowOf("CAFE")).getByText("Posible duplicado")).toBeInTheDocument();
-    expect(within(rowOf("YA ESTABA")).getByRole("checkbox")).toBeDisabled();
+    expect(includeBox("YA ESTABA")).toBeDisabled();
     // Una fecha sin hora no se corre un día por la zona horaria.
     expect(rowOf("COTO SUC 123")).toHaveTextContent("3 de noviembre");
     // El signo se dice con palabras, además del color.
@@ -102,8 +109,8 @@ describe("BatchPage", () => {
       within(rowOf("COTO SUC 123")).getByRole("button", { name: /Categoría de COTO SUC 123/ }),
     );
     await user.click(await screen.findByRole("option", { name: "Kiosco" }));
-    await user.click(within(rowOf("HABERES")).getByRole("checkbox"));
-    await user.click(within(rowOf("CAFE")).getByRole("checkbox"));
+    await user.click(includeBox("HABERES"));
+    await user.click(includeBox("CAFE"));
     await user.click(screen.getByRole("button", { name: "Importar 2 movimientos" }));
 
     expect(await screen.findByText("Movimientos: Importaste 2 movimientos.")).toBeInTheDocument();
@@ -121,8 +128,8 @@ describe("BatchPage", () => {
     const user = userEvent.setup();
 
     await screen.findByText("COTO SUC 123");
-    await user.click(within(rowOf("COTO SUC 123")).getByRole("checkbox"));
-    await user.click(within(rowOf("HABERES")).getByRole("checkbox"));
+    await user.click(includeBox("COTO SUC 123"));
+    await user.click(includeBox("HABERES"));
 
     expect(screen.getByRole("button", { name: "Importar 0 movimientos" })).toBeDisabled();
   });
@@ -182,5 +189,84 @@ describe("BatchPage", () => {
       "href",
       "/transactions",
     );
+  });
+
+  describe("reglas de categoría", () => {
+    const twoCotos = aBatch({
+      lines: [
+        aLine({ number: 2, description: "COTO SUC 1" }),
+        aLine({
+          number: 3,
+          description: "Cotó digital",
+          category_id: FOOD.id,
+          rule: "coto digital",
+        }),
+        aLine({ number: 4, description: "COTO SUC 2" }),
+      ],
+      errors: [],
+    });
+
+    it("dice qué regla eligió una categoría", async () => {
+      mockApi(routes(twoCotos));
+      renderBatch();
+
+      expect(await screen.findByText("Por la regla «coto digital»")).toBeInTheDocument();
+    });
+
+    it("recordar un texto cambia las otras líneas que lo dicen y viaja al confirmar", async () => {
+      const fetchMock = mockApi({
+        ...routes(twoCotos),
+        [`POST /api/imports/${BATCH_ID}/confirm`]: jsonResponse(200, { imported: 3, skipped: 0 }),
+      });
+      renderBatch();
+      const user = userEvent.setup();
+
+      await screen.findByText("COTO SUC 1");
+      await user.click(
+        within(rowOf("COTO SUC 1")).getByRole("button", { name: /Categoría de COTO SUC 1/ }),
+      );
+      await user.click(await screen.findByRole("option", { name: "Kiosco" }));
+      await user.click(within(rowOf("COTO SUC 1")).getByRole("checkbox", { name: /^Recordar/ }));
+      const text = within(rowOf("COTO SUC 1")).getByRole("textbox", {
+        name: /Si la descripción dice/,
+      });
+      // Propone las dos primeras palabras; se cambia por algo más general.
+      expect(text).toHaveValue("COTO SUC");
+      await user.clear(text);
+      await user.type(text, "coto");
+
+      // La otra línea que dice COTO toma la categoría; la de la regla más específica, no.
+      expect(within(rowOf("COTO SUC 2")).getByText("Por la regla «coto»")).toBeInTheDocument();
+      expect(
+        within(rowOf("Cotó digital")).getByText("Por la regla «coto digital»"),
+      ).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Importar 3 movimientos" }));
+
+      await screen.findByText(/Importaste 3 movimientos/);
+      expect(bodyOf(fetchMock)).toEqual({
+        lines: [
+          { number: 2, category_id: FOOD.id, remember: "coto" },
+          { number: 3, category_id: FOOD.id },
+          { number: 4, category_id: FOOD.id },
+        ],
+      });
+    });
+
+    it("un texto muy corto no deja confirmar", async () => {
+      mockApi(routes(twoCotos));
+      renderBatch();
+      const user = userEvent.setup();
+
+      await screen.findByText("COTO SUC 1");
+      await user.click(within(rowOf("COTO SUC 1")).getByRole("checkbox", { name: /^Recordar/ }));
+      const text = within(rowOf("COTO SUC 1")).getByRole("textbox", {
+        name: /Si la descripción dice/,
+      });
+      await user.clear(text);
+      await user.type(text, "co");
+
+      expect(screen.getByText("Escribí entre 3 y 60 caracteres.")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Importar 3 movimientos" })).toBeDisabled();
+    });
   });
 });

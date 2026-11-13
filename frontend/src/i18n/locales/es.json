@@ -694,7 +694,8 @@
       "NOT_AUTHENTICATED": "Tu sesión venció. Volvé a ingresar.",
       "CSRF_REJECTED": "No pudimos confirmar el pedido. Recargá la página.",
       "NETWORK_ERROR": "Sin conexión. Probá de nuevo.",
-      "UNKNOWN_ERROR": "Algo salió mal. Probá de nuevo."
+      "UNKNOWN_ERROR": "Algo salió mal. Probá de nuevo.",
+      "IMPORT_RULE_PATTERN_INVALID": "El texto a recordar tiene que tener entre 3 y 60 caracteres."
     },
     "batch": {
       "back": "Volver a importar",
@@ -735,6 +736,11 @@
       "category": "Categoría de {{description}}",
       "categoryPlaceholder": "Elegí una categoría",
       "missingCategory": "Elegí una categoría para cada movimiento que entra.",
+      "byRule": "Por la regla «{{rule}}»",
+      "remember": "Recordar para las próximas importaciones",
+      "rulePattern": "Si la descripción dice",
+      "rulePatternHint": "Sin importar tildes ni mayúsculas. Cambia también las otras líneas que lo dicen.",
+      "rulePatternInvalid": "Escribí entre 3 y 60 caracteres.",
       "confirm_one": "Importar {{count}} movimiento",
       "confirm_other": "Importar {{count}} movimientos",
       "discard": "Descartar",

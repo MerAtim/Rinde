@@ -103,7 +103,8 @@ for (const idioma of IDIOMAS) {
         } else if (ruta === "/transactions/import") {
           await expect(page.getByRole("button", { name: /CSV|file/ })).toBeVisible();
         } else if (ruta.startsWith("/imports/")) {
-          await expect(page.getByRole("checkbox")).toHaveCount(3);
+          // Tres líneas, y la que entra suma "Recordar".
+          await expect(page.getByRole("checkbox")).toHaveCount(4);
         } else {
           await expect(page.getByRole("radiogroup").last()).toBeVisible();
         }
