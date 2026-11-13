@@ -10,6 +10,7 @@ from rinde.imports.application.ports import (
     CategoryReader,
     Clock,
     MovementRegistrar,
+    RuleRepository,
     Transaction,
 )
 from rinde.imports.application.use_cases import (
@@ -46,6 +47,7 @@ class ImportsUnitFactory(Protocol):
 
 def build_imports_unit(
     batches: BatchRepository,
+    rules: RuleRepository,
     transaction: Transaction,
     gateways: ImportsGateways,
     clock: Clock,
@@ -56,6 +58,7 @@ def build_imports_unit(
         accounts=gateways.accounts,
         registrar=gateways.registrar,
         categories=gateways.categories,
+        rules=rules,
         clock=clock,
     )
     return ImportsUnit(

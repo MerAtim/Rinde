@@ -3931,6 +3931,18 @@
             ],
             "title": "Category Id",
             "description": "La categoría propuesta"
+          },
+          "rule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule",
+            "description": "El texto de la regla que la propuso; sin regla, es la de otros"
           }
         },
         "type": "object",
@@ -3940,7 +3952,8 @@
           "description",
           "amount",
           "status",
-          "category_id"
+          "category_id",
+          "rule"
         ],
         "title": "BatchLineResponse"
       },
@@ -4275,6 +4288,19 @@
             "type": "string",
             "format": "uuid",
             "title": "Category Id"
+          },
+          "remember": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remember",
+            "description": "Un texto para recordar esta categoría en las próximas importaciones"
           }
         },
         "additionalProperties": false,

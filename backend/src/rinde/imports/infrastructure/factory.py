@@ -7,7 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from rinde.imports.application.ports import Clock
 from rinde.imports.application.unit import ImportsGateways, ImportsUnit, build_imports_unit
-from rinde.imports.infrastructure.repositories import SqlAlchemyBatchRepository
+from rinde.imports.infrastructure.repositories import (
+    SqlAlchemyBatchRepository,
+    SqlAlchemyRuleRepository,
+)
 
 
 class SqlAlchemyTransaction:
@@ -34,6 +37,7 @@ class SqlAlchemyImportsUnitFactory:
         async with self._sessionmaker() as session:
             yield build_imports_unit(
                 SqlAlchemyBatchRepository(session),
+                SqlAlchemyRuleRepository(session),
                 SqlAlchemyTransaction(session),
                 self._gateways,
                 self._clock,

@@ -91,6 +91,9 @@ class BatchLineResponse(BaseModel):
         "possible_duplicate, que queda afuera salvo que se incluya"
     )
     category_id: UUID | None = Field(description="La categoría propuesta")
+    rule: str | None = Field(
+        description="El texto de la regla que la propuso; sin regla, es la de otros"
+    )
 
 
 class LineErrorResponse(BaseModel):
@@ -125,7 +128,8 @@ class BatchResponse(BaseModel):
                     description=line.description,
                     amount=MoneyResponse.from_money(Money(line.signed_amount, batch.currency)),
                     status=line.status,
-                    category_id=preview.suggestions.get(line.number),
+                    category_id=preview.suggestions[line.number].category_id,
+                    rule=preview.suggestions[line.number].rule,
                 )
                 for line in batch.lines
             ],
@@ -141,6 +145,11 @@ class ChoiceRequest(BaseModel):
 
     number: int = Field(ge=1)
     category_id: UUID
+    remember: str | None = Field(
+        default=None,
+        max_length=120,
+        description="Un texto para recordar esta categoría en las próximas importaciones",
+    )
 
 
 class ConfirmRequest(BaseModel):
@@ -151,7 +160,7 @@ class ConfirmRequest(BaseModel):
     lines: list[ChoiceRequest] = Field(max_length=MAX_LINES)
 
     def choices(self) -> list[Choice]:
-        return [Choice(item.number, item.category_id) for item in self.lines]
+        return [Choice(item.number, item.category_id, item.remember) for item in self.lines]
 
 
 class ConfirmResponse(BaseModel):

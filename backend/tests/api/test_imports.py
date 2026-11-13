@@ -125,6 +125,7 @@ def test_upload_shows_a_preview_with_errors_and_suggestions(client: TestClient) 
             "amount": {"amount": "-1500.00", "currency": "ARS"},
             "status": "new",
             "category_id": _category(client, "otros"),
+            "rule": None,
         },
         {
             "number": 3,
@@ -133,6 +134,7 @@ def test_upload_shows_a_preview_with_errors_and_suggestions(client: TestClient) 
             "amount": {"amount": "250000.00", "currency": "ARS"},
             "status": "new",
             "category_id": _category(client, "otros-ingresos"),
+            "rule": None,
         },
     ]
     assert batch["errors"] == [{"line": 4, "problem": "LINE_AMOUNT_ZERO"}]
@@ -270,3 +272,39 @@ def test_uploading_needs_the_csrf_header(client: TestClient) -> None:
     )
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+def test_a_remembered_rule_categorizes_the_next_import(client: TestClient) -> None:
+    account = _account(client)
+    food = _category(client, "supermercado")
+    batch = _upload(client, account).json()
+    client.post(
+        f"/api/imports/{batch['id']}/confirm",
+        json={"lines": [{"number": 2, "category_id": food, "remember": "Panadería"}]},
+        headers=CSRF,
+    )
+
+    other_account = _account(client, "USD")
+    usd = ("Fecha;Descripción;Débito;Crédito\n03/11/2026;PANADERÍA CENTRO;15,00;\n").encode(
+        "cp1252"
+    )
+    second = _upload(client, other_account, usd).json()
+
+    [line] = second["lines"]
+    assert line["category_id"] == food
+    assert line["rule"] == "panaderia"
+
+
+def test_a_text_too_short_to_remember(client: TestClient) -> None:
+    batch = _upload(client, _account(client)).json()
+
+    response = client.post(
+        f"/api/imports/{batch['id']}/confirm",
+        json={
+            "lines": [{"number": 2, "category_id": _category(client, "otros"), "remember": "ab"}]
+        },
+        headers=CSRF,
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+    assert response.json() == {"code": "IMPORT_RULE_PATTERN_INVALID"}

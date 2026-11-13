@@ -12,17 +12,22 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
-from sqlalchemy import insert
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import delete, insert
+from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 from rinde.accounts.infrastructure.tables import accounts
 from rinde.auth.infrastructure.tables import users
 from rinde.imports.domain.batch import BatchLine, ImportBatch, LineStatus
+from rinde.imports.domain.rules import CategoryRule
 from rinde.imports.domain.statement import LineError, LineProblem
-from rinde.imports.infrastructure.repositories import SqlAlchemyBatchRepository
-from rinde.imports.infrastructure.tables import import_batches, import_lines
+from rinde.imports.infrastructure.repositories import (
+    SqlAlchemyBatchRepository,
+    SqlAlchemyRuleRepository,
+)
+from rinde.imports.infrastructure.tables import category_rules, import_batches, import_lines
 from rinde.shared.domain.money import Currency
+from rinde.transactions.infrastructure.tables import categories
 
 pytestmark = [pytest.mark.anyio, pytest.mark.integration]
 
@@ -208,3 +213,87 @@ async def test_the_database_repeats_the_rules_of_a_line(
     with pytest.raises(IntegrityError):
         async with session.begin_nested():
             await session.execute(insert(import_lines).values(**row))
+
+
+async def _category(session: AsyncSession, owner_id: UUID, kind: str = "expense") -> UUID:
+    category_id = uuid4()
+    await session.execute(
+        insert(categories).values(
+            id=category_id,
+            owner_id=owner_id,
+            name=f"Categoría {category_id.hex[:8]}",
+            kind=kind,
+            created_at=NOW,
+        )
+    )
+    return category_id
+
+
+def _rule(owner_id: UUID, category_id: UUID, pattern: str = "coto") -> CategoryRule:
+    return CategoryRule(uuid4(), owner_id, pattern, category_id, is_expense=True, updated_at=NOW)
+
+
+class TestReglas:
+    """Reglas de categoría (ADR-0024)."""
+
+    async def test_the_same_text_replaces_the_category(self, session: AsyncSession) -> None:
+        owner_id, _ = await _owner_with_account(session)
+        food, other = await _category(session, owner_id), await _category(session, owner_id)
+        repository = SqlAlchemyRuleRepository(session)
+
+        await repository.save(_rule(owner_id, food))
+        await repository.save(_rule(owner_id, other))
+
+        [saved] = await repository.for_owner(owner_id)
+        assert (saved.pattern, saved.category_id, saved.is_expense) == ("coto", other, True)
+
+    async def test_each_person_sees_only_their_rules(self, session: AsyncSession) -> None:
+        owner_id, _ = await _owner_with_account(session)
+        stranger, _ = await _owner_with_account(session)
+        repository = SqlAlchemyRuleRepository(session)
+        await repository.save(_rule(owner_id, await _category(session, owner_id)))
+
+        assert await repository.for_owner(stranger) == []
+
+    async def test_the_category_has_to_be_of_the_same_owner_and_kind(
+        self, session: AsyncSession
+    ) -> None:
+        owner_id, _ = await _owner_with_account(session)
+        stranger, _ = await _owner_with_account(session)
+        theirs = await _category(session, stranger)
+        salary = await _category(session, owner_id, "income")
+
+        for category_id in (theirs, salary):
+            with pytest.raises(IntegrityError):
+                async with session.begin_nested():
+                    await SqlAlchemyRuleRepository(session).save(_rule(owner_id, category_id))
+
+    async def test_deleting_a_category_takes_its_rules(self, session: AsyncSession) -> None:
+        owner_id, _ = await _owner_with_account(session)
+        food = await _category(session, owner_id)
+        repository = SqlAlchemyRuleRepository(session)
+        await repository.save(_rule(owner_id, food))
+
+        await session.execute(delete(categories).where(categories.c.id == food))
+
+        assert await repository.for_owner(owner_id) == []
+
+    @pytest.mark.parametrize("pattern", ["ab", "COTO", "x" * 61])
+    async def test_the_database_repeats_the_rules_of_a_text(
+        self, session: AsyncSession, pattern: str
+    ) -> None:
+        owner_id, _ = await _owner_with_account(session)
+        food = await _category(session, owner_id)
+
+        with pytest.raises((IntegrityError, DBAPIError)):
+            async with session.begin_nested():
+                await session.execute(
+                    insert(category_rules).values(
+                        id=uuid4(),
+                        owner_id=owner_id,
+                        category_id=food,
+                        kind="expense",
+                        pattern=pattern,
+                        updated_at=NOW,
+                    )
+                )
