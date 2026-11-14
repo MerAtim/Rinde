@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 
 from rinde.shared.domain.money import Currency, Money
 from rinde.transactions.application.dependencies import TransactionsDependencies
-from rinde.transactions.application.events import expense_recorded
+from rinde.transactions.application.events import publish_by_month
 from rinde.transactions.application.use_cases import _account, _category
 from rinde.transactions.domain.category import Category, TransactionKind
 from rinde.transactions.domain.transaction import (
@@ -136,15 +136,6 @@ class RegisterImported:
             created.append(transaction)
         if created:
             await deps.transaction.commit()
-        # Después de confirmar, como un movimiento cargado a mano (ADR-0022). Uno
-        # por mes y no por línea: las alertas miden el mes entero, y un archivo
-        # de cientos de gastos no tiene que medirlo cientos de veces.
-        last_by_month: dict[date, Transaction] = {}
-        for transaction in created:
-            if transaction.kind is TransactionKind.EXPENSE:
-                last_by_month[transaction.occurred_on.replace(day=1)] = transaction
-        for transaction in last_by_month.values():
-            event = expense_recorded(transaction)
-            if event is not None:
-                await deps.events.publish(event)
+        # Después de confirmar, como un movimiento cargado a mano (ADR-0022).
+        await publish_by_month(deps.events, created)
         return ImportOutcome(created, skipped)
