@@ -3,6 +3,7 @@
 import json
 from collections.abc import Iterator
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Any
 
 import pytest
@@ -20,6 +21,7 @@ from tests.fakes import (
     InMemoryImportsUnitFactory,
     InMemoryTransactionsUnitFactory,
 )
+from tests.unit.imports.macro_statement import MacroStatement, to_pdf
 
 CSRF = {"X-Requested-With": "rinde"}
 PASSPHRASE = "mi gato come fideos los martes"
@@ -308,3 +310,91 @@ def test_a_text_too_short_to_remember(client: TestClient) -> None:
 
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
     assert response.json() == {"code": "IMPORT_RULE_PATTERN_INVALID"}
+
+
+def _upload_pdf(client: TestClient, account_id: str, content: bytes, **fields: str) -> Any:
+    return client.post(
+        "/api/imports",
+        data={"account_id": account_id, "format": "macro_pdf", **fields},
+        files={"file": ("resumen.pdf", content, "application/pdf")},
+        headers=CSRF,
+    )
+
+
+class TestResumenPdf:
+    def test_the_macro_statement_shows_a_preview(self, client: TestClient) -> None:
+        source = MacroStatement()
+
+        response = _upload_pdf(client, _account(client), to_pdf(source.pages()))
+
+        assert response.status_code == status.HTTP_201_CREATED
+        body = response.json()
+        assert body["file_name"] == "resumen.pdf"
+        assert [line["amount"]["amount"] for line in body["lines"]] == [
+            "-1500.00",
+            "250000.00",
+            "-12345.67",
+        ]
+        assert body["errors"] == []
+
+    @pytest.mark.parametrize(
+        ("content", "code"),
+        [
+            (FILE, "IMPORT_PDF_INVALID"),
+            (to_pdf([[]]), "IMPORT_STATEMENT_UNKNOWN"),
+            (
+                to_pdf(
+                    MacroStatement(
+                        totals=(Decimal("2500.00"), Decimal(1), Decimal(1), Decimal("2500.00"))
+                    ).pages()
+                ),
+                "IMPORT_STATEMENT_UNBALANCED",
+            ),
+            (
+                to_pdf([*MacroStatement().pages(), *MacroStatement(currency="DOLARES").pages()]),
+                "IMPORT_STATEMENT_MULTIPLE_ACCOUNTS",
+            ),
+        ],
+        ids=["no es PDF", "sin texto", "no cierra", "dos cuentas"],
+    )
+    def test_a_statement_that_cannot_be_trusted_says_why(
+        self, client: TestClient, content: bytes, code: str
+    ) -> None:
+        response = _upload_pdf(client, _account(client), content)
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert response.json() == {"code": code}
+
+    def test_a_statement_in_pesos_into_an_account_in_dollars(self, client: TestClient) -> None:
+        response = _upload_pdf(client, _account(client, "USD"), to_pdf(MacroStatement().pages()))
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert response.json() == {"code": "IMPORT_CURRENCY_MISMATCH"}
+
+    def test_a_layout_with_a_pdf_is_a_confused_request(self, client: TestClient) -> None:
+        response = _upload_pdf(
+            client, _account(client), to_pdf(MacroStatement().pages()), layout=json.dumps(LAYOUT)
+        )
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert response.json() == {"code": "IMPORT_LAYOUT_INVALID"}
+
+    def test_a_csv_needs_its_layout(self, client: TestClient) -> None:
+        response = client.post(
+            "/api/imports",
+            data={"account_id": _account(client), "format": "csv"},
+            files={"file": ("octubre.csv", FILE, "text/csv")},
+            headers=CSRF,
+        )
+
+        assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+        assert response.json() == {"code": "IMPORT_LAYOUT_INVALID"}
+
+    def test_a_statement_of_another_person_account(self, client: TestClient) -> None:
+        theirs = _account(client)
+        _sign_in(client, "otra")
+
+        response = _upload_pdf(client, theirs, to_pdf(MacroStatement().pages()))
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert response.json() == {"code": "ACCOUNT_NOT_FOUND"}

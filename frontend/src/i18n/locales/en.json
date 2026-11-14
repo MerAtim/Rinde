@@ -625,15 +625,22 @@
     "open": "Import",
     "back": "Back to transactions",
     "title": "Import transactions",
-    "subtitle": "Upload the CSV you downloaded from your bank. You'll see everything before it's saved.",
+    "subtitle": "Upload the CSV or the PDF statement you downloaded from the bank. You will see everything before saving.",
     "loading": "Loading…",
     "account": "Account",
     "accountPlaceholder": "Choose an account",
+    "kind": {
+      "label": "File type",
+      "csv": "CSV",
+      "macroPdf": "Macro PDF statement"
+    },
     "file": {
       "label": "File",
       "choose": "Choose a CSV file",
       "change": "Change the file",
-      "hint": "Up to 1 MB. Upload it as downloaded: opening and saving it in Excel changes its format."
+      "hint": "Up to 1 MB. Upload it as downloaded: opening and saving it in Excel changes its format.",
+      "choosePdf": "Choose the PDF statement",
+      "hintPdf": "The monthly account statement, as the Macro app downloads it, up to 1 MB. We check it against its balances and totals before showing it."
     },
     "format": {
       "title": "How it's written",
@@ -695,7 +702,13 @@
       "CSRF_REJECTED": "We couldn't confirm the request. Reload the page.",
       "NETWORK_ERROR": "No connection. Try again.",
       "UNKNOWN_ERROR": "Something went wrong. Try again.",
-      "IMPORT_RULE_PATTERN_INVALID": "The text to remember must have between 3 and 60 characters."
+      "IMPORT_RULE_PATTERN_INVALID": "The text to remember must have between 3 and 60 characters.",
+      "IMPORT_PDF_INVALID": "We could not open the PDF: it may be damaged or have a password.",
+      "IMPORT_PDF_TOO_MANY_PAGES": "The PDF has more than 20 pages. Upload the statement for a single month.",
+      "IMPORT_STATEMENT_UNKNOWN": "The PDF does not look like a Macro account statement. If it is a photo or a scan, download the statement from the app.",
+      "IMPORT_STATEMENT_UNBALANCED": "What we read does not match the statement balances and totals, so nothing was imported. Try the CSV.",
+      "IMPORT_STATEMENT_MULTIPLE_ACCOUNTS": "The statement has more than one account. Download the one for a single account.",
+      "IMPORT_CURRENCY_MISMATCH": "The statement is in a different currency than the chosen account."
     },
     "batch": {
       "back": "Back to import",

@@ -625,15 +625,22 @@
     "open": "Importar",
     "back": "Volver a movimientos",
     "title": "Importar movimientos",
-    "subtitle": "Subí el CSV que bajaste del banco. Antes de guardar vas a ver todo lo que entra.",
+    "subtitle": "Subí el CSV o el resumen PDF que bajaste del banco. Antes de guardar vas a ver todo lo que entra.",
     "loading": "Cargando…",
     "account": "Cuenta",
     "accountPlaceholder": "Elegí una cuenta",
+    "kind": {
+      "label": "Tipo de archivo",
+      "csv": "CSV",
+      "macroPdf": "Resumen PDF de Macro"
+    },
     "file": {
       "label": "Archivo",
       "choose": "Elegir un archivo CSV",
       "change": "Cambiar el archivo",
-      "hint": "Hasta 1 MB. Subilo como lo bajaste: abrirlo y guardarlo con Excel le cambia el formato."
+      "hint": "Hasta 1 MB. Subilo como lo bajaste: abrirlo y guardarlo con Excel le cambia el formato.",
+      "choosePdf": "Elegir el resumen PDF",
+      "hintPdf": "El resumen mensual de la cuenta, como lo baja la app de Macro, hasta 1 MB. Antes de mostrarlo lo controlamos con sus saldos y totales."
     },
     "format": {
       "title": "Cómo está escrito",
@@ -695,7 +702,13 @@
       "CSRF_REJECTED": "No pudimos confirmar el pedido. Recargá la página.",
       "NETWORK_ERROR": "Sin conexión. Probá de nuevo.",
       "UNKNOWN_ERROR": "Algo salió mal. Probá de nuevo.",
-      "IMPORT_RULE_PATTERN_INVALID": "El texto a recordar tiene que tener entre 3 y 60 caracteres."
+      "IMPORT_RULE_PATTERN_INVALID": "El texto a recordar tiene que tener entre 3 y 60 caracteres.",
+      "IMPORT_PDF_INVALID": "No pudimos abrir el PDF: puede estar dañado o tener contraseña.",
+      "IMPORT_PDF_TOO_MANY_PAGES": "El PDF tiene más de 20 páginas. Subí el resumen de un solo mes.",
+      "IMPORT_STATEMENT_UNKNOWN": "El PDF no parece un resumen de cuenta de Macro. Si es una foto o un escaneo, bajá el resumen desde la app.",
+      "IMPORT_STATEMENT_UNBALANCED": "Lo que leímos no cierra con los saldos y totales del resumen, así que no importamos nada. Probá con el CSV.",
+      "IMPORT_STATEMENT_MULTIPLE_ACCOUNTS": "El resumen trae más de una cuenta. Bajá el de una sola.",
+      "IMPORT_CURRENCY_MISMATCH": "El resumen está en otra moneda que la cuenta elegida."
     },
     "batch": {
       "back": "Volver a importar",

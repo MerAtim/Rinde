@@ -6,6 +6,7 @@ existe o que venció (ADR-0009).
 """
 
 from collections.abc import AsyncIterator
+from enum import StrEnum
 from typing import Annotated
 from uuid import UUID
 
@@ -17,7 +18,9 @@ from rinde.imports.api.schemas import (
     ConfirmResponse,
     CsvLayoutRequest,
 )
+from rinde.imports.application.ports import StatementReader
 from rinde.imports.application.unit import ImportsUnit, ImportsUnitFactory
+from rinde.imports.domain.errors import ImportLayoutInvalidError
 from rinde.imports.domain.statement import MAX_BYTES
 from rinde.shared.api.csrf import CSRF
 from rinde.shared.api.identity import CurrentUserId
@@ -38,6 +41,32 @@ async def imports_unit(request: Request) -> AsyncIterator[ImportsUnit]:
 Unit = Annotated[ImportsUnit, Depends(imports_unit)]
 
 
+class FileFormat(StrEnum):
+    CSV = "csv"
+    """Con el formato que elige la persona, en `layout`."""
+    MACRO_PDF = "macro_pdf"
+    """El resumen de cuenta de Banco Macro: su formato es fijo, sin `layout`."""
+
+
+def statement_reader(
+    unit: Unit,
+    file_format: Annotated[FileFormat, Form(alias="format")] = FileFormat.CSV,
+    layout: Annotated[
+        str | None,
+        Form(max_length=LAYOUT_LENGTH, description="CsvLayoutRequest en JSON; solo con CSV"),
+    ] = None,
+) -> StatementReader:
+    """El lector del formato elegido. La unidad es la misma del pedido: FastAPI la reusa."""
+    if file_format is FileFormat.MACRO_PDF:
+        # Un formato de CSV junto a un PDF es un pedido confundido: se avisa, no se ignora.
+        if layout is not None:
+            raise ImportLayoutInvalidError
+        return unit.macro_pdf
+    if layout is None:
+        raise ImportLayoutInvalidError
+    return CsvLayoutRequest.parse(layout)
+
+
 @router.post(
     "",
     dependencies=CSRF,
@@ -48,12 +77,13 @@ Unit = Annotated[ImportsUnit, Depends(imports_unit)]
 async def create_import(
     user_id: CurrentUserId,
     unit: Unit,
-    file: Annotated[UploadFile, File(description="CSV, hasta 1 MB y 2.000 líneas")],
+    file: Annotated[
+        UploadFile, File(description="CSV o PDF, hasta 1 MB, 2.000 líneas y 20 páginas")
+    ],
     account_id: Annotated[UUID, Form()],
-    layout: Annotated[str, Form(max_length=LAYOUT_LENGTH, description="CsvLayoutRequest en JSON")],
+    reader: Annotated[StatementReader, Depends(statement_reader)],
 ) -> BatchResponse:
     """El archivo no se guarda: se guarda lo que se leyó, su nombre y su huella."""
-    reader = CsvLayoutRequest.parse(layout)
     # Uno más que el máximo: alcanza para saber que se pasó sin leer el resto.
     content = await file.read(MAX_BYTES + 1)
     preview = await unit.create.execute(

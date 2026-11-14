@@ -10,9 +10,12 @@ from rinde.imports.application.ports import (
     CategoryReader,
     Clock,
     MovementRegistrar,
+    PdfText,
     RuleRepository,
+    StatementReader,
     Transaction,
 )
+from rinde.imports.application.readers import MacroPdfReader
 from rinde.imports.application.use_cases import (
     ConfirmBatch,
     CreateBatch,
@@ -24,11 +27,12 @@ from rinde.imports.application.use_cases import (
 
 @dataclass(frozen=True, slots=True)
 class ImportsGateways:
-    """Lo que importación usa de movimientos. Cada uno abre su propia unidad."""
+    """Lo que importación usa de afuera: movimientos, que abre su propia unidad, y el PDF."""
 
     accounts: AccountInspector
     registrar: MovementRegistrar
     categories: CategoryReader
+    pdf: PdfText
 
 
 @dataclass(frozen=True, slots=True)
@@ -37,6 +41,8 @@ class ImportsUnit:
     get: GetBatch
     confirm: ConfirmBatch
     discard: DiscardBatch
+    macro_pdf: StatementReader
+    """El lector del resumen PDF de Macro. El del CSV lo arma el pedido con su formato."""
 
 
 class ImportsUnitFactory(Protocol):
@@ -66,4 +72,5 @@ def build_imports_unit(
         get=GetBatch(deps),
         confirm=ConfirmBatch(deps),
         discard=DiscardBatch(deps),
+        macro_pdf=MacroPdfReader(gateways.pdf),
     )

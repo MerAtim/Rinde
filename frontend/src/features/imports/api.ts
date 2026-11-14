@@ -29,6 +29,9 @@ export type Delimiter = (typeof DELIMITERS)[number];
 export const ENCODINGS = ["utf-8", "windows-1252"] as const;
 export type Encoding = (typeof ENCODINGS)[number];
 
+/** Qué archivo se sube: un CSV con su formato, o el resumen PDF de Macro, de formato fijo. */
+export type ImportSource = { kind: "csv"; layout: CsvLayout } | { kind: "macro_pdf" };
+
 /** Lo mismo que acepta el servidor (ADR-0023): se avisa antes de subir. */
 export const MAX_FILE_BYTES = 1024 * 1024;
 
@@ -43,6 +46,12 @@ const SERVER_CODES = [
   "IMPORT_BATCH_NOT_FOUND",
   "IMPORT_LINE_NOT_FOUND",
   "IMPORT_RULE_PATTERN_INVALID",
+  "IMPORT_PDF_INVALID",
+  "IMPORT_PDF_TOO_MANY_PAGES",
+  "IMPORT_STATEMENT_UNKNOWN",
+  "IMPORT_STATEMENT_UNBALANCED",
+  "IMPORT_STATEMENT_MULTIPLE_ACCOUNTS",
+  "IMPORT_CURRENCY_MISMATCH",
   "REQUEST_TOO_LARGE",
   "ACCOUNT_NOT_FOUND",
   "ACCOUNT_ARCHIVED",
@@ -63,11 +72,14 @@ export const isImportsApiError = api.isError;
 export async function uploadBatch(
   accountId: string,
   file: File,
-  layout: CsvLayout,
+  source: ImportSource,
 ): Promise<ImportBatch> {
   const form = new FormData();
   form.append("account_id", accountId);
-  form.append("layout", JSON.stringify(layout));
+  form.append("format", source.kind);
+  if (source.kind === "csv") {
+    form.append("layout", JSON.stringify(source.layout));
+  }
   form.append("file", file, file.name);
   const response = await api.postForm("/api/imports", form);
   return (await response.json()) as ImportBatch;
