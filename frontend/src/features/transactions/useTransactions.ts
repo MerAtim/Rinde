@@ -11,6 +11,7 @@ import { alertKeys } from "../alerts/keys";
 import { budgetKeys } from "../budgets/keys";
 import { dashboardKeys } from "../dashboard/useDashboard";
 import { installmentKeys } from "../installments/keys";
+import { recurringKeys } from "../recurring/keys";
 import {
   type Balance,
   deleteTransaction,
@@ -107,6 +108,8 @@ export function useInvalidateMoney() {
       queryClient.invalidateQueries({ queryKey: alertKeys.all }),
       // Borrar o generar una cuota cambia lo que falta pagar de su compra.
       queryClient.invalidateQueries({ queryKey: installmentKeys.all }),
+      // Y lo mismo con cuántas veces se generó un movimiento recurrente.
+      queryClient.invalidateQueries({ queryKey: recurringKeys.all }),
     ]);
 }
 

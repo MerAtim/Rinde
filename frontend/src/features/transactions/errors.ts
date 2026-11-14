@@ -47,8 +47,12 @@ export function toDecimalString(typed: string): string | null {
   return /^\d+(\.\d+)?$/.test(cleaned) ? cleaned : null;
 }
 
+/** Lo que puede encontrar `validateAmount`: los tres son también códigos de otras pantallas. */
+export type AmountErrorCode =
+  "AMOUNT_REQUIRED" | "AMOUNT_INVALID" | "TRANSACTION_AMOUNT_NOT_POSITIVE";
+
 /** Valida antes de enviar. El servidor sigue siendo la autoridad. */
-export function validateAmount(typed: string): TransactionErrorCode | null {
+export function validateAmount(typed: string): AmountErrorCode | null {
   if (!typed.trim()) {
     return "AMOUNT_REQUIRED";
   }

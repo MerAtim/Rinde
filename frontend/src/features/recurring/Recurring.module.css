@@ -1,0 +1,148 @@
+/* Movimientos recurrentes (ADR-0027). Mismo diseño que las cuotas. */
+
+.page {
+  display: grid;
+  gap: var(--rinde-space-5);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--rinde-space-4);
+}
+
+.heading {
+  display: grid;
+  gap: var(--rinde-space-1);
+}
+
+.title {
+  font: 500 28px/36px var(--md-ref-typeface-brand);
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.subtitle,
+.muted {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 16px/24px var(--md-ref-typeface-plain);
+}
+
+.muted {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.back {
+  justify-self: start;
+  margin-inline-start: calc(-1 * var(--rinde-space-3));
+}
+
+.announcement {
+  color: var(--md-sys-color-on-surface);
+  font: 500 14px/20px var(--md-ref-typeface-plain);
+}
+
+.form {
+  display: grid;
+  gap: var(--rinde-space-5);
+  max-width: 44rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rinde-space-3);
+}
+
+.problem {
+  display: grid;
+  justify-items: start;
+  gap: var(--rinde-space-3);
+}
+
+.empty {
+  display: grid;
+  justify-items: start;
+  gap: var(--rinde-space-3);
+  max-width: 36rem;
+  padding: var(--rinde-space-6) var(--rinde-space-5);
+  border-radius: var(--rinde-shape-card);
+  background: var(--md-sys-color-surface-container);
+}
+
+.emptyTitle {
+  font: 500 22px/28px var(--md-ref-typeface-plain);
+}
+
+/* Una tarjeta por regla. */
+.rules {
+  display: grid;
+  gap: var(--rinde-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rule {
+  display: grid;
+  /* Como hijo de una grilla, sin esto un monto largo empuja la página. */
+  min-width: 0;
+  gap: var(--rinde-space-3);
+  padding: var(--rinde-space-4) var(--rinde-space-5);
+  border-radius: var(--rinde-shape-card);
+  background: var(--md-sys-color-surface-container);
+  box-shadow: inset 0 1px 0 var(--rinde-edge-light);
+}
+
+/* Lo mismo para cada parte de la tarjeta. */
+.rule > * {
+  min-width: 0;
+}
+
+.ruleHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--rinde-space-2) var(--rinde-space-4);
+}
+
+.ruleTitle {
+  min-width: 0;
+  font: 600 16px/24px var(--md-ref-typeface-plain);
+  overflow-wrap: anywhere;
+}
+
+/* El monto, lo registrado y la próxima, uno al lado del otro; en un teléfono, uno abajo del otro. */
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rinde-space-2) var(--rinde-space-6);
+  margin: 0;
+}
+
+.figure {
+  display: grid;
+  gap: var(--rinde-space-1);
+}
+
+.figure dt {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 13px/18px var(--md-ref-typeface-plain);
+}
+
+.figure dd {
+  margin: 0;
+  font: 500 16px/24px var(--md-ref-typeface-plain);
+}
+
+.ruleActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--rinde-space-2);
+}
