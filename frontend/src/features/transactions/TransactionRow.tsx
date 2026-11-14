@@ -58,6 +58,7 @@ export function TransactionRow({
                 count: transaction.installment.count,
               })}`
             : ""}
+          {transaction.recurrence ? ` · ${t("recurring.label")}` : ""}
         </span>
       </span>
       <MoneyAmount

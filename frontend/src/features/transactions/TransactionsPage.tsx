@@ -46,6 +46,9 @@ export function TransactionsPage() {
           <LinkButton to="/installments" variant="tonal" icon="credit-card">
             {t("installments.open")}
           </LinkButton>
+          <LinkButton to="/recurring" variant="tonal" icon="event-repeat">
+            {t("recurring.open")}
+          </LinkButton>
           {rows.length > 0 || hasFilters ? (
             <LinkButton to="/transactions/new" icon="add">
               {t("transactions.list.add")}

@@ -21,6 +21,7 @@ import Logout from "@material-symbols/svg-400/rounded/logout.svg?react";
 import Close from "@material-symbols/svg-400/rounded/close.svg?react";
 import Delete from "@material-symbols/svg-400/rounded/delete.svg?react";
 import Edit from "@material-symbols/svg-400/rounded/edit.svg?react";
+import EventRepeat from "@material-symbols/svg-400/rounded/event_repeat.svg?react";
 import Notifications from "@material-symbols/svg-400/rounded/notifications.svg?react";
 import NotificationsFill from "@material-symbols/svg-400/rounded/notifications-fill.svg?react";
 import NorthEast from "@material-symbols/svg-400/rounded/north_east.svg?react";
@@ -59,6 +60,7 @@ const ICONS = {
   "dark-mode": DarkMode,
   download: Download,
   edit: Edit,
+  "event-repeat": EventRepeat,
   error: ErrorFill,
   home: Home,
   "home-fill": HomeFill,

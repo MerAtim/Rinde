@@ -26,8 +26,20 @@ const ANCHOS = [360, 599, 600, 768, 1440];
 const TOLERANCIA = 0.5; // Redondeos subpíxel del navegador.
 
 const IDIOMAS = [
-  { codigo: "es-AR", nombre: "español", navegacion: "Navegación principal", dolar: "Dólar hoy" },
-  { codigo: "en-US", nombre: "inglés", navegacion: "Main navigation", dolar: "Dollar today" },
+  {
+    codigo: "es-AR",
+    nombre: "español",
+    navegacion: "Navegación principal",
+    dolar: "Dólar hoy",
+    recurrentes: "Recurrentes",
+  },
+  {
+    codigo: "en-US",
+    nombre: "inglés",
+    navegacion: "Main navigation",
+    dolar: "Dollar today",
+    recurrentes: "Recurring",
+  },
 ] as const;
 
 for (const idioma of IDIOMAS) {
@@ -84,6 +96,8 @@ for (const idioma of IDIOMAS) {
       "/transactions/import",
       `/imports/${BATCH.id}`,
       "/installments",
+      "/recurring",
+      "/transactions",
       "/preferences",
     ]) {
       test(`${ruta} no se puede desplazar en horizontal`, async ({ page }) => {
@@ -107,6 +121,10 @@ for (const idioma of IDIOMAS) {
           // La tabla de cuotas abierta: 24 filas con montos largos.
           await page.locator("summary").first().click();
           await expect(page.getByRole("table")).toBeVisible();
+        } else if (ruta === "/recurring") {
+          await expect(page.getByRole("main").getByRole("listitem")).toHaveCount(1);
+        } else if (ruta === "/transactions") {
+          await expect(page.getByRole("link", { name: idioma.recurrentes })).toBeVisible();
         } else if (ruta.startsWith("/imports/")) {
           // Tres líneas, y la que entra suma "Recordar".
           await expect(page.getByRole("checkbox")).toHaveCount(4);

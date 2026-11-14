@@ -63,6 +63,13 @@ export async function mockSession(page: Page): Promise<void> {
   // de cuotas abierta, es lo más ancho que puede tener la pantalla de cuotas.
   await page.route("**/api/installments/due", (route) => route.fulfill(json({ created: 0 })));
   await page.route("**/api/installments", (route) => route.fulfill(json([PLAN])));
+  // Lo mismo con los recurrentes: una regla de nombre y monto largos.
+  await page.route("**/api/recurring/due", (route) => route.fulfill(json({ created: 0 })));
+  await page.route("**/api/recurring", (route) => route.fulfill(json([RULE])));
+  // Sin movimientos: en Movimientos se ve la barra de acciones con todos sus botones.
+  await page.route("**/api/history*", (route) =>
+    route.fulfill(json({ items: [], next_cursor: null })),
+  );
   await page.route("**/api/preferences", (route) =>
     route.fulfill(json({ reference_currency: "ARS", rate_type: "crypto" })),
   );
@@ -267,6 +274,22 @@ export const BATCH = {
     },
   ],
   errors: [{ line: 5, problem: "LINE_AMOUNT_TOO_PRECISE" }],
+};
+
+export const RULE = {
+  id: "5c6d7e8f-9a0b-4c1d-8e2f-3a4b5c6d7e8f",
+  account_id: "5c4b3a29-1807-4f6e-9d5c-4b3a29180706",
+  kind: "income",
+  amount: "123456789.00",
+  currency: "USD",
+  category_id: "0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9",
+  frequency: "yearly",
+  starts_on: "2026-01-31",
+  description: "Honorarios anuales de la consultoría con el estudio contable",
+  created_at: "2026-01-31T13:00:00Z",
+  cancelled_at: null,
+  generated: 1234,
+  next_on: "2027-01-31",
 };
 
 export const PLAN = {
