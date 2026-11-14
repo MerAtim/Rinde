@@ -1,0 +1,191 @@
+/* Compras en cuotas (ADR-0026). */
+
+.page {
+  display: grid;
+  gap: var(--rinde-space-5);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--rinde-space-4);
+}
+
+.heading {
+  display: grid;
+  gap: var(--rinde-space-1);
+}
+
+.title {
+  font: 500 28px/36px var(--md-ref-typeface-brand);
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+
+.subtitle,
+.muted {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 16px/24px var(--md-ref-typeface-plain);
+}
+
+.muted {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.back {
+  justify-self: start;
+  margin-inline-start: calc(-1 * var(--rinde-space-3));
+}
+
+.announcement {
+  color: var(--md-sys-color-on-surface);
+  font: 500 14px/20px var(--md-ref-typeface-plain);
+}
+
+.form {
+  display: grid;
+  gap: var(--rinde-space-5);
+  max-width: 44rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--rinde-space-3);
+}
+
+.problem {
+  display: grid;
+  justify-items: start;
+  gap: var(--rinde-space-3);
+}
+
+.empty {
+  display: grid;
+  justify-items: start;
+  gap: var(--rinde-space-3);
+  max-width: 36rem;
+  padding: var(--rinde-space-6) var(--rinde-space-5);
+  border-radius: var(--rinde-shape-card);
+  background: var(--md-sys-color-surface-container);
+}
+
+.emptyTitle {
+  font: 500 22px/28px var(--md-ref-typeface-plain);
+}
+
+/* Una tarjeta por compra. */
+.plans {
+  display: grid;
+  gap: var(--rinde-space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plan {
+  display: grid;
+  /* Como hijo de una grilla, sin esto crece con la tabla y empuja la página. */
+  min-width: 0;
+  gap: var(--rinde-space-3);
+  padding: var(--rinde-space-4) var(--rinde-space-5);
+  border-radius: var(--rinde-shape-card);
+  background: var(--md-sys-color-surface-container);
+  box-shadow: inset 0 1px 0 var(--rinde-edge-light);
+}
+
+/* Lo mismo para cada parte de la tarjeta: la tabla se desplaza adentro. */
+.plan > * {
+  min-width: 0;
+}
+
+.planHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--rinde-space-2) var(--rinde-space-4);
+}
+
+.planTitle {
+  min-width: 0;
+  font: 600 16px/24px var(--md-ref-typeface-plain);
+  overflow-wrap: anywhere;
+}
+
+/* Lo que falta y el avance, uno al lado del otro; en un teléfono, uno abajo del otro. */
+.figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--rinde-space-2) var(--rinde-space-6);
+  margin: 0;
+}
+
+.figure {
+  display: grid;
+  gap: var(--rinde-space-1);
+}
+
+.figure dt {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 13px/18px var(--md-ref-typeface-plain);
+}
+
+.figure dd {
+  margin: 0;
+  font: 500 16px/24px var(--md-ref-typeface-plain);
+}
+
+.stacked {
+  display: grid;
+}
+
+.schedule summary {
+  inline-size: fit-content;
+  padding-block: var(--rinde-space-2);
+  color: var(--md-sys-color-primary);
+  font: 500 14px/20px var(--md-ref-typeface-plain);
+  cursor: pointer;
+}
+
+.schedule summary:focus-visible {
+  outline: 2px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
+  border-radius: var(--rinde-shape-chip);
+}
+
+.table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  font: 400 14px/20px var(--md-ref-typeface-plain);
+}
+
+.table th,
+.table td {
+  padding: var(--rinde-space-2) var(--rinde-space-2);
+  border-block-end: 1px solid var(--md-sys-color-outline-variant);
+  text-align: start;
+}
+
+.table thead th {
+  color: var(--md-sys-color-on-surface-variant);
+  font-weight: 500;
+}
+
+.number {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table .number {
+  text-align: end;
+}
+
+.planActions {
+  display: flex;
+  justify-content: flex-end;
+}

@@ -48,6 +48,16 @@ const BudgetFormPage = lazy(() =>
     default: module.BudgetFormPage,
   })),
 );
+const InstallmentsPage = lazy(() =>
+  import("./features/installments/InstallmentsPage").then((module) => ({
+    default: module.InstallmentsPage,
+  })),
+);
+const NewInstallmentPage = lazy(() =>
+  import("./features/installments/NewInstallmentPage").then((module) => ({
+    default: module.NewInstallmentPage,
+  })),
+);
 const ImportPage = lazy(() =>
   import("./features/imports/ImportPage").then((module) => ({ default: module.ImportPage })),
 );
@@ -78,6 +88,8 @@ export function App() {
           <Route path="imports/:batchId" element={<BatchPage />} />
           <Route path="transactions/:transactionId" element={<EditTransactionPage />} />
           <Route path="transfers/new" element={<NewTransferPage />} />
+          <Route path="installments" element={<InstallmentsPage />} />
+          <Route path="installments/new" element={<NewInstallmentPage />} />
           <Route path="budgets" element={<BudgetsPage />} />
           <Route path="budgets/new" element={<BudgetFormPage />} />
           <Route path="budgets/:categoryId/edit" element={<BudgetFormPage />} />
