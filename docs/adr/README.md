@@ -28,3 +28,4 @@
 | [0024](0024-reglas-de-categoria.md) | Reglas de categoría al importar: texto contenido, gana la más específica | Aceptado | 2026-11-12 |
 | [0025](0025-pesos-constantes.md) | Pesos constantes con el IPC del INDEC: índice oficial, solo el flujo mensual | Aceptado | 2026-11-14 |
 | [0026](0026-compras-en-cuotas.md) | Compras en cuotas: plan con reparto exacto, cada cuota se genera al llegar su fecha | Aceptado | 2026-11-14 |
+| [0027](0027-movimientos-recurrentes.md) | Movimientos recurrentes: una regla que genera cada vez al llegar su fecha | Aceptado | 2026-11-14 |
