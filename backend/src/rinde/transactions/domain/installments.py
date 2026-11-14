@@ -5,13 +5,13 @@ su fecha: así ningún movimiento tiene fecha futura, y todo lo que lee
 movimientos (saldos, presupuestos, dashboard) sigue viendo solo lo que pasó.
 """
 
-from calendar import monthrange
 from dataclasses import dataclass, replace
 from datetime import date, datetime
 from typing import ClassVar
 from uuid import UUID
 
 from rinde.shared.domain.allocation import split_equally
+from rinde.shared.domain.calendar import add_months
 from rinde.shared.domain.money import Money
 from rinde.transactions.domain.category import Category, TransactionKind
 from rinde.transactions.domain.errors import (
@@ -36,9 +36,7 @@ def due_on(first: date, number: int) -> date:
 
     Un 31 en un mes de 30 días cae el último día del mes.
     """
-    index = first.year * 12 + first.month - 1 + number - 1
-    year, month = index // 12, index % 12 + 1
-    return date(year, month, min(first.day, monthrange(year, month)[1]))
+    return add_months(first, number - 1)
 
 
 @dataclass(frozen=True, slots=True)
