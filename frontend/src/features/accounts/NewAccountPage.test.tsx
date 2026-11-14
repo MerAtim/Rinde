@@ -119,7 +119,12 @@ describe("Abrir una cuenta", () => {
     expect(screen.getByLabelText("Nombre")).toHaveAccessibleDescription(
       "Escribí un nombre para la cuenta.",
     );
-    expect(fetchMock.mock.calls.some(([, init]) => init?.method === "POST")).toBe(false);
+    // El marco pide las cuotas vencidas al abrir (ADR-0026): se mira solo este envío.
+    expect(
+      fetchMock.mock.calls.some(
+        ([input, init]) => init?.method === "POST" && input === "/api/accounts",
+      ),
+    ).toBe(false);
   });
 
   it("muestra junto al campo el nombre que rechaza el servidor", async () => {

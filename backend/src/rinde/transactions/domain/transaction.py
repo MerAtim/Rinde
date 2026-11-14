@@ -84,6 +84,15 @@ class Draft:
 
 
 @dataclass(frozen=True, slots=True)
+class InstallmentRef:
+    """De qué plan es una cuota y cuál es: "cuota 3 de 6" (ADR-0026)."""
+
+    plan_id: UUID
+    number: int
+    count: int
+
+
+@dataclass(frozen=True, slots=True)
 class Transaction:
     id: UUID
     owner_id: UUID
@@ -103,6 +112,8 @@ class Transaction:
 
     Editar el movimiento la conserva, así reimportar el mismo archivo no lo duplica.
     """
+    installment: InstallmentRef | None = None
+    """Solo en las cuotas. Editar la cuota la conserva: sigue siendo esa cuota."""
 
     def __post_init__(self) -> None:
         # En todo movimiento, no solo al registrarlo: también en el que se lee de la base.
@@ -150,6 +161,7 @@ def register(  # noqa: PLR0913  (todos por nombre: es el constructor del agregad
     owner_id: UUID,
     at: datetime,
     source_fingerprint: str | None = None,
+    installment: InstallmentRef | None = None,
 ) -> Transaction:
     """Crea un movimiento válido o no lo crea."""
     draft.check(account.currency, at)
@@ -165,4 +177,5 @@ def register(  # noqa: PLR0913  (todos por nombre: es el constructor del agregad
         updated_at=at,
         description=draft.description,
         source_fingerprint=source_fingerprint,
+        installment=installment,
     )

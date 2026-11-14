@@ -7,6 +7,7 @@ import { AlertNotice } from "../alerts/AlertNotice";
 import { AlertsButton } from "../alerts/AlertsButton";
 import { logout } from "../auth/api";
 import { useSetSession } from "../auth/useSession";
+import { useGenerateDueInstallments } from "../installments/useInstallments";
 import { announcementFrom } from "../../shared/navigation/announcement";
 import { ThemeToggle } from "../../shared/theme/ThemeToggle";
 import { Alert } from "../../shared/ui/Alert";
@@ -24,6 +25,7 @@ export function AppShell() {
   const { t } = useTranslation();
   const location = useLocation();
   const setSession = useSetSession();
+  useGenerateDueInstallments();
   // En un celular el texto no entra junto al idioma y el tema: queda el ícono,
   // con el mismo nombre accesible.
   const isWide = useMediaQuery("(min-width: 600px)");

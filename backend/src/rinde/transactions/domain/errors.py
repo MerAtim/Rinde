@@ -125,3 +125,21 @@ class CategoryInUseError(CategoryError):
 
 class CategoryNameTakenError(CategoryError):
     code = "CATEGORY_NAME_TAKEN"
+
+
+class InstallmentPlanNotFoundError(TransactionError):
+    """También para un plan ajeno: no se confirma que exista (ADR-0009)."""
+
+    code = "INSTALLMENT_PLAN_NOT_FOUND"
+
+
+class InstallmentCountInvalidError(TransactionError):
+    """De 2 a 48 cuotas (ADR-0026): una sola cuota es un gasto común."""
+
+    code = "INSTALLMENT_COUNT_INVALID"
+
+
+class InstallmentAmountTooSmallError(TransactionError):
+    """El total no alcanza para que cada cuota sea de al menos un centavo."""
+
+    code = "INSTALLMENT_AMOUNT_TOO_SMALL"

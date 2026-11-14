@@ -2491,6 +2491,316 @@
         }
       }
     },
+    "/api/installments": {
+      "get": {
+        "tags": [
+          "installments"
+        ],
+        "summary": "Listar mis compras en cuotas",
+        "operationId": "list_plans_api_installments_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InstallmentPlanResponse"
+                  },
+                  "title": "Response List Plans Api Installments Get"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "installments"
+        ],
+        "summary": "Registrar una compra en cuotas",
+        "description": "Las cuotas que ya vencieron se vuelven movimientos en el mismo pedido.",
+        "operationId": "create_plan_api_installments_post",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          },
+          {
+            "name": "x-requested-with",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallmentPlanRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallmentPlanResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unprocessable Content"
+          }
+        }
+      }
+    },
+    "/api/installments/due": {
+      "post": {
+        "tags": [
+          "installments"
+        ],
+        "summary": "Generar las cuotas vencidas",
+        "description": "Lo pide la pantalla al abrirse: no hay tareas programadas (ADR-0026).\n\nRepetirlo no duplica nada.",
+        "operationId": "generate_due_api_installments_due_post",
+        "parameters": [
+          {
+            "name": "x-requested-with",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GeneratedResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/installments/{plan_id}/cancel": {
+      "post": {
+        "tags": [
+          "installments"
+        ],
+        "summary": "Cancelar una compra en cuotas",
+        "description": "Las cuotas ya generadas quedan; no se generan más.",
+        "operationId": "cancel_plan_api_installments__plan_id__cancel_post",
+        "parameters": [
+          {
+            "name": "plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Plan Id"
+            }
+          },
+          {
+            "name": "x-requested-with",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstallmentPlanResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/rates": {
       "get": {
         "tags": [
@@ -4677,6 +4987,20 @@
         ],
         "title": "FileFormat"
       },
+      "GeneratedResponse": {
+        "properties": {
+          "created": {
+            "type": "integer",
+            "title": "Created",
+            "description": "Cuántas cuotas vencidas se volvieron movimientos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "created"
+        ],
+        "title": "GeneratedResponse"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -4770,6 +5094,176 @@
         ],
         "title": "HistoryTransfer",
         "description": "Una transferencia dentro del historial."
+      },
+      "InstallmentPlanRequest": {
+        "properties": {
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Id"
+          },
+          "total": {
+            "type": "string",
+            "title": "Total",
+            "description": "Lo que se paga en total, con interés o sin él"
+          },
+          "count": {
+            "type": "integer",
+            "maximum": 48.0,
+            "minimum": 2.0,
+            "title": "Count"
+          },
+          "first_on": {
+            "type": "string",
+            "format": "date",
+            "title": "First On",
+            "description": "El día de la compra: el de la primera cuota"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "account_id",
+          "category_id",
+          "total",
+          "count",
+          "first_on"
+        ],
+        "title": "InstallmentPlanRequest"
+      },
+      "InstallmentPlanResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Id"
+          },
+          "total": {
+            "type": "string",
+            "title": "Total"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "first_on": {
+            "type": "string",
+            "format": "date",
+            "title": "First On"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "cancelled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelled At"
+          },
+          "pending": {
+            "type": "string",
+            "title": "Pending",
+            "description": "Lo que falta pagar: cero si se canceló"
+          },
+          "installments": {
+            "items": {
+              "$ref": "#/components/schemas/ScheduledInstallmentResponse"
+            },
+            "type": "array",
+            "title": "Installments",
+            "description": "Todas, en orden"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "account_id",
+          "category_id",
+          "total",
+          "currency",
+          "count",
+          "first_on",
+          "description",
+          "created_at",
+          "cancelled_at",
+          "pending",
+          "installments"
+        ],
+        "title": "InstallmentPlanResponse"
+      },
+      "InstallmentRefResponse": {
+        "properties": {
+          "plan_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Plan Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan_id",
+          "number",
+          "count"
+        ],
+        "title": "InstallmentRefResponse",
+        "description": "De qué compra en cuotas es este gasto: \"cuota 3 de 6\" (ADR-0026)."
       },
       "LineErrorResponse": {
         "properties": {
@@ -5296,6 +5790,50 @@
         ],
         "title": "RenameCategoryRequest"
       },
+      "ScheduledInstallmentResponse": {
+        "properties": {
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "due_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Due On"
+          },
+          "amount": {
+            "type": "string",
+            "title": "Amount"
+          },
+          "transaction_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transaction Id",
+            "description": "El movimiento de la cuota, si ya se generó"
+          },
+          "deleted": {
+            "type": "boolean",
+            "title": "Deleted",
+            "description": "La cuota se generó y después se borró"
+          }
+        },
+        "type": "object",
+        "required": [
+          "number",
+          "due_on",
+          "amount",
+          "transaction_id",
+          "deleted"
+        ],
+        "title": "ScheduledInstallmentResponse"
+      },
       "Threshold": {
         "type": "string",
         "enum": [
@@ -5405,6 +5943,17 @@
               }
             ],
             "title": "Deleted At"
+          },
+          "installment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InstallmentRefResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo en las cuotas"
           }
         },
         "type": "object",
@@ -5419,7 +5968,8 @@
           "description",
           "created_at",
           "updated_at",
-          "deleted_at"
+          "deleted_at",
+          "installment"
         ],
         "title": "TransactionResponse"
       },

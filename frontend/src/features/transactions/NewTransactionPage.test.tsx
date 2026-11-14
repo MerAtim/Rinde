@@ -71,7 +71,12 @@ describe("Registrar un movimiento", () => {
     expect(screen.getByRole("button", { name: /Categoría/ })).toHaveAccessibleDescription(
       "Elegí una categoría.",
     );
-    expect(fetchMock.mock.calls.some(([, init]) => init?.method === "POST")).toBe(false);
+    // El marco pide las cuotas vencidas al abrir (ADR-0026): se mira solo este envío.
+    expect(
+      fetchMock.mock.calls.some(
+        ([input, init]) => init?.method === "POST" && input === "/api/transactions",
+      ),
+    ).toBe(false);
   });
 
   it("al cambiar de tipo ofrece las categorías de ese tipo", async () => {

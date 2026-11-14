@@ -128,15 +128,6 @@
   background: var(--rinde-expense);
 }
 
-/* Una tabla ancha se desplaza dentro de su tarjeta, nunca la página entera.
-   `relative` hace que el recorte alcance también a los textos solo para
-   lectores (.visually-hidden, absolutos): si no, quedan en su lugar dentro de
-   la tabla ancha y empujan la página. */
-.tableScroll {
-  position: relative;
-  overflow-x: auto;
-}
-
 .table {
   width: 100%;
   border-collapse: collapse;

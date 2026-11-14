@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 
 import { cx } from "../../shared/ui/cx";
 import { SegmentedButton } from "../../shared/ui/SegmentedButton";
+import { TableScroll } from "../../shared/ui/TableScroll";
 import styles from "./Dashboard.module.css";
-import { TableScroll } from "./TableScroll";
 
 type View = "chart" | "table";
 

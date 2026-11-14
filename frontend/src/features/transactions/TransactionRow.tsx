@@ -52,6 +52,12 @@ export function TransactionRow({
           {formatDate(transaction.occurred_on)}
           {category ? ` · ${categoryName(category)}` : ""}
           {showAccount && account ? ` · ${account.name}` : ""}
+          {transaction.installment
+            ? ` · ${t("installments.ofCount", {
+                number: transaction.installment.number,
+                count: transaction.installment.count,
+              })}`
+            : ""}
         </span>
       </span>
       <MoneyAmount
