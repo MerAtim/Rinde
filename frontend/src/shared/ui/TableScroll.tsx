@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
-import { cx } from "../../shared/ui/cx";
-import styles from "./Dashboard.module.css";
+import { cx } from "./cx";
+import styles from "./TableScroll.module.css";
 
 /**
  * Una tabla que puede ser más ancha que la pantalla y se desplaza dentro de su
