@@ -10,7 +10,7 @@ from decimal import Decimal
 from typing import Protocol
 from uuid import UUID
 
-from rinde.dashboard.domain.report import BalanceChange, Converter, Flow
+from rinde.dashboard.domain.report import BalanceChange, Converter, Flow, PriceIndex
 from rinde.shared.domain.money import Currency, Money
 from rinde.shared.domain.rate_type import RateType
 
@@ -73,6 +73,12 @@ class SameCurrencyConverter:
 
     def to_target(self, money: Money, day: date) -> Decimal | None:
         return money.amount if money.currency is self._target else None
+
+
+class PriceIndexReader(Protocol):
+    async def index(self, since: date, until: date) -> PriceIndex:
+        """El IPC de cada mes del rango que ya esté publicado, y el último (ADR-0025)."""
+        ...
 
 
 class Clock(Protocol):

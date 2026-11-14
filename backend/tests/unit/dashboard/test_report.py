@@ -4,9 +4,11 @@ from datetime import date
 from decimal import Decimal
 from uuid import uuid4
 
+import pytest
 from hypothesis import given
 from hypothesis import strategies as st
 
+from rinde.dashboard.domain.errors import DashboardConstantPricesArsOnlyError
 from rinde.dashboard.domain.period import Period
 from rinde.dashboard.domain.report import BalanceChange, build_report
 from rinde.shared.domain.money import Currency, Money
@@ -16,6 +18,7 @@ from tests.unit.dashboard.fakes import (
     ars,
     expense,
     income,
+    price_index,
     usd,
 )
 
@@ -186,4 +189,94 @@ def test_the_net_of_a_month_is_exactly_income_minus_expense(
 
     month = build_report(PERIOD, flows, [], converter).monthly[0]
 
+    assert month.net == month.income - month.expense
+
+
+def test_constant_prices_bring_each_month_to_the_prices_of_the_base_month() -> None:
+    flows = [
+        income(date(2026, 9, 5), ars("1000.00")),
+        expense(date(2026, 9, 6), ars("300.00")),
+        expense(date(2026, 10, 2), ars("110.00")),
+    ]
+    prices = price_index((OCT, "132"), m2026_09="120", m2026_10="132")
+
+    constant = build_report(PERIOD, flows, [], TableConverter(), prices).constant
+
+    assert constant is not None
+    assert constant.base_month == OCT
+    # Septiembre por 132 / 120 = 1,1; octubre ya está en sus propios precios.
+    assert [(m.month, m.income, m.expense, m.net) for m in constant.monthly] == [
+        (SEPT, ars("1100.00"), ars("330.00"), ars("770.00")),
+        (OCT, ars("0.00"), ars("110.00"), ars("-110.00")),
+        (NOV, None, None, None),
+    ]
+
+
+def test_the_nominal_report_does_not_change_with_constant_prices() -> None:
+    flows = [expense(date(2026, 9, 6), ars("300.00"))]
+    prices = price_index((OCT, "132"), m2026_09="120", m2026_10="132")
+
+    nominal = build_report(PERIOD, flows, [], TableConverter())
+    adjusted = build_report(PERIOD, flows, [], TableConverter(), prices)
+
+    assert adjusted.monthly == nominal.monthly
+    assert adjusted.spending == nominal.spending
+
+
+def test_dollars_are_converted_first_and_adjusted_after() -> None:
+    # 1 USD de gasto a 1100 (venta, del lado prudente) son 1100 pesos de septiembre.
+    flows = [expense(date(2026, 9, 6), usd("1.00"))]
+    prices = price_index((OCT, "150"), m2026_09="100", m2026_10="150")
+
+    constant = build_report(PERIOD, flows, [], TableConverter(), prices).constant
+
+    assert constant is not None
+    assert constant.monthly[0].expense == ars("1650.00")
+
+
+def test_the_adjustment_is_rounded_once_per_month() -> None:
+    # Tres gastos de 0,01 por 4/3: cada uno redondeado daría 0,03; la suma, 0,04.
+    flows = [expense(date(2026, 9, day), ars("0.01")) for day in (1, 2, 3)]
+    prices = price_index((OCT, "4"), m2026_09="3", m2026_10="4")
+
+    constant = build_report(PERIOD, flows, [], TableConverter(), prices).constant
+
+    assert constant is not None
+    assert constant.monthly[0].expense == ars("0.04")
+
+
+def test_without_any_cpi_nothing_is_adjusted() -> None:
+    flows = [expense(date(2026, 9, 6), ars("300.00"))]
+
+    constant = build_report(PERIOD, flows, [], TableConverter(), price_index(None)).constant
+
+    assert constant is not None
+    assert constant.base_month is None
+    assert all(m.income is None and m.net is None for m in constant.monthly)
+
+
+def test_constant_prices_only_make_sense_in_pesos() -> None:
+    with pytest.raises(DashboardConstantPricesArsOnlyError):
+        build_report(PERIOD, [], [], TableConverter(Currency.USD), price_index(None))
+
+
+@given(
+    st.lists(st.tuples(amounts, st.booleans()), max_size=30),
+    st.decimals(min_value=Decimal(100), max_value=Decimal(99999), places=4),
+)
+def test_the_adjusted_net_is_exactly_income_minus_expense(
+    items: list[tuple[Decimal, bool]], index: Decimal
+) -> None:
+    flows = [
+        (income if is_income else expense)(date(2026, 9, 1), ars(str(amount)))
+        for amount, is_income in items
+    ]
+    prices = price_index((OCT, "12785.9321"), m2026_09=str(index))
+
+    constant = build_report(PERIOD, flows, [], TableConverter(), prices).constant
+
+    assert constant is not None
+    month = constant.monthly[0]
+    assert month.income is not None
+    assert month.expense is not None
     assert month.net == month.income - month.expense

@@ -456,6 +456,8 @@ export interface paths {
      * @description Gasto por categoría, flujo de cada mes y patrimonio, en la moneda de referencia.
      *
      *     Lo que no se puede convertir no entra en los totales: sale en `unconverted`.
+     *     Con `prices=constant`, además, el flujo de cada mes en pesos de hoy, ajustado
+     *     por el IPC del INDEC; solo si la moneda de referencia es el peso.
      */
     get: operations["get_dashboard_api_dashboard_get"];
     put?: never;
@@ -916,6 +918,31 @@ export interface components {
        */
       skipped: number;
     };
+    /** ConstantMonthFlowResponse */
+    ConstantMonthFlowResponse: {
+      /** Month */
+      month: string;
+      /** @description Vacío si ese mes no tiene IPC publicado */
+      income: components["schemas"]["MoneyResponse"] | null;
+      expense: components["schemas"]["MoneyResponse"] | null;
+      net: components["schemas"]["MoneyResponse"] | null;
+    };
+    /**
+     * ConstantPricesResponse
+     * @description El flujo de cada mes en pesos del mes base. El gasto por categoría no se ajusta.
+     */
+    ConstantPricesResponse: {
+      /**
+       * Base Month
+       * @description El último mes con IPC publicado. Vacío si no hay ninguno
+       */
+      base_month: string | null;
+      /**
+       * Monthly
+       * @description Un elemento por mes
+       */
+      monthly: components["schemas"]["ConstantMonthFlowResponse"][];
+    };
     /** ConversionResponse */
     ConversionResponse: {
       original: components["schemas"]["MoneyResponse"];
@@ -979,6 +1006,8 @@ export interface components {
       net_worth: components["schemas"]["NetWorthPointResponse"][];
       /** Unconverted */
       unconverted: components["schemas"]["UnconvertedResponse"][];
+      /** @description Solo con `prices=constant` */
+      constant: components["schemas"]["ConstantPricesResponse"] | null;
     };
     /**
      * EditTransactionRequest
@@ -1173,6 +1202,11 @@ export interface components {
       reference_currency: "ARS" | "USD";
       rate_type: components["schemas"]["RateType"];
     };
+    /**
+     * Prices
+     * @enum {string}
+     */
+    Prices: "nominal" | "constant";
     /** QuoteResponse */
     QuoteResponse: {
       rate_type: components["schemas"]["RateType"];
@@ -3315,6 +3349,8 @@ export interface operations {
         to?: string | null;
         /** @description Cuentas a incluir; se repite el parámetro. Si falta, todas */
         account?: string[];
+        /** @description `constant` suma el flujo mensual en pesos del último mes con IPC (ADR-0025) */
+        prices?: components["schemas"]["Prices"];
       };
       header?: never;
       path?: never;

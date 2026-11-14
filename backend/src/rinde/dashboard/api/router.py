@@ -9,7 +9,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query, Request
 
-from rinde.dashboard.api.schemas import DashboardQuery, DashboardResponse, parse_month
+from rinde.dashboard.api.schemas import DashboardQuery, DashboardResponse, Prices, parse_month
 from rinde.dashboard.application.use_cases import GetDashboard
 from rinde.shared.api.identity import CurrentUserId
 from rinde.shared.api.schemas import error_responses
@@ -24,6 +24,8 @@ async def get_dashboard(
     """Gasto por categoría, flujo de cada mes y patrimonio, en la moneda de referencia.
 
     Lo que no se puede convertir no entra en los totales: sale en `unconverted`.
+    Con `prices=constant`, además, el flujo de cada mes en pesos de hoy, ajustado
+    por el IPC del INDEC; solo si la moneda de referencia es el peso.
     """
     dashboard: GetDashboard = request.app.state.dashboard
     result = await dashboard.execute(
@@ -31,5 +33,6 @@ async def get_dashboard(
         first=parse_month(query.first),
         last=parse_month(query.last),
         account_ids=frozenset(query.account) or None,
+        constant_prices=query.prices is Prices.CONSTANT,
     )
     return DashboardResponse.from_dashboard(result)

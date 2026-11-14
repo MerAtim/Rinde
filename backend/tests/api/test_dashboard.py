@@ -17,10 +17,12 @@ from tests.fakes import (
     FakeDatabaseProbe,
     InMemoryAccountsUnitFactory,
     InMemoryAuthUnitFactory,
+    InMemoryInflationUnitFactory,
     InMemoryPreferencesUnitFactory,
     InMemoryRatesUnitFactory,
     InMemoryTransactionsUnitFactory,
 )
+from tests.unit.inflation.fakes import FakeCpiProvider, cpi
 from tests.unit.rates.fakes import FakeHistoryProvider, FakeRateProvider, quote
 
 CSRF = {"X-Requested-With": "rinde"}
@@ -67,6 +69,10 @@ def client(settings: Settings, rates: InMemoryRatesUnitFactory) -> Iterator[Test
         transactions_factory=InMemoryTransactionsUnitFactory(accounts.accounts, clock),
         rates_factory=rates,
         preferences_factory=InMemoryPreferencesUnitFactory(),
+        # El IPC sube 10 % en octubre; noviembre todavía no se publicó.
+        inflation_factory=InMemoryInflationUnitFactory(
+            FakeCpiProvider(cpi(date(2026, 9, 1), "100"), cpi(date(2026, 10, 1), "110"))
+        ),
         dashboard_clock=clock,
     )
     with TestClient(app, base_url="https://testserver") as test_client:
@@ -241,6 +247,7 @@ def test_someone_elses_account_in_the_filter_shows_nothing_of_theirs(client: Tes
         {"from": "2024-01"},
         {"account": "no-es-un-id"},
         {"desde": "2026-09"},
+        {"prices": "reales"},
     ],
 )
 def test_a_wrong_period_is_rejected_with_a_stable_code(
@@ -257,3 +264,53 @@ def test_a_wrong_period_is_rejected_with_a_stable_code(
 
 def test_without_a_session_there_is_no_dashboard(client: TestClient) -> None:
     assert client.get("/api/dashboard").status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_constant_prices_bring_each_month_to_pesos_of_the_last_cpi(client: TestClient) -> None:
+    _sign_in(client, "mechi")
+    pesos = _account(client, "ARS")
+    _move(client, pesos, "expense", "1000.00", "2026-09-02")
+    _move(client, pesos, "expense", "1100.00", "2026-10-02")
+    _move(client, pesos, "expense", "50.00", "2026-11-02")
+
+    body = client.get("/api/dashboard", params={**PERIOD, "prices": "constant"}).json()
+
+    # Lo nominal no cambia: el ajuste va aparte.
+    assert [m["expense"]["amount"] for m in body["monthly"]] == ["1000.00", "1100.00", "50.00"]
+    constant = body["constant"]
+    assert constant["base_month"] == "2026-10"
+    # En pesos de octubre, septiembre y octubre gastaron lo mismo.
+    assert constant["monthly"][0] == {
+        "month": "2026-09",
+        "income": _money("0.00"),
+        "expense": _money("1100.00"),
+        "net": _money("-1100.00"),
+    }
+    assert constant["monthly"][1]["expense"] == _money("1100.00")
+    # Noviembre no tiene IPC: queda vacío, no con el factor 1.
+    assert constant["monthly"][2] == {
+        "month": "2026-11",
+        "income": None,
+        "expense": None,
+        "net": None,
+    }
+
+
+def test_without_asking_there_are_no_constant_prices(client: TestClient) -> None:
+    _sign_in(client, "mechi")
+
+    body = client.get("/api/dashboard", params=PERIOD).json()
+
+    assert body["constant"] is None
+
+
+def test_constant_prices_need_pesos_as_reference(client: TestClient) -> None:
+    _sign_in(client, "mechi")
+    client.put(
+        "/api/preferences", json={"reference_currency": "USD", "rate_type": "mep"}, headers=CSRF
+    )
+
+    response = client.get("/api/dashboard", params={**PERIOD, "prices": "constant"})
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+    assert response.json() == {"code": "DASHBOARD_CONSTANT_PRICES_ARS_ONLY"}

@@ -5,7 +5,15 @@ from decimal import Decimal
 from uuid import UUID, uuid4
 
 from rinde.dashboard.application.ports import Ledger, Reference
-from rinde.dashboard.domain.report import BalanceChange, CategoryRef, Converter, Flow, FlowKind
+from rinde.dashboard.domain.report import (
+    BalanceChange,
+    CategoryRef,
+    Converter,
+    Flow,
+    FlowKind,
+    IndexPoint,
+    PriceIndex,
+)
 from rinde.shared.domain.money import Currency, Money
 from rinde.shared.domain.rate_type import RateType
 
@@ -105,3 +113,23 @@ class FakeConverters:
     ) -> Converter:
         self.calls.append((target, rate_type, since, until))
         return self._converter
+
+
+def price_index(base: tuple[date, str] | None, **by_month: str) -> PriceIndex:
+    """`by_month` con claves `mAAAA_MM`: `price_index((OCT, "200"), m2026_09="100")`."""
+    return PriceIndex(
+        base=None if base is None else IndexPoint(base[0], Decimal(base[1])),
+        by_month={
+            date(int(key[1:5]), int(key[6:8]), 1): Decimal(value) for key, value in by_month.items()
+        },
+    )
+
+
+class FakePrices:
+    def __init__(self, index: PriceIndex | None = None) -> None:
+        self._index = index or PriceIndex(base=None, by_month={})
+        self.calls: list[tuple[date, date]] = []
+
+    async def index(self, since: date, until: date) -> PriceIndex:
+        self.calls.append((since, until))
+        return self._index

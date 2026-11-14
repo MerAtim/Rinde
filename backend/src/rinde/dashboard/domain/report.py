@@ -17,9 +17,12 @@ Reglas:
 * **Nada inventado.** Lo que no se puede convertir (Bitcoin, o un día sin
   cotización) no entra en los totales y se informa aparte, en su moneda. Un
   cierre de mes con una cuenta sin cotización no tiene total.
+* **Pesos constantes, si se piden** (ADR-0025). El flujo de cada mes se lleva
+  a pesos del último mes con IPC publicado. Un mes sin IPC queda vacío.
 """
 
 from collections import defaultdict
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date
 from decimal import Decimal
@@ -27,6 +30,7 @@ from enum import StrEnum
 from typing import Protocol
 from uuid import UUID
 
+from rinde.dashboard.domain.errors import DashboardConstantPricesArsOnlyError
 from rinde.dashboard.domain.period import Period
 from rinde.shared.domain.money import Currency, Money
 
@@ -93,6 +97,38 @@ class MonthFlow:
 
 
 @dataclass(frozen=True, slots=True)
+class IndexPoint:
+    month: date
+    value: Decimal
+
+
+@dataclass(frozen=True, slots=True)
+class PriceIndex:
+    """El IPC de los meses del período y el del mes base (ADR-0025)."""
+
+    base: IndexPoint | None
+    """El último mes publicado. `None` si no hay ninguno: no se puede ajustar nada."""
+    by_month: Mapping[date, Decimal]
+    """Un mes que falta no tiene IPC publicado."""
+
+
+@dataclass(frozen=True, slots=True)
+class ConstantMonthFlow:
+    """El flujo de un mes en pesos del mes base. Todo vacío si ese mes no tiene IPC."""
+
+    month: date
+    income: Money | None
+    expense: Money | None
+    net: Money | None
+
+
+@dataclass(frozen=True, slots=True)
+class ConstantPrices:
+    base_month: date | None
+    monthly: list[ConstantMonthFlow]
+
+
+@dataclass(frozen=True, slots=True)
 class NetWorthPoint:
     month: date
     on: date
@@ -118,6 +154,8 @@ class Report:
     monthly: list[MonthFlow]
     net_worth: list[NetWorthPoint]
     unconverted: list[Unconverted]
+    constant: ConstantPrices | None = None
+    """Solo si se pidió."""
 
 
 @dataclass
@@ -136,9 +174,14 @@ def build_report(
     flows: list[Flow],
     changes: list[BalanceChange],
     converter: Converter,
+    prices: PriceIndex | None = None,
 ) -> Report:
+    """`prices` pide los pesos constantes: solo tienen sentido en pesos (ADR-0025)."""
+    if prices is not None and converter.target is not Currency.ARS:
+        raise DashboardConstantPricesArsOnlyError
     left: defaultdict[Currency, _Left] = defaultdict(_Left)
-    spending, monthly = _flows(period, flows, converter, left)
+    spending, sums = _flows(flows, converter, left)
+    monthly = _monthly(period, sums, converter.target)
     net_worth = _net_worth(period, changes, converter, left)
     unconverted = [
         Unconverted(
@@ -150,7 +193,8 @@ def build_report(
         for currency, totals in sorted(left.items())
         if not totals.is_empty
     ]
-    return Report(spending, monthly, net_worth, unconverted)
+    constant = None if prices is None else _constant(period, sums, prices)
+    return Report(spending, monthly, net_worth, unconverted, constant)
 
 
 def _exact(amount: Decimal, currency: Currency) -> Money:
@@ -158,12 +202,19 @@ def _exact(amount: Decimal, currency: Currency) -> Money:
     return Money(amount.quantize(currency.quantum), currency)
 
 
+@dataclass(frozen=True, slots=True)
+class _MonthSums:
+    """Lo que entró y salió cada mes, ya convertido y sin redondear."""
+
+    income: defaultdict[date, Decimal]
+    expense: defaultdict[date, Decimal]
+
+
 def _flows(
-    period: Period,
     flows: list[Flow],
     converter: Converter,
     left: defaultdict[Currency, _Left],
-) -> tuple[list[CategoryTotal], list[MonthFlow]]:
+) -> tuple[list[CategoryTotal], _MonthSums]:
     target = converter.target
     by_category: dict[UUID, tuple[CategoryRef, Decimal]] = {}
     income: defaultdict[date, Decimal] = defaultdict(Decimal)
@@ -193,12 +244,37 @@ def _flows(
         ),
         key=lambda item: (-item.total.amount, item.category.name.casefold()),
     )
+    return spending, _MonthSums(income, expense)
+
+
+def _monthly(period: Period, sums: _MonthSums, target: Currency) -> list[MonthFlow]:
     monthly = []
     for month in period.months:
-        month_income = Money.rounded(income[month], target)
-        month_expense = Money.rounded(expense[month], target)
+        month_income = Money.rounded(sums.income[month], target)
+        month_expense = Money.rounded(sums.expense[month], target)
         monthly.append(MonthFlow(month, month_income, month_expense, month_income - month_expense))
-    return spending, monthly
+    return monthly
+
+
+def _constant(period: Period, sums: _MonthSums, prices: PriceIndex) -> ConstantPrices:
+    """Cada mes, por el cociente entre el IPC base y el suyo.
+
+    El factor es uno por mes, así que ajustar la suma del mes sin redondear da
+    lo mismo que ajustar cada movimiento. Se redondea una vez al final, y el
+    neto es la resta de los redondeados, para que cierre exacto.
+    """
+    base = prices.base
+    monthly = []
+    for month in period.months:
+        value = prices.by_month.get(month)
+        if base is None or value is None:
+            monthly.append(ConstantMonthFlow(month, None, None, None))
+            continue
+        factor = base.value / value
+        income = Money.rounded(sums.income[month] * factor, Currency.ARS)
+        expense = Money.rounded(sums.expense[month] * factor, Currency.ARS)
+        monthly.append(ConstantMonthFlow(month, income, expense, income - expense))
+    return ConstantPrices(None if base is None else base.month, monthly)
 
 
 def _net_worth(
