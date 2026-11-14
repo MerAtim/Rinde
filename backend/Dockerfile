@@ -24,11 +24,14 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Etapa 2: imagen final, sin uv, sin pip y sin código fuente, con usuario sin privilegios.
 # pip solo sirve para instalar (ya se hizo en la etapa 1) y trae dependencias propias con
 # vulnerabilidades conocidas: quitarlo reduce la superficie de ataque.
+# La ruta no nombra la versión de Python, y la build falla si pip sigue ahí: con
+# la versión escrita, cambiar de Python dejaba pip instalado sin avisar.
 FROM python:3.14-slim@sha256:a2b82f3c48559aa0a8446d9af49826b6e2b2016f4cd2afabfe6013ec53729170 AS runtime
 RUN apt-get update \
     && apt-get upgrade --yes --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /usr/local/lib/python3.14/site-packages/pip /usr/local/lib/python3.14/site-packages/pip-* /usr/local/bin/pip* \
+    && rm -rf /usr/local/lib/python3.*/site-packages/pip /usr/local/lib/python3.*/site-packages/pip-* /usr/local/bin/pip* \
+    && ! python -c "import pip" 2>/dev/null \
     && groupadd --system --gid 10001 rinde \
     && useradd --system --uid 10001 --gid rinde --no-create-home --shell /usr/sbin/nologin rinde
 WORKDIR /app
