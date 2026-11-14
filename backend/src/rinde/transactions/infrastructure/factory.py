@@ -12,6 +12,7 @@ from rinde.transactions.infrastructure.repositories import (
     SqlAlchemyAuditLog,
     SqlAlchemyCategoryRepository,
     SqlAlchemyIdempotencyStore,
+    SqlAlchemyInstallmentPlanRepository,
     SqlAlchemyTransactionRepository,
     SqlAlchemyTransferAuditLog,
     SqlAlchemyTransferRepository,
@@ -58,5 +59,6 @@ class SqlAlchemyTransactionsUnitFactory:
                     transaction=SqlAlchemyDatabaseTransaction(session),
                     clock=self._clock,
                     events=self._events,
+                    installments=SqlAlchemyInstallmentPlanRepository(session),
                 )
             )

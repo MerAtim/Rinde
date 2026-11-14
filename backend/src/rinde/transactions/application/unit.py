@@ -12,6 +12,12 @@ from rinde.transactions.application.categories import (
 )
 from rinde.transactions.application.dependencies import TransactionsDependencies
 from rinde.transactions.application.imported import InspectImport, RegisterImported
+from rinde.transactions.application.installments import (
+    CancelInstallmentPlan,
+    CreateInstallmentPlan,
+    GenerateDueInstallments,
+    ListInstallmentPlans,
+)
 from rinde.transactions.application.summary import SummarizeLedger
 from rinde.transactions.application.use_cases import (
     DeleteTransaction,
@@ -54,6 +60,10 @@ class TransactionsUnit:
     delete_category: DeleteCategory
     inspect_import: InspectImport
     register_imported: RegisterImported
+    create_plan: CreateInstallmentPlan
+    list_plans: ListInstallmentPlans
+    cancel_plan: CancelInstallmentPlan
+    generate_due: GenerateDueInstallments
 
 
 class TransactionsUnitFactory(Protocol):
@@ -85,4 +95,8 @@ def build_transactions_unit(deps: TransactionsDependencies) -> TransactionsUnit:
         delete_category=DeleteCategory(deps),
         inspect_import=InspectImport(deps),
         register_imported=RegisterImported(deps),
+        create_plan=CreateInstallmentPlan(deps),
+        list_plans=ListInstallmentPlans(deps),
+        cancel_plan=CancelInstallmentPlan(deps),
+        generate_due=GenerateDueInstallments(deps),
     )

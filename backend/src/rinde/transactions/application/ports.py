@@ -15,6 +15,7 @@ from uuid import UUID
 from rinde.shared.domain.money import Currency, Money
 from rinde.transactions.application.events import ExpenseRecorded
 from rinde.transactions.domain.category import Category, TransactionKind
+from rinde.transactions.domain.installments import InstallmentPlan
 from rinde.transactions.domain.transaction import AuditAction, TargetAccount, Transaction
 from rinde.transactions.domain.transfer import Transfer
 
@@ -175,6 +176,13 @@ class TransactionRepository(Protocol):
 
     async def save(self, transaction: Transaction) -> None: ...
 
+    async def add_installment(self, transaction: Transaction) -> bool:
+        """Guarda una cuota si todavía no se generó. `False` si ya estaba (ADR-0026).
+
+        Dos pedidos a la vez no la duplican: la base tiene la última palabra.
+        """
+        ...
+
     async def imported_fingerprints(
         self, owner_id: UUID, account_id: UUID, fingerprints: Collection[str]
     ) -> set[str]:
@@ -185,6 +193,39 @@ class TransactionRepository(Protocol):
         self, owner_id: UUID, account_id: UUID, since: date, until: date
     ) -> list[Transaction]:
         """Los vivos de una cuenta entre dos fechas, incluidas las dos."""
+        ...
+
+
+@dataclass(frozen=True, slots=True)
+class GeneratedInstallment:
+    """Una cuota que ya es movimiento. Una borrada cuenta: no se vuelve a generar."""
+
+    number: int
+    transaction_id: UUID
+    is_deleted: bool
+
+
+class InstallmentPlanRepository(Protocol):
+    async def add(self, plan: InstallmentPlan) -> None: ...
+
+    async def get(self, plan_id: UUID, owner_id: UUID) -> InstallmentPlan | None:
+        """Un plan ajeno es lo mismo que uno inexistente (ADR-0009)."""
+        ...
+
+    async def list_for_owner(self, owner_id: UUID) -> list[InstallmentPlan]:
+        """Todos, también los cancelados, de la compra más reciente a la más vieja."""
+        ...
+
+    async def save(self, plan: InstallmentPlan) -> None: ...
+
+    async def generated(
+        self, owner_id: UUID, plan_ids: Collection[UUID]
+    ) -> dict[UUID, dict[int, GeneratedInstallment]]:
+        """Las cuotas que ya son movimiento, borradas incluidas, por plan y por número."""
+        ...
+
+    async def count_by_category(self, category_id: UUID, owner_id: UUID) -> int:
+        """Un plan, cancelado o no, sigue usando su categoría."""
         ...
 
 
@@ -228,6 +269,7 @@ class IdempotentResource(StrEnum):
 
     TRANSACTION = "transaction"
     TRANSFER = "transfer"
+    INSTALLMENT_PLAN = "installment_plan"
 
 
 @dataclass(frozen=True, slots=True)

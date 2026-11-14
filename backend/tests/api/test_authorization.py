@@ -133,6 +133,23 @@ def _upload_batch(client: TestClient) -> str:
     return identifier
 
 
+def _create_plan(client: TestClient) -> str:
+    response = client.post(
+        "/api/installments",
+        json={
+            "account_id": _open_account(client),
+            "category_id": _create_category(client),
+            "total": "1200.00",
+            "count": 3,
+            "first_on": "2026-09-11",
+        },
+        headers=CSRF,
+    )
+    assert response.status_code == status.HTTP_201_CREATED, response.text
+    identifier: str = response.json()["id"]
+    return identifier
+
+
 # Cómo crear, con la sesión activa, un recurso para cada parámetro de camino.
 OWNED_RESOURCES: dict[str, Callable[[TestClient], str]] = {
     "account_id": _open_account,
@@ -140,6 +157,7 @@ OWNED_RESOURCES: dict[str, Callable[[TestClient], str]] = {
     "transaction_id": _register_transaction,
     "transfer_id": _register_transfer,
     "batch_id": _upload_batch,
+    "plan_id": _create_plan,
 }
 
 # Parámetros de camino que no nombran algo de una persona: las cotizaciones son

@@ -17,6 +17,7 @@ from rinde.transactions.application.ports import (
     AccountBalance,
     BalanceChange,
     FlowSum,
+    GeneratedInstallment,
     LedgerScope,
     Page,
     RememberedKey,
@@ -27,6 +28,7 @@ from rinde.transactions.application.ports import (
 from rinde.transactions.application.unit import TransactionsUnit, build_transactions_unit
 from rinde.transactions.domain.category import Category, TransactionKind
 from rinde.transactions.domain.errors import TransactionAlreadyImportedError
+from rinde.transactions.domain.installments import InstallmentPlan
 from rinde.transactions.domain.transaction import AuditAction, TargetAccount, Transaction
 from rinde.transactions.domain.transfer import Transfer
 
@@ -91,6 +93,18 @@ class FakeTransactionRepository:
         ):
             raise TransactionAlreadyImportedError
         self.rows[transaction.id] = transaction
+
+    async def add_installment(self, transaction: Transaction) -> bool:
+        # Como el índice único de la base (ADR-0026): una cuota ya generada no entra.
+        ref = transaction.installment
+        if ref is not None and any(
+            row.installment is not None
+            and (row.installment.plan_id, row.installment.number) == (ref.plan_id, ref.number)
+            for row in self.rows.values()
+        ):
+            return False
+        self.rows[transaction.id] = transaction
+        return True
 
     async def imported_fingerprints(
         self, owner_id: UUID, account_id: UUID, fingerprints: Collection[str]
@@ -357,6 +371,50 @@ class FakeTransferAuditLog:
         return [action for action, _, _ in self.entries]
 
 
+class FakeInstallmentPlans:
+    """Planes en memoria. Las cuotas generadas las lee del repositorio de movimientos."""
+
+    def __init__(self, transactions: FakeTransactionRepository) -> None:
+        self.rows: dict[UUID, InstallmentPlan] = {}
+        self._transactions = transactions
+
+    async def add(self, plan: InstallmentPlan) -> None:
+        self.rows[plan.id] = plan
+
+    async def get(self, plan_id: UUID, owner_id: UUID) -> InstallmentPlan | None:
+        found = self.rows.get(plan_id)
+        return found if found is not None and found.owner_id == owner_id else None
+
+    async def list_for_owner(self, owner_id: UUID) -> list[InstallmentPlan]:
+        return sorted(
+            (row for row in self.rows.values() if row.owner_id == owner_id),
+            key=lambda row: (row.first_on, row.id),
+            reverse=True,
+        )
+
+    async def save(self, plan: InstallmentPlan) -> None:
+        self.rows[plan.id] = plan
+
+    async def generated(
+        self, owner_id: UUID, plan_ids: Collection[UUID]
+    ) -> dict[UUID, dict[int, GeneratedInstallment]]:
+        found: dict[UUID, dict[int, GeneratedInstallment]] = {}
+        for row in self._transactions.rows.values():
+            ref = row.installment
+            if row.owner_id == owner_id and ref is not None and ref.plan_id in plan_ids:
+                found.setdefault(ref.plan_id, {})[ref.number] = GeneratedInstallment(
+                    ref.number, row.id, row.is_deleted
+                )
+        return found
+
+    async def count_by_category(self, category_id: UUID, owner_id: UUID) -> int:
+        return sum(
+            1
+            for row in self.rows.values()
+            if row.owner_id == owner_id and row.category_id == category_id
+        )
+
+
 class FakeAuditLog:
     def __init__(self) -> None:
         self.entries: list[tuple[AuditAction, UUID, datetime]] = []
@@ -394,6 +452,7 @@ class Harness:
         self.transfer_audit = FakeTransferAuditLog()
         self.db = FakeDatabaseTransaction()
         self.events = RecordingPublisher(self.db)
+        self.installments = FakeInstallmentPlans(self.transactions)
         self.unit: TransactionsUnit = build_transactions_unit(
             TransactionsDependencies(
                 transactions=self.transactions,
@@ -406,5 +465,6 @@ class Harness:
                 transaction=self.db,
                 clock=self.clock,
                 events=self.events,
+                installments=self.installments,
             )
         )

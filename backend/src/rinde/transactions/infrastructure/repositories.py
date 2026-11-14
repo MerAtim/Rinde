@@ -36,6 +36,7 @@ from rinde.transactions.application.ports import (
     AccountBalance,
     BalanceChange,
     FlowSum,
+    GeneratedInstallment,
     IdempotentResource,
     LedgerScope,
     Page,
@@ -46,15 +47,18 @@ from rinde.transactions.application.ports import (
 )
 from rinde.transactions.domain.category import Category, CategoryName, TransactionKind
 from rinde.transactions.domain.errors import TransactionAlreadyImportedError
+from rinde.transactions.domain.installments import InstallmentPlan
 from rinde.transactions.domain.transaction import (
     AuditAction,
     Description,
+    InstallmentRef,
     Transaction,
 )
 from rinde.transactions.domain.transfer import Transfer
 from rinde.transactions.infrastructure.tables import (
     categories,
     idempotency_keys,
+    installment_plans,
     transaction_audit,
     transactions,
     transfer_audit,
@@ -93,10 +97,18 @@ def _to_transaction(row: RowMapping) -> Transaction:
         updated_at=row["updated_at"],
         deleted_at=row["deleted_at"],
         source_fingerprint=row["source_fingerprint"],
+        installment=None
+        if row["installment_plan_id"] is None
+        else InstallmentRef(
+            plan_id=row["installment_plan_id"],
+            number=row["installment_number"],
+            count=row["installment_count"],
+        ),
     )
 
 
 def _values(transaction: Transaction) -> dict[str, object]:
+    installment = transaction.installment
     return {
         "id": transaction.id,
         "owner_id": transaction.owner_id,
@@ -114,6 +126,9 @@ def _values(transaction: Transaction) -> dict[str, object]:
         "updated_at": transaction.updated_at,
         "deleted_at": transaction.deleted_at,
         "source_fingerprint": transaction.source_fingerprint,
+        "installment_plan_id": installment.plan_id if installment else None,
+        "installment_number": installment.number if installment else None,
+        "installment_count": installment.count if installment else None,
     }
 
 
@@ -303,6 +318,19 @@ class SqlAlchemyTransactionRepository:
             )
             .values(**values)
         )
+
+    async def add_installment(self, transaction: Transaction) -> bool:
+        # Si otro pedido generó la misma cuota a la vez, esta no entra y no falla.
+        result = await self._session.execute(
+            pg_insert(transactions)
+            .values(**_values(transaction))
+            .on_conflict_do_nothing(
+                index_elements=["installment_plan_id", "installment_number"],
+                index_where=transactions.c.installment_plan_id.is_not(None),
+            )
+            .returning(transactions.c.id)
+        )
+        return result.scalar_one_or_none() is not None
 
 
 def _to_transfer(row: RowMapping) -> Transfer:
@@ -606,6 +634,13 @@ class SqlAlchemyAuditLog:
                     if transaction.deleted_at
                     else None,
                     "source_fingerprint": transaction.source_fingerprint,
+                    "installment": None
+                    if transaction.installment is None
+                    else {
+                        "plan_id": str(transaction.installment.plan_id),
+                        "number": transaction.installment.number,
+                        "count": transaction.installment.count,
+                    },
                 },
             )
         )
@@ -646,3 +681,102 @@ class SqlAlchemyIdempotencyStore:
         await self._session.execute(
             delete(idempotency_keys).where(idempotency_keys.c.created_at < before)
         )
+
+
+def _to_plan(row: RowMapping) -> InstallmentPlan:
+    currency = Currency(row["currency"])
+    return InstallmentPlan(
+        id=row["id"],
+        owner_id=row["owner_id"],
+        account_id=row["account_id"],
+        category_id=row["category_id"],
+        total=Money(Decimal(row["total"]).quantize(currency.quantum), currency),
+        count=row["count"],
+        first_on=row["first_on"],
+        created_at=row["created_at"],
+        description=Description(row["description"]) if row["description"] else None,
+        cancelled_at=row["cancelled_at"],
+    )
+
+
+class SqlAlchemyInstallmentPlanRepository:
+    """Planes de cuotas (ADR-0026). Toda lectura filtra por el dueño."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def add(self, plan: InstallmentPlan) -> None:
+        await self._session.execute(
+            insert(installment_plans).values(
+                id=plan.id,
+                owner_id=plan.owner_id,
+                account_id=plan.account_id,
+                currency=plan.total.currency.value,
+                kind=TransactionKind.EXPENSE.value,
+                category_id=plan.category_id,
+                total=plan.total.amount,
+                count=plan.count,
+                first_on=plan.first_on,
+                description=plan.description.value if plan.description else None,
+                created_at=plan.created_at,
+                cancelled_at=plan.cancelled_at,
+            )
+        )
+
+    async def get(self, plan_id: UUID, owner_id: UUID) -> InstallmentPlan | None:
+        result = await self._session.execute(
+            select(installment_plans).where(
+                installment_plans.c.id == plan_id, installment_plans.c.owner_id == owner_id
+            )
+        )
+        row = result.mappings().first()
+        return None if row is None else _to_plan(row)
+
+    async def list_for_owner(self, owner_id: UUID) -> list[InstallmentPlan]:
+        result = await self._session.execute(
+            select(installment_plans)
+            .where(installment_plans.c.owner_id == owner_id)
+            .order_by(installment_plans.c.first_on.desc(), installment_plans.c.id.desc())
+        )
+        return [_to_plan(row) for row in result.mappings()]
+
+    async def save(self, plan: InstallmentPlan) -> None:
+        # Lo único que cambia de un plan es si se canceló.
+        await self._session.execute(
+            update(installment_plans)
+            .where(installment_plans.c.id == plan.id, installment_plans.c.owner_id == plan.owner_id)
+            .values(cancelled_at=plan.cancelled_at)
+        )
+
+    async def generated(
+        self, owner_id: UUID, plan_ids: Collection[UUID]
+    ) -> dict[UUID, dict[int, GeneratedInstallment]]:
+        if not plan_ids:
+            return {}
+        # Sin `_alive`: una cuota borrada también cuenta como generada.
+        result = await self._session.execute(
+            select(
+                transactions.c.installment_plan_id,
+                transactions.c.installment_number,
+                transactions.c.id,
+                transactions.c.deleted_at,
+            ).where(
+                transactions.c.owner_id == owner_id,
+                transactions.c.installment_plan_id.in_(list(plan_ids)),
+            )
+        )
+        found: dict[UUID, dict[int, GeneratedInstallment]] = {}
+        for plan_id, number, transaction_id, deleted_at in result.tuples():
+            found.setdefault(plan_id, {})[number] = GeneratedInstallment(
+                number=number, transaction_id=transaction_id, is_deleted=deleted_at is not None
+            )
+        return found
+
+    async def count_by_category(self, category_id: UUID, owner_id: UUID) -> int:
+        result = await self._session.execute(
+            select(func.count()).where(
+                installment_plans.c.category_id == category_id,
+                installment_plans.c.owner_id == owner_id,
+            )
+        )
+        return int(result.scalar_one())
