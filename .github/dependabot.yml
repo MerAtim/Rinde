@@ -71,6 +71,15 @@ updates:
       - dependency-name: node
         update-types:
           - version-update:semver-major
+      # Python cambia de versión en el segundo número (3.14 a 3.15), y eso se hace
+      # a propósito: la versión está también en .python-version, que usa la CI, y
+      # cada dependencia con código compilado necesita publicar sus binarios para
+      # la versión nueva. Cambiar solo la imagen dejaría producción en una versión
+      # que los tests no corrieron. Los parches y el digest se siguen proponiendo.
+      - dependency-name: python
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
 
   - package-ecosystem: docker-compose
     directory: /
