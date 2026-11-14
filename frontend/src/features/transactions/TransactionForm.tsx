@@ -35,6 +35,8 @@ interface TransactionFormProps {
   draft: TransactionDraft;
   /** En la edición la cuenta queda fija: mover plata de cuenta es otra operación. */
   isAccountFixed?: boolean;
+  /** Una cuota es siempre un gasto (ADR-0026): el tipo no se puede cambiar. */
+  isKindFixed?: boolean;
   submitLabel: string;
   submittingLabel: string;
   isPending: boolean;
@@ -47,6 +49,7 @@ export function TransactionForm({
   categories,
   draft: initial,
   isAccountFixed = false,
+  isKindFixed = false,
   submitLabel,
   submittingLabel,
   isPending,
@@ -101,9 +104,11 @@ export function TransactionForm({
       <SegmentedButton
         label={t("transactions.form.kind")}
         isLabelVisible
+        {...(isKindFixed ? { description: t("transactions.form.kindFixed") } : {})}
         options={TRANSACTION_KINDS.map((kind) => ({
           id: kind,
           label: t(`transactions.kind.${kind}`),
+          isDisabled: isKindFixed && kind !== draft.kind,
         }))}
         value={draft.kind}
         onChange={(kind) => {

@@ -11,6 +11,7 @@ from rinde.shared.domain.text import is_clean, normalize
 from rinde.transactions.domain.category import Category, TransactionKind
 from rinde.transactions.domain.errors import (
     CategoryKindMismatchError,
+    InstallmentKindFixedError,
     TransactionAmountNotPositiveError,
     TransactionCurrencyMismatchError,
     TransactionDateInFutureError,
@@ -133,6 +134,8 @@ class Transaction:
         """Edita todo junto: las reglas cruzan los campos y se validan de una."""
         if self.is_deleted:
             raise TransactionDeletedError
+        if self.installment is not None and draft.kind is not self.kind:
+            raise InstallmentKindFixedError
         draft.check(self.money.currency, at)
         return replace(
             self,

@@ -104,6 +104,28 @@ def test_each_installment_is_a_transaction_that_says_which_one_it_is(client: Tes
     ]
 
 
+def test_an_installment_cannot_become_an_income(client: TestClient) -> None:
+    client.post("/api/installments", json=_purchase(client), headers=CSRF)
+    installment = client.get("/api/transactions").json()["items"][0]
+    income = next(
+        row["id"] for row in client.get("/api/categories").json() if row["kind"] == "income"
+    )
+
+    response = client.patch(
+        f"/api/transactions/{installment['id']}",
+        json={
+            "kind": "income",
+            "amount": installment["amount"],
+            "category_id": income,
+            "occurred_on": installment["occurred_on"],
+        },
+        headers=CSRF,
+    )
+
+    assert response.status_code == status.HTTP_422_UNPROCESSABLE_CONTENT
+    assert response.json() == {"code": "INSTALLMENT_KIND_FIXED"}
+
+
 def test_the_due_ones_are_generated_when_asked_and_only_once(
     client: TestClient, clock: FakeClock
 ) -> None:

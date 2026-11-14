@@ -12,6 +12,7 @@ from rinde.shared.domain.money import Currency, Money
 from rinde.transactions.domain.category import Category, CategoryName, TransactionKind
 from rinde.transactions.domain.errors import (
     CategoryKindMismatchError,
+    InstallmentKindFixedError,
     TransactionAmountNotPositiveError,
     TransactionCurrencyMismatchError,
     TransactionDateInFutureError,
@@ -21,6 +22,7 @@ from rinde.transactions.domain.errors import (
 from rinde.transactions.domain.transaction import (
     Description,
     Draft,
+    InstallmentRef,
     TargetAccount,
     Transaction,
     register,
@@ -129,6 +131,24 @@ def test_a_deleted_movement_cannot_be_edited() -> None:
 
     with pytest.raises(TransactionDeletedError):
         deleted.edited(_draft(), NOW)
+
+
+def test_an_installment_stays_an_expense_but_the_rest_can_be_edited() -> None:
+    installment = register(
+        _draft(),
+        ACCOUNT,
+        transaction_id=uuid4(),
+        owner_id=OWNER,
+        at=NOW,
+        installment=InstallmentRef(plan_id=uuid4(), number=1, count=3),
+    )
+
+    edited = installment.edited(_draft(money=Money(Decimal("2.00"), Currency.ARS)), NOW)
+
+    assert edited.money == Money(Decimal("2.00"), Currency.ARS)
+    assert edited.installment == installment.installment
+    with pytest.raises(InstallmentKindFixedError):
+        installment.edited(_draft(kind=TransactionKind.INCOME), NOW)
 
 
 def test_deleting_is_idempotent_and_restoring_brings_it_back() -> None:
