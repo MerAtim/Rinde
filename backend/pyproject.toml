@@ -118,8 +118,9 @@ containers = [
     "rinde.budgets",
     "rinde.alerts",
     "rinde.imports",
+    "rinde.inflation",
 ]
-layers = ["api | infrastructure", "application", "(domain)"]
+layers = ["(api) | infrastructure", "application", "(domain)"]
 
 [[tool.importlinter.contracts]]
 name = "Aplicación y dominio no dependen de frameworks ni de infraestructura"
@@ -144,6 +145,8 @@ source_modules = [
     "rinde.alerts.domain",
     "rinde.imports.application",
     "rinde.imports.domain",
+    "rinde.inflation.application",
+    "rinde.inflation.domain",
     "rinde.shared.domain",
 ]
 forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic", "httpx", "argon2"]
@@ -163,6 +166,7 @@ forbidden_modules = [
     "rinde.budgets",
     "rinde.alerts",
     "rinde.imports",
+    "rinde.inflation",
 ]
 
 [[tool.importlinter.contracts]]
@@ -198,6 +202,15 @@ forbidden_modules = [
 ]
 
 [[tool.importlinter.contracts]]
+name = "Inflación no depende de ningún otro módulo: el índice es el mismo para todos"
+type = "forbidden"
+source_modules = ["rinde.inflation"]
+forbidden_modules = [
+    "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.health", "rinde.preferences",
+    "rinde.rates", "rinde.dashboard", "rinde.budgets", "rinde.alerts", "rinde.imports",
+]
+
+[[tool.importlinter.contracts]]
 name = "Preferencias no depende de ningún otro módulo: el tipo de dólar está en el kernel"
 type = "forbidden"
 source_modules = ["rinde.preferences"]
@@ -211,7 +224,7 @@ type = "forbidden"
 source_modules = ["rinde.dashboard.application", "rinde.dashboard.domain"]
 forbidden_modules = [
     "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
-    "rinde.health",
+    "rinde.health", "rinde.inflation",
 ]
 
 [[tool.importlinter.contracts]]
@@ -228,6 +241,7 @@ forbidden_modules = [
     "rinde.transactions.api", "rinde.transactions.infrastructure", "rinde.transactions.domain",
     "rinde.rates.api", "rinde.rates.infrastructure", "rinde.rates.domain",
     "rinde.preferences.api", "rinde.preferences.infrastructure", "rinde.preferences.domain",
+    "rinde.inflation.infrastructure", "rinde.inflation.domain",
 ]
 
 [[tool.importlinter.contracts]]
@@ -235,7 +249,7 @@ name = "Ningún módulo depende del dashboard: es un modelo de lectura sobre los
 type = "forbidden"
 source_modules = [
     "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
-    "rinde.health", "rinde.budgets", "rinde.alerts",
+    "rinde.health", "rinde.budgets", "rinde.alerts", "rinde.inflation",
 ]
 forbidden_modules = ["rinde.dashboard"]
 

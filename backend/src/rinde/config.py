@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     dolarapi_url: str = "https://dolarapi.com"
     argentinadatos_url: str = "https://api.argentinadatos.com"
     criptoya_url: str = "https://criptoya.com"
+    # IPC del INDEC para los pesos constantes (ADR-0025).
+    datos_gob_ar_url: str = "https://apis.datos.gob.ar"
 
     @field_validator("database_url")
     @classmethod
