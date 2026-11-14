@@ -81,6 +81,7 @@ from rinde.imports.infrastructure.gateways import (
 from rinde.imports.infrastructure.gateways import (
     TransactionsCategoryReader as ImportsCategoryReader,
 )
+from rinde.imports.infrastructure.pdf import PdfPlumberText
 from rinde.preferences.api.errors import preferences_error_handler
 from rinde.preferences.api.router import router as preferences_router
 from rinde.preferences.application.unit import PreferencesUnitFactory
@@ -344,6 +345,7 @@ def _sql_imports(
             accounts=TransactionsAccountInspector(transactions),
             registrar=TransactionsRegistrar(transactions),
             categories=ImportsCategoryReader(transactions),
+            pdf=PdfPlumberText(),
         ),
         SystemClock(),
     )

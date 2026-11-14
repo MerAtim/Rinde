@@ -17,6 +17,7 @@ import {
   type Delimiter,
   type Encoding,
   type ImportErrorCode,
+  type ImportSource,
   isImportsApiError,
   MAX_FILE_BYTES,
 } from "./api";
@@ -30,6 +31,12 @@ type LocalErrorCode =
 type FormErrorCode = LocalErrorCode | ImportErrorCode;
 
 type AmountMode = "signed" | "debit_credit";
+type Kind = ImportSource["kind"];
+
+const ACCEPTED: Record<Kind, string[]> = {
+  csv: [".csv", "text/csv", "text/plain"],
+  macro_pdf: [".pdf", "application/pdf"],
+};
 
 interface Columns {
   date: number | null;
@@ -47,10 +54,10 @@ const NO_COLUMNS: Columns = {
   credit: null,
 };
 
-/** El archivo leído en el navegador, solo para mostrar sus primeras filas. */
+/** El archivo elegido. Un CSV se lee en el navegador para mostrar sus primeras filas; un PDF, no. */
 interface Picked {
   file: File;
-  bytes: ArrayBuffer;
+  bytes: ArrayBuffer | null;
 }
 
 /** El formato que arma el formulario, o el motivo por el que todavía no se puede enviar. */
@@ -86,7 +93,7 @@ function layoutFrom(
   };
 }
 
-/** Subir un CSV y decir cómo leerlo (ADR-0023). La vista previa viene después. */
+/** Subir un CSV con su formato, o el resumen PDF de Macro (ADR-0023). La vista previa viene después. */
 export function ImportPage() {
   const { t } = useTranslation();
   const accounts = useAccounts(false);
@@ -118,6 +125,7 @@ function ImportForm({ accounts }: { accounts: Account[] }) {
   const navigate = useNavigate();
   const upload = useUploadBatch();
   const [accountId, setAccountId] = useState(accounts.length === 1 ? (accounts[0]?.id ?? "") : "");
+  const [kind, setKind] = useState<Kind>("csv");
   const [picked, setPicked] = useState<Picked | null>(null);
   const [encoding, setEncoding] = useState<Encoding>("utf-8");
   const [delimiter, setDelimiter] = useState<Delimiter>(";");
@@ -128,7 +136,8 @@ function ImportForm({ accounts }: { accounts: Account[] }) {
   const [columns, setColumns] = useState<Columns>(NO_COLUMNS);
   const [localError, setLocalError] = useState<FormErrorCode | null>(null);
 
-  const text = picked ? decode(picked.bytes, encoding) : null;
+  const isCsv = kind === "csv";
+  const text = picked?.bytes ? decode(picked.bytes, encoding) : null;
   const preview: CsvPreview | null = text === null ? null : previewRows(text, delimiter);
   const header = hasHeader && preview ? (preview.rows[0] ?? []) : [];
   const columnOptions = Array.from({ length: preview?.columns ?? 0 }, (_, index) => {
@@ -147,6 +156,17 @@ function ImportForm({ accounts }: { accounts: Account[] }) {
       : "UNKNOWN_ERROR"
     : null;
   const code = localError ?? serverError;
+
+  function submit(file: File, source: ImportSource) {
+    upload.mutate(
+      { accountId, file, source },
+      {
+        onSuccess: (batch) => {
+          void navigate(`/imports/${batch.id}`);
+        },
+      },
+    );
+  }
 
   function reset() {
     setLocalError(null);
@@ -188,6 +208,14 @@ function ImportForm({ accounts }: { accounts: Account[] }) {
       noValidate
       onSubmit={(event) => {
         event.preventDefault();
+        if (!isCsv) {
+          const missing = !accountId ? "ACCOUNT_REQUIRED" : !picked ? "FILE_REQUIRED" : null;
+          setLocalError(missing);
+          if (picked && !missing) {
+            submit(picked.file, { kind });
+          }
+          return;
+        }
         const layout = layoutFrom(
           {
             delimiter,
@@ -210,14 +238,7 @@ function ImportForm({ accounts }: { accounts: Account[] }) {
         if (invalid || !picked || typeof layout === "string") {
           return;
         }
-        upload.mutate(
-          { accountId, file: picked.file, layout },
-          {
-            onSuccess: (batch) => {
-              void navigate(`/imports/${batch.id}`);
-            },
-          },
-        );
+        submit(picked.file, { kind: "csv", layout });
       }}
     >
       {code ? <Alert>{t(`imports.errors.${code}`)}</Alert> : null}
@@ -234,12 +255,27 @@ function ImportForm({ accounts }: { accounts: Account[] }) {
           reset();
         }}
       />
+      <SegmentedButton
+        label={t("imports.kind.label")}
+        isLabelVisible
+        options={[
+          { id: "csv", label: t("imports.kind.csv") },
+          { id: "macro_pdf", label: t("imports.kind.macroPdf") },
+        ]}
+        value={kind}
+        onChange={(value) => {
+          setKind(value);
+          // Un CSV elegido no sirve como PDF, ni al revés.
+          setPicked(null);
+          reset();
+        }}
+      />
       <div className={cx(styles.file)}>
         <p className={cx(styles.label)} id="import-file-label">
           {t("imports.file.label")}
         </p>
         <FileTrigger
-          acceptedFileTypes={[".csv", "text/csv", "text/plain"]}
+          acceptedFileTypes={ACCEPTED[kind]}
           onSelect={(list) => {
             const file = list?.[0];
             if (!file) {
@@ -249,6 +285,10 @@ function ImportForm({ accounts }: { accounts: Account[] }) {
             if (file.size > MAX_FILE_BYTES) {
               setPicked(null);
               setLocalError("IMPORT_FILE_TOO_LARGE");
+              return;
+            }
+            if (!isCsv) {
+              setPicked({ file, bytes: null });
               return;
             }
             void file.arrayBuffer().then((bytes) => {
@@ -262,88 +302,56 @@ function ImportForm({ accounts }: { accounts: Account[] }) {
             aria-describedby="import-file-label import-file-hint"
           >
             <Icon name="upload" size={20} />
-            {picked ? t("imports.file.change") : t("imports.file.choose")}
+            {picked
+              ? t("imports.file.change")
+              : isCsv
+                ? t("imports.file.choose")
+                : t("imports.file.choosePdf")}
           </AriaButton>
         </FileTrigger>
         {picked ? <p className={cx(styles.fileName)}>{picked.file.name}</p> : null}
         <p className={cx(styles.muted)} id="import-file-hint">
-          {t("imports.file.hint")}
+          {isCsv ? t("imports.file.hint") : t("imports.file.hintPdf")}
         </p>
       </div>
 
-      <fieldset className={cx(styles.fieldset)}>
-        <legend className={cx(styles.legend)}>{t("imports.format.title")}</legend>
-        <SegmentedButton
-          label={t("imports.format.encoding")}
-          isLabelVisible
-          options={[
-            { id: "utf-8", label: t("imports.format.utf8") },
-            { id: "windows-1252", label: t("imports.format.windows1252") },
-          ]}
-          value={encoding}
-          onChange={(value) => {
+      {isCsv ? (
+        <CsvFormat
+          encoding={encoding}
+          delimiter={delimiter}
+          decimalMark={decimalMark}
+          dateOrder={dateOrder}
+          hasHeader={hasHeader}
+          onEncoding={(value) => {
             setEncoding(value);
             reset();
-            if (picked) {
+            if (picked?.bytes) {
               propose({ bytes: picked.bytes, encoding: value, delimiter });
             }
           }}
-        />
-        <SegmentedButton
-          label={t("imports.format.delimiter")}
-          isLabelVisible
-          options={[
-            { id: ";", label: t("imports.format.semicolon") },
-            { id: ",", label: t("imports.format.comma") },
-            { id: "\t", label: t("imports.format.tab") },
-          ]}
-          value={delimiter}
-          onChange={(value) => {
+          onDelimiter={(value) => {
             setDelimiter(value);
             reset();
-            if (picked) {
+            if (picked?.bytes) {
               propose({ bytes: picked.bytes, encoding, delimiter: value });
             }
           }}
-        />
-        <SegmentedButton
-          label={t("imports.format.decimal")}
-          isLabelVisible
-          options={[
-            { id: "comma", label: t("imports.format.decimalComma") },
-            { id: "dot", label: t("imports.format.decimalDot") },
-          ]}
-          value={decimalMark}
-          onChange={(value) => {
+          onDecimalMark={(value) => {
             setDecimalMark(value);
             reset();
           }}
-        />
-        <SegmentedButton
-          label={t("imports.format.date")}
-          isLabelVisible
-          options={[
-            { id: "dmy", label: t("imports.format.dateDmy") },
-            { id: "iso", label: t("imports.format.dateIso") },
-          ]}
-          value={dateOrder}
-          onChange={(value) => {
+          onDateOrder={(value) => {
             setDateOrder(value);
             reset();
           }}
-        />
-        <Checkbox
-          isSelected={hasHeader}
-          onChange={(value) => {
+          onHeader={(value) => {
             setHasHeader(value);
             reset();
           }}
-        >
-          {t("imports.format.header")}
-        </Checkbox>
-      </fieldset>
+        />
+      ) : null}
 
-      {picked && text === null ? (
+      {isCsv && picked && text === null ? (
         <Alert>
           {t("imports.sample.unreadable", {
             encoding:
@@ -351,11 +359,11 @@ function ImportForm({ accounts }: { accounts: Account[] }) {
           })}
         </Alert>
       ) : null}
-      {preview && preview.rows.length > 0 ? (
+      {isCsv && preview && preview.rows.length > 0 ? (
         <Sample preview={preview} hasHeader={hasHeader} />
       ) : null}
 
-      {preview && preview.columns > 0 ? (
+      {isCsv && preview && preview.columns > 0 ? (
         <fieldset className={cx(styles.fieldset)}>
           <legend className={cx(styles.legend)}>{t("imports.columns.title")}</legend>
           {columnSelect("date", t("imports.columns.date"))}
@@ -432,5 +440,83 @@ function Sample({ preview, hasHeader }: { preview: CsvPreview; hasHeader: boolea
         </tbody>
       </table>
     </div>
+  );
+}
+
+interface CsvFormatProps {
+  encoding: Encoding;
+  delimiter: Delimiter;
+  decimalMark: CsvLayout["decimal_mark"];
+  dateOrder: CsvLayout["date_order"];
+  hasHeader: boolean;
+  onEncoding: (value: Encoding) => void;
+  onDelimiter: (value: Delimiter) => void;
+  onDecimalMark: (value: CsvLayout["decimal_mark"]) => void;
+  onDateOrder: (value: CsvLayout["date_order"]) => void;
+  onHeader: (value: boolean) => void;
+}
+
+/** Cómo está escrito el CSV. El PDF de Macro no lo necesita: su formato es fijo. */
+function CsvFormat({
+  encoding,
+  delimiter,
+  decimalMark,
+  dateOrder,
+  hasHeader,
+  onEncoding,
+  onDelimiter,
+  onDecimalMark,
+  onDateOrder,
+  onHeader,
+}: CsvFormatProps) {
+  const { t } = useTranslation();
+  return (
+    <fieldset className={cx(styles.fieldset)}>
+      <legend className={cx(styles.legend)}>{t("imports.format.title")}</legend>
+      <SegmentedButton
+        label={t("imports.format.encoding")}
+        isLabelVisible
+        options={[
+          { id: "utf-8", label: t("imports.format.utf8") },
+          { id: "windows-1252", label: t("imports.format.windows1252") },
+        ]}
+        value={encoding}
+        onChange={onEncoding}
+      />
+      <SegmentedButton
+        label={t("imports.format.delimiter")}
+        isLabelVisible
+        options={[
+          { id: ";", label: t("imports.format.semicolon") },
+          { id: ",", label: t("imports.format.comma") },
+          { id: "\t", label: t("imports.format.tab") },
+        ]}
+        value={delimiter}
+        onChange={onDelimiter}
+      />
+      <SegmentedButton
+        label={t("imports.format.decimal")}
+        isLabelVisible
+        options={[
+          { id: "comma", label: t("imports.format.decimalComma") },
+          { id: "dot", label: t("imports.format.decimalDot") },
+        ]}
+        value={decimalMark}
+        onChange={onDecimalMark}
+      />
+      <SegmentedButton
+        label={t("imports.format.date")}
+        isLabelVisible
+        options={[
+          { id: "dmy", label: t("imports.format.dateDmy") },
+          { id: "iso", label: t("imports.format.dateIso") },
+        ]}
+        value={dateOrder}
+        onChange={onDateOrder}
+      />
+      <Checkbox isSelected={hasHeader} onChange={onHeader}>
+        {t("imports.format.header")}
+      </Checkbox>
+    </fieldset>
   );
 }

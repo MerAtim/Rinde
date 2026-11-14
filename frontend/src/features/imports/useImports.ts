@@ -4,9 +4,9 @@ import { useInvalidateMoney } from "../transactions/useTransactions";
 import {
   type Choice,
   confirmBatch,
-  type CsvLayout,
   discardBatch,
   fetchBatch,
+  type ImportSource,
   uploadBatch,
 } from "./api";
 
@@ -25,12 +25,12 @@ export function useUploadBatch() {
     mutationFn: ({
       accountId,
       file,
-      layout,
+      source,
     }: {
       accountId: string;
       file: File;
-      layout: CsvLayout;
-    }) => uploadBatch(accountId, file, layout),
+      source: ImportSource;
+    }) => uploadBatch(accountId, file, source),
     // La vista previa que devuelve es la misma que la pantalla va a pedir.
     onSuccess: (batch) => {
       queryClient.setQueryData(batchKey(batch.id), batch);

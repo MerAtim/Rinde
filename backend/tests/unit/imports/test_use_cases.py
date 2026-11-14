@@ -20,12 +20,14 @@ from rinde.imports.domain.csv_layout import (
 )
 from rinde.imports.domain.errors import (
     ImportBatchNotFoundError,
+    ImportCurrencyMismatchError,
     ImportFileTooLargeError,
     ImportLineNotFoundError,
     RulePatternInvalidError,
 )
 from rinde.imports.domain.rules import CategoryRule
 from rinde.imports.domain.statement import MAX_BYTES, LineError, LineProblem
+from rinde.imports.infrastructure.pdf import PdfPlumberText
 from rinde.shared.domain.money import Currency
 from tests.fakes import FakeClock, FakeTransaction
 from tests.unit.imports.fakes import (
@@ -34,6 +36,7 @@ from tests.unit.imports.fakes import (
     InMemoryBatchRepository,
     InMemoryRuleRepository,
 )
+from tests.unit.imports.macro_statement import MacroStatement, to_pdf
 
 pytestmark = pytest.mark.anyio
 
@@ -89,6 +92,7 @@ class Setup:
                 accounts=self.account,
                 registrar=self.account,
                 categories=FixedCategories(OWNER, OTHER_EXPENSES, OTHER_INCOMES, FOOD),
+                pdf=PdfPlumberText(),
             ),
             self.clock,
         )
@@ -126,6 +130,31 @@ async def test_uploading_reads_classifies_and_suggests(setup: Setup) -> None:
     assert setup.account.periods == [(date(2026, 11, 3), date(2026, 11, 6))]
     assert setup.db.commits == 1
     assert batch.expires_at == NOW + timedelta(hours=24)
+
+
+class TestResumenPdf:
+    async def test_the_macro_statement_is_read_with_its_own_reader(self, setup: Setup) -> None:
+        source = MacroStatement()
+
+        preview = await setup.unit.create.execute(
+            OWNER, ACCOUNT, "resumen.pdf", to_pdf(source.pages()), setup.unit.macro_pdf
+        )
+
+        assert [line.signed_amount for line in preview.batch.lines] == [
+            movement.amount for movement in source.movements
+        ]
+        assert preview.batch.errors == []
+
+    async def test_a_statement_in_another_currency_is_not_saved(self, setup: Setup) -> None:
+        content = to_pdf(MacroStatement(currency="DOLARES").pages())
+
+        with pytest.raises(ImportCurrencyMismatchError):
+            await setup.unit.create.execute(
+                OWNER, ACCOUNT, "resumen.pdf", content, setup.unit.macro_pdf
+            )
+
+        assert setup.batches.rows == {}
+        assert setup.db.commits == 0
 
 
 async def test_confirming_registers_the_chosen_lines(setup: Setup) -> None:

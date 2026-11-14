@@ -85,6 +85,7 @@ describe("ImportPage", () => {
     expect(await screen.findByText("Vista previa")).toBeInTheDocument();
     const form = sentForm(fetchMock);
     expect(form?.get("account_id")).toBe(ACCOUNT.id);
+    expect(form?.get("format")).toBe("csv");
     expect(JSON.parse(form?.get("layout") as string)).toEqual({
       delimiter: ";",
       encoding: "windows-1252",
@@ -166,5 +167,69 @@ describe("ImportPage", () => {
     await user.click(screen.getByRole("button", { name: "Ver la vista previa" }));
 
     expect(await screen.findByText(/No pudimos leer ninguna línea/)).toBeInTheDocument();
+  });
+  describe("resumen PDF de Macro", () => {
+    const PDF = new File(["%PDF-1.4"], "resumen.pdf", { type: "application/pdf" });
+
+    it("se sube sin formato: el del PDF es fijo", async () => {
+      const fetchMock = mockApi({
+        "GET /api/accounts": jsonResponse(200, [ACCOUNT]),
+        "POST /api/imports": jsonResponse(201, aBatch()),
+      });
+      const { container } = renderPage();
+      const user = userEvent.setup();
+
+      await screen.findByRole("button", { name: "Ver la vista previa" });
+      expect(screen.getByRole("group", { name: "Cómo está escrito" })).toBeInTheDocument();
+      await user.click(screen.getByRole("radio", { name: "Resumen PDF de Macro" }));
+
+      expect(screen.queryByRole("group", { name: "Cómo está escrito" })).not.toBeInTheDocument();
+      expect(screen.getByText(/lo controlamos con sus saldos y totales/)).toBeInTheDocument();
+      await user.upload(fileInput(container), PDF);
+      expect(screen.getByText("resumen.pdf")).toBeInTheDocument();
+      await expectNoA11yViolations(container);
+
+      await user.click(screen.getByRole("button", { name: "Ver la vista previa" }));
+
+      expect(await screen.findByText("Vista previa")).toBeInTheDocument();
+      const form = sentForm(fetchMock);
+      expect(form?.get("format")).toBe("macro_pdf");
+      expect(form?.has("layout")).toBe(false);
+      expect((form?.get("file") as File | null)?.name).toBe("resumen.pdf");
+    });
+
+    it("cambiar el tipo de archivo suelta el elegido", async () => {
+      mockApi({ "GET /api/accounts": jsonResponse(200, [ACCOUNT]) });
+      const { container } = renderPage();
+      const user = userEvent.setup();
+
+      await screen.findByRole("button", { name: "Ver la vista previa" });
+      await user.upload(
+        fileInput(container),
+        new File([EXCEL], "octubre.csv", { type: "text/csv" }),
+      );
+      await user.click(screen.getByRole("radio", { name: "Resumen PDF de Macro" }));
+
+      expect(screen.queryByText("octubre.csv")).not.toBeInTheDocument();
+      expect(fileInput(container).accept).toContain(".pdf");
+      await user.click(screen.getByRole("button", { name: "Ver la vista previa" }));
+      expect(await screen.findByText("Elegí un archivo.")).toBeInTheDocument();
+    });
+
+    it("un resumen que no cierra no importa nada y lo dice", async () => {
+      mockApi({
+        "GET /api/accounts": jsonResponse(200, [ACCOUNT]),
+        "POST /api/imports": jsonResponse(422, { code: "IMPORT_STATEMENT_UNBALANCED" }),
+      });
+      const { container } = renderPage();
+      const user = userEvent.setup();
+
+      await screen.findByRole("button", { name: "Ver la vista previa" });
+      await user.click(screen.getByRole("radio", { name: "Resumen PDF de Macro" }));
+      await user.upload(fileInput(container), PDF);
+      await user.click(screen.getByRole("button", { name: "Ver la vista previa" }));
+
+      expect(await screen.findByText(/no cierra con los saldos y totales/)).toBeInTheDocument();
+    });
   });
 });
