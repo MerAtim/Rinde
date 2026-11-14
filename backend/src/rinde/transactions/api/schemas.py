@@ -65,6 +65,14 @@ class EditTransactionRequest(BaseModel):
     description: str | None = Field(default=None, max_length=Description.MAX_LENGTH)
 
 
+class InstallmentRefResponse(BaseModel):
+    """De qué compra en cuotas es este gasto: "cuota 3 de 6" (ADR-0026)."""
+
+    plan_id: UUID
+    number: int
+    count: int
+
+
 class TransactionResponse(BaseModel):
     id: UUID
     account_id: UUID
@@ -77,9 +85,11 @@ class TransactionResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     deleted_at: datetime | None
+    installment: InstallmentRefResponse | None = Field(description="Solo en las cuotas")
 
     @classmethod
     def from_transaction(cls, transaction: Transaction) -> TransactionResponse:
+        installment = transaction.installment
         return cls(
             id=transaction.id,
             account_id=transaction.account_id,
@@ -92,6 +102,11 @@ class TransactionResponse(BaseModel):
             created_at=transaction.created_at,
             updated_at=transaction.updated_at,
             deleted_at=transaction.deleted_at,
+            installment=None
+            if installment is None
+            else InstallmentRefResponse(
+                plan_id=installment.plan_id, number=installment.number, count=installment.count
+            ),
         )
 
 

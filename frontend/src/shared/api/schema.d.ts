@@ -369,6 +369,69 @@ export interface paths {
     patch: operations["rename_category_api_categories__category_id__patch"];
     trace?: never;
   };
+  "/api/installments": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /** Listar mis compras en cuotas */
+    get: operations["list_plans_api_installments_get"];
+    put?: never;
+    /**
+     * Registrar una compra en cuotas
+     * @description Las cuotas que ya vencieron se vuelven movimientos en el mismo pedido.
+     */
+    post: operations["create_plan_api_installments_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/installments/due": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Generar las cuotas vencidas
+     * @description Lo pide la pantalla al abrirse: no hay tareas programadas (ADR-0026).
+     *
+     *     Repetirlo no duplica nada.
+     */
+    post: operations["generate_due_api_installments_due_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/installments/{plan_id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Cancelar una compra en cuotas
+     * @description Las cuotas ya generadas quedan; no se generan más.
+     */
+    post: operations["cancel_plan_api_installments__plan_id__cancel_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/rates": {
     parameters: {
       query?: never;
@@ -1046,6 +1109,14 @@ export interface components {
      * @enum {string}
      */
     FileFormat: "csv" | "macro_pdf";
+    /** GeneratedResponse */
+    GeneratedResponse: {
+      /**
+       * Created
+       * @description Cuántas cuotas vencidas se volvieron movimientos
+       */
+      created: number;
+    };
     /** HTTPValidationError */
     HTTPValidationError: {
       /** Detail */
@@ -1086,6 +1157,96 @@ export interface components {
        */
       type: "transfer";
       transfer: components["schemas"]["TransferResponse"];
+    };
+    /** InstallmentPlanRequest */
+    InstallmentPlanRequest: {
+      /**
+       * Account Id
+       * Format: uuid
+       */
+      account_id: string;
+      /**
+       * Category Id
+       * Format: uuid
+       */
+      category_id: string;
+      /**
+       * Total
+       * @description Lo que se paga en total, con interés o sin él
+       */
+      total: string;
+      /** Count */
+      count: number;
+      /**
+       * First On
+       * Format: date
+       * @description El día de la compra: el de la primera cuota
+       */
+      first_on: string;
+      /** Description */
+      description?: string | null;
+    };
+    /** InstallmentPlanResponse */
+    InstallmentPlanResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Account Id
+       * Format: uuid
+       */
+      account_id: string;
+      /**
+       * Category Id
+       * Format: uuid
+       */
+      category_id: string;
+      /** Total */
+      total: string;
+      currency: components["schemas"]["Currency"];
+      /** Count */
+      count: number;
+      /**
+       * First On
+       * Format: date
+       */
+      first_on: string;
+      /** Description */
+      description: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Cancelled At */
+      cancelled_at: string | null;
+      /**
+       * Pending
+       * @description Lo que falta pagar: cero si se canceló
+       */
+      pending: string;
+      /**
+       * Installments
+       * @description Todas, en orden
+       */
+      installments: components["schemas"]["ScheduledInstallmentResponse"][];
+    };
+    /**
+     * InstallmentRefResponse
+     * @description De qué compra en cuotas es este gasto: "cuota 3 de 6" (ADR-0026).
+     */
+    InstallmentRefResponse: {
+      /**
+       * Plan Id
+       * Format: uuid
+       */
+      plan_id: string;
+      /** Number */
+      number: number;
+      /** Count */
+      count: number;
     };
     /** LineErrorResponse */
     LineErrorResponse: {
@@ -1322,6 +1483,28 @@ export interface components {
       /** Name */
       name: string;
     };
+    /** ScheduledInstallmentResponse */
+    ScheduledInstallmentResponse: {
+      /** Number */
+      number: number;
+      /**
+       * Due On
+       * Format: date
+       */
+      due_on: string;
+      /** Amount */
+      amount: string;
+      /**
+       * Transaction Id
+       * @description El movimiento de la cuota, si ya se generó
+       */
+      transaction_id: string | null;
+      /**
+       * Deleted
+       * @description La cuota se generó y después se borró
+       */
+      deleted: boolean;
+    };
     /**
      * Threshold
      * @enum {string}
@@ -1380,6 +1563,8 @@ export interface components {
       updated_at: string;
       /** Deleted At */
       deleted_at: string | null;
+      /** @description Solo en las cuotas */
+      installment: components["schemas"]["InstallmentRefResponse"] | null;
     };
     /** TransferPageResponse */
     TransferPageResponse: {
@@ -3078,6 +3263,216 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  list_plans_api_installments_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["InstallmentPlanResponse"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  create_plan_api_installments_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "Idempotency-Key"?: string | null;
+        "x-requested-with"?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["InstallmentPlanRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["InstallmentPlanResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  generate_due_api_installments_due_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GeneratedResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  cancel_plan_api_installments__plan_id__cancel_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path: {
+        plan_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["InstallmentPlanResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };

@@ -10,6 +10,7 @@ from rinde.transactions.application.ports import (
     DatabaseTransaction,
     EventPublisher,
     IdempotencyStore,
+    InstallmentPlanRepository,
     TransactionRepository,
     TransferAuditLog,
     TransferRepository,
@@ -30,3 +31,4 @@ class TransactionsDependencies:
     transaction: DatabaseTransaction
     clock: Clock
     events: EventPublisher
+    installments: InstallmentPlanRepository

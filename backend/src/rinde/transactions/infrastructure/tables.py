@@ -13,6 +13,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
     Numeric,
+    SmallInteger,
     String,
     Table,
     Uuid,
@@ -58,6 +59,60 @@ categories = Table(
     ),
 )
 
+# Una compra en cuotas (ADR-0026). Cada cuota se vuelve un movimiento al llegar
+# su fecha, y la clave foránea de ese movimiento apunta a (id, dueño, cuenta,
+# cantidad): la base garantiza que la cuota es del mismo plan, de la misma
+# persona y de la misma cuenta, y que su número no pasa de la cantidad.
+installment_plans = Table(
+    "installment_plans",
+    metadata,
+    Column("id", Uuid, primary_key=True),
+    Column("owner_id", Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+    Column("account_id", Uuid, nullable=False),
+    Column("currency", String(3), nullable=False),
+    # Siempre un gasto: está para que la clave foránea exija una categoría de gastos.
+    Column("kind", String(8), nullable=False),
+    Column("category_id", Uuid, nullable=False),
+    Column("total", Numeric(20, 8), nullable=False),
+    Column("count", SmallInteger, nullable=False),
+    Column("first_on", Date, nullable=False),
+    Column("description", String(120), nullable=True),
+    Column("created_at", DateTime(timezone=True), nullable=False),
+    Column("cancelled_at", DateTime(timezone=True), nullable=True),
+    ForeignKeyConstraint(
+        ["account_id", "owner_id", "currency"],
+        ["accounts.id", "accounts.owner_id", "accounts.currency"],
+        name="account_of_the_same_owner_and_currency",
+    ),
+    ForeignKeyConstraint(
+        ["category_id", "owner_id", "kind"],
+        ["categories.id", "categories.owner_id", "categories.kind"],
+        name="category_of_the_same_owner_and_kind",
+    ),
+    CheckConstraint("kind = 'expense'", name="is_an_expense"),
+    CheckConstraint("count BETWEEN 2 AND 48", name="count_in_range"),
+    CheckConstraint("total > 0", name="total_positive"),
+    CheckConstraint("currency = 'BTC' OR total = round(total, 2)", name="total_fits_the_currency"),
+    # Cada cuota es de al menos la unidad mínima de su moneda.
+    CheckConstraint(
+        "total >= count * CASE WHEN currency = 'BTC' THEN 0.00000001 ELSE 0.01 END",
+        name="every_installment_has_a_minimum",
+    ),
+    CheckConstraint(
+        "cancelled_at IS NULL OR cancelled_at >= created_at", name="cancelled_after_created"
+    ),
+    Index(
+        "uq_installment_plans_id_owner_account_count",
+        "id",
+        "owner_id",
+        "account_id",
+        "count",
+        unique=True,
+    ),
+    Index("ix_installment_plans_owner_id_first_on", "owner_id", text("first_on DESC")),
+    Index("ix_installment_plans_category_id", "category_id"),
+)
+
 transactions = Table(
     "transactions",
     metadata,
@@ -81,10 +136,45 @@ transactions = Table(
     Column("deleted_at", DateTime(timezone=True), nullable=True),
     # Solo en los importados: SHA-256 de la línea del archivo, en hexadecimal (ADR-0023).
     Column("source_fingerprint", String(64), nullable=True),
+    # Solo en las cuotas: de qué plan, cuál y de cuántas (ADR-0026).
+    Column("installment_plan_id", Uuid, nullable=True),
+    Column("installment_number", SmallInteger, nullable=True),
+    Column("installment_count", SmallInteger, nullable=True),
     ForeignKeyConstraint(
         ["account_id", "owner_id", "currency"],
         ["accounts.id", "accounts.owner_id", "accounts.currency"],
         name="account_of_the_same_owner_and_currency",
+    ),
+    ForeignKeyConstraint(
+        ["installment_plan_id", "owner_id", "account_id", "installment_count"],
+        [
+            "installment_plans.id",
+            "installment_plans.owner_id",
+            "installment_plans.account_id",
+            "installment_plans.count",
+        ],
+        name="installment_of_the_same_plan_owner_and_account",
+    ),
+    CheckConstraint(
+        "(installment_plan_id IS NULL) = (installment_number IS NULL)"
+        " AND (installment_plan_id IS NULL) = (installment_count IS NULL)",
+        name="installment_complete",
+    ),
+    CheckConstraint(
+        "installment_number IS NULL OR installment_number BETWEEN 1 AND installment_count",
+        name="installment_number_in_range",
+    ),
+    CheckConstraint(
+        "installment_plan_id IS NULL OR kind = 'expense'", name="installment_is_an_expense"
+    ),
+    # Cada cuota se genera una sola vez, aunque después se borre: borrarla fue
+    # una decisión, y generar lo vencido no la deshace (ADR-0026).
+    Index(
+        "uq_transactions_installment_plan_id_number",
+        "installment_plan_id",
+        "installment_number",
+        unique=True,
+        postgresql_where=text("installment_plan_id IS NOT NULL"),
     ),
     ForeignKeyConstraint(
         ["category_id", "owner_id", "kind"],
@@ -164,7 +254,9 @@ idempotency_keys = Table(
     Column("resource", String(16), nullable=False),
     Column("resource_id", Uuid, nullable=False),
     Column("created_at", DateTime(timezone=True), nullable=False),
-    CheckConstraint("resource IN ('transaction', 'transfer')", name="resource_known"),
+    CheckConstraint(
+        "resource IN ('transaction', 'transfer', 'installment_plan')", name="resource_known"
+    ),
     Index("ix_idempotency_keys_created_at", "created_at"),
 )
 
