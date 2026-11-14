@@ -15,7 +15,10 @@ from rinde.dashboard.domain.report import (
     Converter,
     Flow,
     FlowKind,
+    IndexPoint,
+    PriceIndex,
 )
+from rinde.inflation.application.unit import InflationUnitFactory
 from rinde.preferences.application.unit import PreferencesUnitFactory
 from rinde.rates.application.unit import RatesUnitFactory
 from rinde.shared.domain.money import Currency
@@ -82,3 +85,17 @@ class RatesConverterFactory:
         async with self._factory() as unit:
             # `DayConverter` ya cumple el puerto del dashboard: no hace falta traducirlo.
             return await unit.converter.execute(target, rate_type, since, until)
+
+
+class InflationPriceIndexReader:
+    def __init__(self, factory: InflationUnitFactory) -> None:
+        self._factory = factory
+
+    async def index(self, since: date, until: date) -> PriceIndex:
+        async with self._factory() as unit:
+            table = await unit.cpi.execute(since, until)
+        base = table.base
+        return PriceIndex(
+            base=None if base is None else IndexPoint(base.month, base.index),
+            by_month={month: cpi.index for month, cpi in table.months.items()},
+        )

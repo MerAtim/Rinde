@@ -2898,7 +2898,7 @@
           "dashboard"
         ],
         "summary": "Ver mi dashboard",
-        "description": "Gasto por categoría, flujo de cada mes y patrimonio, en la moneda de referencia.\n\nLo que no se puede convertir no entra en los totales: sale en `unconverted`.",
+        "description": "Gasto por categoría, flujo de cada mes y patrimonio, en la moneda de referencia.\n\nLo que no se puede convertir no entra en los totales: sale en `unconverted`.\nCon `prices=constant`, además, el flujo de cada mes en pesos de hoy, ajustado\npor el IPC del INDEC; solo si la moneda de referencia es el peso.",
         "operationId": "get_dashboard_api_dashboard_get",
         "parameters": [
           {
@@ -2954,6 +2954,17 @@
               "title": "Account"
             },
             "description": "Cuentas a incluir; se repite el parámetro. Si falta, todas"
+          },
+          {
+            "name": "prices",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/Prices",
+              "description": "`constant` suma el flujo mensual en pesos del último mes con IPC (ADR-0025)",
+              "default": "nominal"
+            },
+            "description": "`constant` suma el flujo mensual en pesos del último mes con IPC (ADR-0025)"
           }
         ],
         "responses": {
@@ -4366,6 +4377,84 @@
         ],
         "title": "ConfirmResponse"
       },
+      "ConstantMonthFlowResponse": {
+        "properties": {
+          "month": {
+            "type": "string",
+            "title": "Month"
+          },
+          "income": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MoneyResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío si ese mes no tiene IPC publicado"
+          },
+          "expense": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MoneyResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "net": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MoneyResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "month",
+          "income",
+          "expense",
+          "net"
+        ],
+        "title": "ConstantMonthFlowResponse"
+      },
+      "ConstantPricesResponse": {
+        "properties": {
+          "base_month": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Base Month",
+            "description": "El último mes con IPC publicado. Vacío si no hay ninguno"
+          },
+          "monthly": {
+            "items": {
+              "$ref": "#/components/schemas/ConstantMonthFlowResponse"
+            },
+            "type": "array",
+            "title": "Monthly",
+            "description": "Un elemento por mes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "base_month",
+          "monthly"
+        ],
+        "title": "ConstantPricesResponse",
+        "description": "El flujo de cada mes en pesos del mes base. El gasto por categoría no se ajusta."
+      },
       "ConversionResponse": {
         "properties": {
           "original": {
@@ -4497,6 +4586,17 @@
             },
             "type": "array",
             "title": "Unconverted"
+          },
+          "constant": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConstantPricesResponse"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Solo con `prices=constant`"
           }
         },
         "type": "object",
@@ -4506,7 +4606,8 @@
           "spending",
           "monthly",
           "net_worth",
-          "unconverted"
+          "unconverted",
+          "constant"
         ],
         "title": "DashboardResponse"
       },
@@ -4929,6 +5030,14 @@
           "rate_type"
         ],
         "title": "PreferencesResponse"
+      },
+      "Prices": {
+        "type": "string",
+        "enum": [
+          "nominal",
+          "constant"
+        ],
+        "title": "Prices"
       },
       "QuoteResponse": {
         "properties": {

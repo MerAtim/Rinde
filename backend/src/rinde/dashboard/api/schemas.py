@@ -4,6 +4,7 @@ Los meses viajan como `AAAA-MM` y el dinero como string decimal (ADR-0002).
 """
 
 from datetime import date
+from enum import StrEnum
 from typing import Annotated
 from uuid import UUID
 
@@ -12,7 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, PlainSerializer
 from rinde.dashboard.application.use_cases import Dashboard
 from rinde.dashboard.domain.report import CategoryRef
 from rinde.shared.api.schemas import MoneyResponse
-from rinde.shared.domain.money import Currency
+from rinde.shared.domain.money import Currency, Money
 from rinde.shared.domain.rate_type import RateType
 
 MONTH_PATTERN = r"^\d{4}-(0[1-9]|1[0-2])$"
@@ -28,6 +29,11 @@ def parse_month(raw: str | None) -> date | None:
         return None
     year, month = raw.split("-")
     return date(int(year), int(month), 1)
+
+
+class Prices(StrEnum):
+    NOMINAL = "nominal"
+    CONSTANT = "constant"
 
 
 class DashboardQuery(BaseModel):
@@ -49,6 +55,10 @@ class DashboardQuery(BaseModel):
         default_factory=list,
         max_length=MAX_ACCOUNTS,
         description="Cuentas a incluir; se repite el parámetro. Si falta, todas",
+    )
+    prices: Prices = Field(
+        default=Prices.NOMINAL,
+        description="`constant` suma el flujo mensual en pesos del último mes con IPC (ADR-0025)",
     )
 
 
@@ -86,6 +96,22 @@ class MonthFlowResponse(BaseModel):
     net: MoneyResponse
 
 
+class ConstantMonthFlowResponse(BaseModel):
+    month: MonthOut
+    income: MoneyResponse | None = Field(description="Vacío si ese mes no tiene IPC publicado")
+    expense: MoneyResponse | None
+    net: MoneyResponse | None
+
+
+class ConstantPricesResponse(BaseModel):
+    """El flujo de cada mes en pesos del mes base. El gasto por categoría no se ajusta."""
+
+    base_month: MonthOut | None = Field(
+        description="El último mes con IPC publicado. Vacío si no hay ninguno"
+    )
+    monthly: list[ConstantMonthFlowResponse] = Field(description="Un elemento por mes")
+
+
 class NetWorthPointResponse(BaseModel):
     month: MonthOut
     on: date = Field(description="Día del cierre: fin de mes, u hoy en el mes en curso")
@@ -112,6 +138,7 @@ class DashboardResponse(BaseModel):
         description="Un cierre por mes; el último es el patrimonio de hoy"
     )
     unconverted: list[UnconvertedResponse]
+    constant: ConstantPricesResponse | None = Field(description="Solo con `prices=constant`")
 
     @classmethod
     def from_dashboard(cls, dashboard: Dashboard) -> DashboardResponse:
@@ -156,4 +183,22 @@ class DashboardResponse(BaseModel):
                 )
                 for item in report.unconverted
             ],
+            constant=None
+            if report.constant is None
+            else ConstantPricesResponse(
+                base_month=report.constant.base_month,
+                monthly=[
+                    ConstantMonthFlowResponse(
+                        month=item.month,
+                        income=_money(item.income),
+                        expense=_money(item.expense),
+                        net=_money(item.net),
+                    )
+                    for item in report.constant.monthly
+                ],
+            ),
         )
+
+
+def _money(money: Money | None) -> MoneyResponse | None:
+    return None if money is None else MoneyResponse.from_money(money)

@@ -61,6 +61,7 @@ from rinde.dashboard.api.router import router as dashboard_router
 from rinde.dashboard.application.ports import Clock
 from rinde.dashboard.application.use_cases import DashboardDependencies, GetDashboard
 from rinde.dashboard.infrastructure.gateways import (
+    InflationPriceIndexReader,
     PreferencesReferenceReader,
     RatesConverterFactory,
     TransactionsLedgerReader,
@@ -82,6 +83,11 @@ from rinde.imports.infrastructure.gateways import (
     TransactionsCategoryReader as ImportsCategoryReader,
 )
 from rinde.imports.infrastructure.pdf import PdfPlumberText
+from rinde.inflation.application.unit import InflationUnitFactory
+from rinde.inflation.infrastructure.factory import (
+    SqlAlchemyInflationUnitFactory,
+    build_cpi_provider,
+)
 from rinde.preferences.api.errors import preferences_error_handler
 from rinde.preferences.api.router import router as preferences_router
 from rinde.preferences.application.unit import PreferencesUnitFactory
@@ -134,6 +140,7 @@ def create_app(  # noqa: PLR0913
     budgets_factory: BudgetsUnitFactory | None = None,
     alerts_factory: AlertsUnitFactory | None = None,
     imports_factory: ImportsUnitFactory | None = None,
+    inflation_factory: InflationUnitFactory | None = None,
     dashboard_clock: Clock | None = None,
     event_bus: InProcessEventBus | None = None,
 ) -> FastAPI:
@@ -193,6 +200,10 @@ def create_app(  # noqa: PLR0913
         async_sessionmaker(shared_engine(), expire_on_commit=False), SystemClock()
     )
 
+    inflation_factory = inflation_factory or _sql_inflation(
+        async_sessionmaker(shared_engine(), expire_on_commit=False), shared_http_client(), config
+    )
+
     # El dashboard no tiene infraestructura propia: lee a los otros módulos por
     # su capa de aplicación, con las mismas fábricas que usan sus endpoints.
     dashboard = GetDashboard(
@@ -200,6 +211,7 @@ def create_app(  # noqa: PLR0913
             ledger=TransactionsLedgerReader(transactions_factory),
             references=PreferencesReferenceReader(preferences_factory),
             converters=RatesConverterFactory(rates_factory),
+            prices=InflationPriceIndexReader(inflation_factory),
             clock=dashboard_clock or SystemClock(),
         )
     )
@@ -276,6 +288,15 @@ def _sql_rates(
         ),
         build_history_provider(client, clock, argentinadatos_url=config.argentinadatos_url),
         clock,
+    )
+
+
+def _sql_inflation(
+    sessionmaker: async_sessionmaker[AsyncSession], client: httpx.AsyncClient, config: Settings
+) -> InflationUnitFactory:
+    clock = SystemClock()
+    return SqlAlchemyInflationUnitFactory(
+        sessionmaker, build_cpi_provider(client, clock, base_url=config.datos_gob_ar_url), clock
     )
 
 

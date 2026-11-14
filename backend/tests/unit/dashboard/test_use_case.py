@@ -6,7 +6,10 @@ from uuid import uuid4
 import pytest
 
 from rinde.dashboard.application.use_cases import DashboardDependencies, GetDashboard
-from rinde.dashboard.domain.errors import DashboardPeriodInvalidError
+from rinde.dashboard.domain.errors import (
+    DashboardConstantPricesArsOnlyError,
+    DashboardPeriodInvalidError,
+)
 from rinde.dashboard.domain.report import BalanceChange, Flow
 from rinde.shared.domain.money import Currency
 from rinde.shared.domain.rate_type import RateType
@@ -14,10 +17,12 @@ from tests.fakes import FakeClock
 from tests.unit.dashboard.fakes import (
     FakeConverters,
     FakeLedger,
+    FakePrices,
     FixedReferences,
     TableConverter,
     ars,
     expense,
+    price_index,
     usd,
 )
 
@@ -32,6 +37,7 @@ def _dashboard(
     *,
     currency: Currency = Currency.ARS,
     rate_type: RateType = RateType.MEP,
+    prices: FakePrices | None = None,
 ) -> tuple[GetDashboard, FakeLedger, FakeConverters]:
     clock = FakeClock()
     # 23 del 30 de noviembre en Buenos Aires: en UTC ya es diciembre.
@@ -42,6 +48,7 @@ def _dashboard(
         ledger=ledger,
         references=FixedReferences(currency, rate_type),
         converters=converters,
+        prices=prices or FakePrices(),
         clock=clock,
     )
     return GetDashboard(deps), ledger, converters
@@ -104,3 +111,35 @@ async def test_a_period_in_the_future_is_rejected_before_reading_anything() -> N
         await dashboard.execute(OWNER, last=date(2026, 12, 1))
 
     assert ledger.calls == []
+
+
+async def test_constant_prices_bring_the_cpi_of_the_whole_period() -> None:
+    prices = FakePrices(price_index((date(2026, 10, 1), "110"), m2026_10="110"))
+    dashboard, _, _ = _dashboard([expense(date(2026, 10, 2), ars("100.00"))], prices=prices)
+
+    result = await dashboard.execute(OWNER, first=date(2026, 10, 1), constant_prices=True)
+
+    assert prices.calls == [(date(2026, 10, 1), date(2026, 11, 30))]
+    assert result.report.constant is not None
+    assert result.report.constant.base_month == date(2026, 10, 1)
+
+
+async def test_without_asking_for_constant_prices_the_cpi_is_not_read() -> None:
+    prices = FakePrices()
+    dashboard, _, _ = _dashboard([], prices=prices)
+
+    result = await dashboard.execute(OWNER)
+
+    assert prices.calls == []
+    assert result.report.constant is None
+
+
+async def test_constant_prices_in_dollars_are_rejected_before_reading_anything() -> None:
+    prices = FakePrices()
+    dashboard, ledger, _ = _dashboard([], currency=Currency.USD, prices=prices)
+
+    with pytest.raises(DashboardConstantPricesArsOnlyError):
+        await dashboard.execute(OWNER, constant_prices=True)
+
+    assert ledger.calls == []
+    assert prices.calls == []

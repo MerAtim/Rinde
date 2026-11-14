@@ -45,6 +45,29 @@ export function aDashboard(overrides: Partial<Dashboard> = {}): Dashboard {
         balance: { amount: "0.01250000", currency: "BTC" },
       },
     ],
+    constant: null,
     ...overrides,
+  };
+}
+
+/** Los mismos meses en pesos de octubre: noviembre todavía no tiene IPC. */
+export function constantPrices(): NonNullable<Dashboard["constant"]> {
+  return {
+    base_month: "2026-10",
+    monthly: [
+      {
+        month: "2026-09",
+        income: ars("918000.00"),
+        expense: ars("632400.00"),
+        net: ars("285600.00"),
+      },
+      {
+        month: "2026-10",
+        income: ars("900000.00"),
+        expense: ars("950000.00"),
+        net: ars("-50000.00"),
+      },
+      { month: "2026-11", income: null, expense: null, net: null },
+    ],
   };
 }

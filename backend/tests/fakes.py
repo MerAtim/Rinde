@@ -36,6 +36,8 @@ from rinde.imports.infrastructure.gateways import (
     TransactionsCategoryReader as ImportsCategoryReader,
 )
 from rinde.imports.infrastructure.pdf import PdfPlumberText
+from rinde.inflation.application.unit import InflationUnit, build_inflation_unit
+from rinde.inflation.application.use_cases import InflationDependencies
 from rinde.preferences.application.unit import PreferencesUnit, build_preferences_unit
 from rinde.preferences.application.use_cases import PreferencesDependencies
 from rinde.preferences.domain.preferences import Preferences
@@ -48,6 +50,7 @@ from rinde.transactions.infrastructure.accounts_gateway import AccountsApplicati
 from tests.unit.alerts.fakes import InMemoryAlertRepository
 from tests.unit.budgets.fakes import InMemoryBudgetRepository
 from tests.unit.imports.fakes import InMemoryBatchRepository, InMemoryRuleRepository
+from tests.unit.inflation.fakes import FakeCpiProvider, InMemoryCpi
 from tests.unit.rates.fakes import FakeHistoryProvider, FakeRateProvider, InMemoryQuotes
 from tests.unit.transactions.fakes import (
     FakeAuditLog,
@@ -460,4 +463,27 @@ class InMemoryImportsUnitFactory:
     async def __call__(self) -> AsyncIterator[ImportsUnit]:
         yield build_imports_unit(
             self.batches, self.rules, self.transaction, self.gateways, self.clock
+        )
+
+
+class InMemoryInflationUnitFactory:
+    """IPC con fuente y base en memoria, compartidas entre pedidos."""
+
+    def __init__(self, provider: FakeCpiProvider | None = None) -> None:
+        self.provider = provider or FakeCpiProvider()
+        self.months = InMemoryCpi()
+        self.transaction = FakeTransaction()
+        self.clock = FakeClock()
+        # Las 12 de Buenos Aires del 10 de noviembre de 2026, como cotizaciones.
+        self.clock.current = datetime(2026, 11, 10, 15, tzinfo=UTC)
+
+    @asynccontextmanager
+    async def __call__(self) -> AsyncIterator[InflationUnit]:
+        yield build_inflation_unit(
+            InflationDependencies(
+                months=self.months,
+                provider=self.provider,
+                transaction=self.transaction,
+                clock=self.clock,
+            )
         )
