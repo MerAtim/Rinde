@@ -1,25 +1,17 @@
-"""Pedidos a las fuentes de cotizaciones: tiempo máximo, reintento con espera y validación.
+"""Pedidos a las fuentes de cotizaciones, con la política común a toda fuente pública.
 
-Todo lo que responde una fuente se trata como un dato que no es de fiar: puede
-llegar tarde, vacío, enorme o con otra forma. Ninguno de esos casos llega al
-dominio; acá se convierten en `RateSourceUnavailableError`.
+La política (tiempo máximo, reintento con espera, tope de tamaño) vive en el
+kernel compartido. Acá solo se traduce su error al del puerto de cotizaciones,
+que es el que atrapa la cadena de fuentes para pasar a la siguiente.
 """
-
-import asyncio
-import json
-from decimal import Decimal
 
 import httpx
 
 from rinde.rates.application.ports import RateSourceUnavailableError
+from rinde.shared.infrastructure import http
+from rinde.shared.infrastructure.http import MAX_RESPONSE_BYTES
 
-# Errores de un servidor que puede responder bien al rato. Un 429 no se
-# reintenta: si la fuente pide que se baje el ritmo, se pasa a la siguiente.
-_RETRYABLE_STATUS = frozenset({502, 503, 504})
-# Las respuestas reales pesan unos pocos KB. Algo mucho más grande no es una cotización.
-MAX_RESPONSE_BYTES = 256 * 1024
-# Un reintento: una fuente caída no hace esperar de más, y la cadena sigue con la próxima.
-ATTEMPTS = 2
+__all__ = ["MAX_RESPONSE_BYTES", "get_json"]
 
 
 async def get_json(
@@ -30,28 +22,14 @@ async def get_json(
     backoff_seconds: float = 0.25,
     max_bytes: int = MAX_RESPONSE_BYTES,
 ) -> object | None:
-    """El JSON de la respuesta, con los números como `Decimal`. `None` si es un 404.
-
-    Con `float` 1587.9 ya no es exacto antes de llegar al dominio.
-    """
-    for attempt in range(ATTEMPTS):
-        if attempt:
-            await asyncio.sleep(backoff_seconds * 2 ** (attempt - 1))
-        try:
-            response = await client.get(url, timeout=timeout_seconds)
-        except httpx.TransportError:
-            continue
-        if response.status_code == httpx.codes.NOT_FOUND:
-            return None
-        if response.status_code in _RETRYABLE_STATUS:
-            continue
-        if not response.is_success:
-            break
-        if len(response.content) > max_bytes:
-            break
-        try:
-            body: object = json.loads(response.content, parse_float=Decimal, parse_int=Decimal)
-        except ValueError:
-            break
-        return body
-    raise RateSourceUnavailableError(url)
+    """El JSON de la respuesta, con los números como `Decimal`. `None` si es un 404."""
+    try:
+        return await http.get_json(
+            client,
+            url,
+            timeout_seconds=timeout_seconds,
+            backoff_seconds=backoff_seconds,
+            max_bytes=max_bytes,
+        )
+    except http.SourceUnavailableError:
+        raise RateSourceUnavailableError(url) from None
