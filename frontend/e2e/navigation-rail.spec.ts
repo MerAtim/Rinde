@@ -151,7 +151,10 @@ for (const idioma of IDIOMAS) {
         await page.setViewportSize({ width: ancho, height: 900 });
         await mockSession(page);
         await page.goto("/alerts");
-        await expect(page.getByRole("link", { name: /\d+/ })).toBeVisible();
+        // La campana con su badge. En la barra: la lista de alertas también tiene
+        // enlaces con números ("presupuestos de noviembre 2026") y, si carga
+        // antes, el localizador encontraría varios.
+        await expect(page.getByRole("banner").getByRole("link", { name: /\d+/ })).toBeVisible();
         await page.evaluate(() => document.fonts.ready);
 
         const problemas = await page.evaluate((tolerancia) => {
