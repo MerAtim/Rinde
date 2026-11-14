@@ -149,3 +149,21 @@ class InstallmentKindFixedError(TransactionError):
     """Una cuota es siempre un gasto: pasarla a ingreso la separaría de su plan."""
 
     code = "INSTALLMENT_KIND_FIXED"
+
+
+class RecurringRuleNotFoundError(TransactionError):
+    """También para una regla ajena: no se confirma que exista (ADR-0009)."""
+
+    code = "RECURRING_RULE_NOT_FOUND"
+
+
+class RecurringStartOutOfRangeError(TransactionError):
+    """La primera vez es como mucho un año antes o un año después de hoy (ADR-0027)."""
+
+    code = "RECURRING_START_OUT_OF_RANGE"
+
+
+class RecurringRuleCancelledError(TransactionError):
+    """Una regla cancelada no se cambia: se crea otra."""
+
+    code = "RECURRING_RULE_CANCELLED"

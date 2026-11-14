@@ -110,6 +110,7 @@ from rinde.shared.infrastructure.clock import SystemClock
 from rinde.shared.infrastructure.events import InProcessEventBus
 from rinde.transactions.api.errors import transactions_error_handler
 from rinde.transactions.api.installments import router as installments_router
+from rinde.transactions.api.recurring import router as recurring_router
 from rinde.transactions.api.router import router as transactions_router
 from rinde.transactions.application.events import ExpenseRecorded
 from rinde.transactions.application.unit import TransactionsUnitFactory
@@ -394,6 +395,7 @@ def _register_modules(app: FastAPI) -> None:
         accounts_router,
         transactions_router,
         installments_router,
+        recurring_router,
         rates_router,
         preferences_router,
         dashboard_router,

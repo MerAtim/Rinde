@@ -18,6 +18,13 @@ from rinde.transactions.application.installments import (
     GenerateDueInstallments,
     ListInstallmentPlans,
 )
+from rinde.transactions.application.recurring import (
+    CancelRecurringRule,
+    ChangeRecurringRule,
+    CreateRecurringRule,
+    GenerateDueRecurring,
+    ListRecurringRules,
+)
 from rinde.transactions.application.summary import SummarizeLedger
 from rinde.transactions.application.use_cases import (
     DeleteTransaction,
@@ -64,6 +71,11 @@ class TransactionsUnit:
     list_plans: ListInstallmentPlans
     cancel_plan: CancelInstallmentPlan
     generate_due: GenerateDueInstallments
+    create_rule: CreateRecurringRule
+    list_rules: ListRecurringRules
+    change_rule: ChangeRecurringRule
+    cancel_rule: CancelRecurringRule
+    generate_due_recurring: GenerateDueRecurring
 
 
 class TransactionsUnitFactory(Protocol):
@@ -99,4 +111,9 @@ def build_transactions_unit(deps: TransactionsDependencies) -> TransactionsUnit:
         list_plans=ListInstallmentPlans(deps),
         cancel_plan=CancelInstallmentPlan(deps),
         generate_due=GenerateDueInstallments(deps),
+        create_rule=CreateRecurringRule(deps),
+        list_rules=ListRecurringRules(deps),
+        change_rule=ChangeRecurringRule(deps),
+        cancel_rule=CancelRecurringRule(deps),
+        generate_due_recurring=GenerateDueRecurring(deps),
     )

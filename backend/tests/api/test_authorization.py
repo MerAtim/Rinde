@@ -150,6 +150,24 @@ def _create_plan(client: TestClient) -> str:
     return identifier
 
 
+def _create_rule(client: TestClient) -> str:
+    response = client.post(
+        "/api/recurring",
+        json={
+            "account_id": _open_account(client),
+            "kind": "expense",
+            "amount": "450000.00",
+            "category_id": _create_category(client),
+            "frequency": "monthly",
+            "starts_on": "2026-09-11",
+        },
+        headers=CSRF,
+    )
+    assert response.status_code == status.HTTP_201_CREATED, response.text
+    identifier: str = response.json()["id"]
+    return identifier
+
+
 # Cómo crear, con la sesión activa, un recurso para cada parámetro de camino.
 OWNED_RESOURCES: dict[str, Callable[[TestClient], str]] = {
     "account_id": _open_account,
@@ -158,6 +176,7 @@ OWNED_RESOURCES: dict[str, Callable[[TestClient], str]] = {
     "transfer_id": _register_transfer,
     "batch_id": _upload_batch,
     "plan_id": _create_plan,
+    "rule_id": _create_rule,
 }
 
 # Parámetros de camino que no nombran algo de una persona: las cotizaciones son
@@ -180,6 +199,7 @@ VALID_BODIES: dict[tuple[str, str], dict[str, Any]] = {
     },
     ("PUT", "/api/budgets/{category_id}"): {"amount": "1.00", "currency": "ARS"},
     ("POST", "/api/imports/{batch_id}/confirm"): {"lines": []},
+    ("PATCH", "/api/recurring/{rule_id}"): {"amount": "9999.00"},
     ("PATCH", "/api/transfers/{transfer_id}"): {
         "from_account_id": str(uuid4()),
         "to_account_id": str(uuid4()),
