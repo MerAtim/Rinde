@@ -1,5 +1,6 @@
 """El calendario de Rinde: el día que cuenta es el de Argentina."""
 
+from calendar import monthrange
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
@@ -17,3 +18,14 @@ def argentine_day(moment: datetime) -> date:
         msg = "el momento tiene que tener zona horaria"
         raise ValueError(msg)
     return moment.astimezone(ARGENTINA).date()
+
+
+def add_months(day: date, months: int) -> date:
+    """El mismo día, `months` meses después. Si el mes no tiene ese día, el último.
+
+    Se calcula siempre desde el día original: sumar de a un mes a partir del
+    resultado anterior convertiría un 31 en 30 para siempre después de abril.
+    """
+    index = day.year * 12 + day.month - 1 + months
+    year, month = index // 12, index % 12 + 1
+    return date(year, month, min(day.day, monthrange(year, month)[1]))
