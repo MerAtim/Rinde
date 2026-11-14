@@ -13,6 +13,7 @@ from rinde.transactions.infrastructure.repositories import (
     SqlAlchemyCategoryRepository,
     SqlAlchemyIdempotencyStore,
     SqlAlchemyInstallmentPlanRepository,
+    SqlAlchemyRecurringRuleRepository,
     SqlAlchemyTransactionRepository,
     SqlAlchemyTransferAuditLog,
     SqlAlchemyTransferRepository,
@@ -60,5 +61,6 @@ class SqlAlchemyTransactionsUnitFactory:
                     clock=self._clock,
                     events=self._events,
                     installments=SqlAlchemyInstallmentPlanRepository(session),
+                    recurring=SqlAlchemyRecurringRuleRepository(session),
                 )
             )

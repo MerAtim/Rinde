@@ -117,5 +117,7 @@ class DeleteCategory:
             raise CategoryInUseError
         if await deps.installments.count_by_category(category.id, owner_id) > 0:
             raise CategoryInUseError
+        if await deps.recurring.count_by_category(category.id, owner_id) > 0:
+            raise CategoryInUseError
         await deps.categories.delete(category.id, owner_id)
         await deps.transaction.commit()

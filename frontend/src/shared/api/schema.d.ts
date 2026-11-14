@@ -432,6 +432,90 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/recurring": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Listar mis movimientos recurrentes
+     * @description Primero las activas; después las canceladas.
+     */
+    get: operations["list_rules_api_recurring_get"];
+    put?: never;
+    /**
+     * Registrar un movimiento recurrente
+     * @description Lo que ya venció se vuelve movimiento en el mismo pedido.
+     */
+    post: operations["create_rule_api_recurring_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/recurring/due": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Generar los movimientos recurrentes vencidos
+     * @description Lo pide la app al abrirse, como las cuotas (ADR-0027). Repetirlo no duplica nada.
+     */
+    post: operations["generate_due_api_recurring_due_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/recurring/{rule_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Cambiar el monto de un movimiento recurrente
+     * @description Antes de cambiarlo se genera lo vencido con el monto anterior.
+     */
+    patch: operations["change_rule_api_recurring__rule_id__patch"];
+    trace?: never;
+  };
+  "/api/recurring/{rule_id}/cancel": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Cancelar un movimiento recurrente
+     * @description Lo ya generado queda; no se genera más.
+     */
+    post: operations["cancel_rule_api_recurring__rule_id__cancel_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/rates": {
     parameters: {
       query?: never;
@@ -1109,11 +1193,16 @@ export interface components {
      * @enum {string}
      */
     FileFormat: "csv" | "macro_pdf";
+    /**
+     * Frequency
+     * @enum {string}
+     */
+    Frequency: "weekly" | "monthly" | "yearly";
     /** GeneratedResponse */
     GeneratedResponse: {
       /**
        * Created
-       * @description Cuántas cuotas vencidas se volvieron movimientos
+       * @description Cuántos movimientos vencidos se generaron
        */
       created: number;
     };
@@ -1435,6 +1524,104 @@ export interface components {
       /** Recovery Code */
       recovery_code: string;
     };
+    /**
+     * RecurrenceRefResponse
+     * @description De qué movimiento recurrente salió y qué vez es (ADR-0027).
+     */
+    RecurrenceRefResponse: {
+      /**
+       * Rule Id
+       * Format: uuid
+       */
+      rule_id: string;
+      /** Number */
+      number: number;
+    };
+    /** RecurringRuleChangeRequest */
+    RecurringRuleChangeRequest: {
+      /**
+       * Amount
+       * @description Vale desde la próxima vez
+       */
+      amount: string;
+      /** Description */
+      description?: string | null;
+    };
+    /** RecurringRuleRequest */
+    RecurringRuleRequest: {
+      /**
+       * Account Id
+       * Format: uuid
+       */
+      account_id: string;
+      kind: components["schemas"]["TransactionKind"];
+      /**
+       * Amount
+       * @description Monto positivo como string decimal, por ejemplo "15300.50"
+       */
+      amount: string;
+      /**
+       * Category Id
+       * Format: uuid
+       */
+      category_id: string;
+      frequency: components["schemas"]["Frequency"];
+      /**
+       * Starts On
+       * Format: date
+       * @description La primera vez: como mucho un año antes o un año después de hoy
+       */
+      starts_on: string;
+      /** Description */
+      description?: string | null;
+    };
+    /** RecurringRuleResponse */
+    RecurringRuleResponse: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Account Id
+       * Format: uuid
+       */
+      account_id: string;
+      kind: components["schemas"]["TransactionKind"];
+      /** Amount */
+      amount: string;
+      currency: components["schemas"]["Currency"];
+      /**
+       * Category Id
+       * Format: uuid
+       */
+      category_id: string;
+      frequency: components["schemas"]["Frequency"];
+      /**
+       * Starts On
+       * Format: date
+       */
+      starts_on: string;
+      /** Description */
+      description: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Cancelled At */
+      cancelled_at: string | null;
+      /**
+       * Generated
+       * @description Cuántas veces ya se volvió movimiento, borradas incluidas
+       */
+      generated: number;
+      /**
+       * Next On
+       * @description La próxima vez que se genera; nada si se canceló
+       */
+      next_on: string | null;
+    };
     /** ReferenceResponse */
     ReferenceResponse: {
       currency: components["schemas"]["Currency"];
@@ -1565,6 +1752,8 @@ export interface components {
       deleted_at: string | null;
       /** @description Solo en las cuotas */
       installment: components["schemas"]["InstallmentRefResponse"] | null;
+      /** @description Solo en los generados por un movimiento recurrente */
+      recurrence: components["schemas"]["RecurrenceRefResponse"] | null;
     };
     /** TransferPageResponse */
     TransferPageResponse: {
@@ -3437,6 +3626,289 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["InstallmentPlanResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_rules_api_recurring_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecurringRuleResponse"][];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  create_rule_api_recurring_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "Idempotency-Key"?: string | null;
+        "x-requested-with"?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RecurringRuleRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecurringRuleResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  generate_due_api_recurring_due_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["GeneratedResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  change_rule_api_recurring__rule_id__patch: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path: {
+        rule_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RecurringRuleChangeRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecurringRuleResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Not Found */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  cancel_rule_api_recurring__rule_id__cancel_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path: {
+        rule_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecurringRuleResponse"];
         };
       };
       /** @description Unauthorized */

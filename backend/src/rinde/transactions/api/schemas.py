@@ -73,6 +73,13 @@ class InstallmentRefResponse(BaseModel):
     count: int
 
 
+class RecurrenceRefResponse(BaseModel):
+    """De qué movimiento recurrente salió y qué vez es (ADR-0027)."""
+
+    rule_id: UUID
+    number: int
+
+
 class TransactionResponse(BaseModel):
     id: UUID
     account_id: UUID
@@ -86,10 +93,14 @@ class TransactionResponse(BaseModel):
     updated_at: datetime
     deleted_at: datetime | None
     installment: InstallmentRefResponse | None = Field(description="Solo en las cuotas")
+    recurrence: RecurrenceRefResponse | None = Field(
+        description="Solo en los generados por un movimiento recurrente"
+    )
 
     @classmethod
     def from_transaction(cls, transaction: Transaction) -> TransactionResponse:
         installment = transaction.installment
+        recurrence = transaction.recurrence
         return cls(
             id=transaction.id,
             account_id=transaction.account_id,
@@ -107,6 +118,9 @@ class TransactionResponse(BaseModel):
             else InstallmentRefResponse(
                 plan_id=installment.plan_id, number=installment.number, count=installment.count
             ),
+            recurrence=None
+            if recurrence is None
+            else RecurrenceRefResponse(rule_id=recurrence.rule_id, number=recurrence.number),
         )
 
 

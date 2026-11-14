@@ -12,6 +12,7 @@ from sqlalchemy import (
     ForeignKey,
     ForeignKeyConstraint,
     Index,
+    Integer,
     Numeric,
     SmallInteger,
     String,
@@ -113,6 +114,46 @@ installment_plans = Table(
     Index("ix_installment_plans_category_id", "category_id"),
 )
 
+recurring_rules = Table(
+    "recurring_rules",
+    metadata,
+    Column("id", Uuid, primary_key=True),
+    Column("owner_id", Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False),
+    Column("account_id", Uuid, nullable=False),
+    Column("currency", String(3), nullable=False),
+    Column("kind", String(8), nullable=False),
+    Column("category_id", Uuid, nullable=False),
+    Column("amount", Numeric(20, 8), nullable=False),
+    Column("frequency", String(8), nullable=False),
+    Column("starts_on", Date, nullable=False),
+    Column("description", String(120), nullable=True),
+    Column("created_at", DateTime(timezone=True), nullable=False),
+    Column("cancelled_at", DateTime(timezone=True), nullable=True),
+    ForeignKeyConstraint(
+        ["account_id", "owner_id", "currency"],
+        ["accounts.id", "accounts.owner_id", "accounts.currency"],
+        name="account_of_the_same_owner_and_currency",
+    ),
+    ForeignKeyConstraint(
+        ["category_id", "owner_id", "kind"],
+        ["categories.id", "categories.owner_id", "categories.kind"],
+        name="category_of_the_same_owner_and_kind",
+    ),
+    CheckConstraint(f"kind IN {_KINDS}", name="kind_known"),
+    CheckConstraint("frequency IN ('weekly', 'monthly', 'yearly')", name="frequency_known"),
+    CheckConstraint("amount > 0", name="amount_positive"),
+    CheckConstraint(
+        "currency = 'BTC' OR amount = round(amount, 2)", name="amount_fits_the_currency"
+    ),
+    CheckConstraint(
+        "cancelled_at IS NULL OR cancelled_at >= created_at", name="cancelled_after_created"
+    ),
+    # Para la clave foránea de los movimientos: cada vez es de la cuenta de su regla.
+    Index("uq_recurring_rules_id_owner_account", "id", "owner_id", "account_id", unique=True),
+    Index("ix_recurring_rules_owner_id_starts_on", "owner_id", text("starts_on DESC")),
+    Index("ix_recurring_rules_category_id", "category_id"),
+)
+
 transactions = Table(
     "transactions",
     metadata,
@@ -140,6 +181,9 @@ transactions = Table(
     Column("installment_plan_id", Uuid, nullable=True),
     Column("installment_number", SmallInteger, nullable=True),
     Column("installment_count", SmallInteger, nullable=True),
+    # Solo en los generados por una regla: de cuál y qué vez (ADR-0027).
+    Column("recurring_rule_id", Uuid, nullable=True),
+    Column("recurrence_number", Integer, nullable=True),
     ForeignKeyConstraint(
         ["account_id", "owner_id", "currency"],
         ["accounts.id", "accounts.owner_id", "accounts.currency"],
@@ -175,6 +219,28 @@ transactions = Table(
         "installment_number",
         unique=True,
         postgresql_where=text("installment_plan_id IS NOT NULL"),
+    ),
+    ForeignKeyConstraint(
+        ["recurring_rule_id", "owner_id", "account_id"],
+        ["recurring_rules.id", "recurring_rules.owner_id", "recurring_rules.account_id"],
+        name="occurrence_of_the_same_rule_owner_and_account",
+    ),
+    CheckConstraint(
+        "(recurring_rule_id IS NULL) = (recurrence_number IS NULL)", name="recurrence_complete"
+    ),
+    CheckConstraint(
+        "recurrence_number IS NULL OR recurrence_number >= 1", name="recurrence_number_positive"
+    ),
+    CheckConstraint(
+        "installment_plan_id IS NULL OR recurring_rule_id IS NULL", name="one_origin_at_most"
+    ),
+    # Como las cuotas: cada vez se genera una sola vez, aunque después se borre.
+    Index(
+        "uq_transactions_recurring_rule_id_number",
+        "recurring_rule_id",
+        "recurrence_number",
+        unique=True,
+        postgresql_where=text("recurring_rule_id IS NOT NULL"),
     ),
     ForeignKeyConstraint(
         ["category_id", "owner_id", "kind"],
@@ -255,7 +321,8 @@ idempotency_keys = Table(
     Column("resource_id", Uuid, nullable=False),
     Column("created_at", DateTime(timezone=True), nullable=False),
     CheckConstraint(
-        "resource IN ('transaction', 'transfer', 'installment_plan')", name="resource_known"
+        "resource IN ('transaction', 'transfer', 'installment_plan', 'recurring_rule')",
+        name="resource_known",
     ),
     Index("ix_idempotency_keys_created_at", "created_at"),
 )

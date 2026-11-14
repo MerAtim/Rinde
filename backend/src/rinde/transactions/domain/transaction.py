@@ -94,6 +94,14 @@ class InstallmentRef:
 
 
 @dataclass(frozen=True, slots=True)
+class RecurrenceRef:
+    """De qué regla salió un movimiento recurrente y qué vez es (ADR-0027)."""
+
+    rule_id: UUID
+    number: int
+
+
+@dataclass(frozen=True, slots=True)
 class Transaction:
     id: UUID
     owner_id: UUID
@@ -115,6 +123,8 @@ class Transaction:
     """
     installment: InstallmentRef | None = None
     """Solo en las cuotas. Editar la cuota la conserva: sigue siendo esa cuota."""
+    recurrence: RecurrenceRef | None = None
+    """Solo en los generados por una regla. Editarlo la conserva."""
 
     def __post_init__(self) -> None:
         # En todo movimiento, no solo al registrarlo: también en el que se lee de la base.
@@ -165,6 +175,7 @@ def register(  # noqa: PLR0913  (todos por nombre: es el constructor del agregad
     at: datetime,
     source_fingerprint: str | None = None,
     installment: InstallmentRef | None = None,
+    recurrence: RecurrenceRef | None = None,
 ) -> Transaction:
     """Crea un movimiento válido o no lo crea."""
     draft.check(account.currency, at)
@@ -181,4 +192,5 @@ def register(  # noqa: PLR0913  (todos por nombre: es el constructor del agregad
         description=draft.description,
         source_fingerprint=source_fingerprint,
         installment=installment,
+        recurrence=recurrence,
     )

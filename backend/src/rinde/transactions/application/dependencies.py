@@ -11,6 +11,7 @@ from rinde.transactions.application.ports import (
     EventPublisher,
     IdempotencyStore,
     InstallmentPlanRepository,
+    RecurringRuleRepository,
     TransactionRepository,
     TransferAuditLog,
     TransferRepository,
@@ -32,3 +33,4 @@ class TransactionsDependencies:
     clock: Clock
     events: EventPublisher
     installments: InstallmentPlanRepository
+    recurring: RecurringRuleRepository

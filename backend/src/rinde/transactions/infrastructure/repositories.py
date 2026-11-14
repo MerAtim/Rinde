@@ -48,10 +48,12 @@ from rinde.transactions.application.ports import (
 from rinde.transactions.domain.category import Category, CategoryName, TransactionKind
 from rinde.transactions.domain.errors import TransactionAlreadyImportedError
 from rinde.transactions.domain.installments import InstallmentPlan
+from rinde.transactions.domain.recurring import Frequency, RecurringRule
 from rinde.transactions.domain.transaction import (
     AuditAction,
     Description,
     InstallmentRef,
+    RecurrenceRef,
     Transaction,
 )
 from rinde.transactions.domain.transfer import Transfer
@@ -59,6 +61,7 @@ from rinde.transactions.infrastructure.tables import (
     categories,
     idempotency_keys,
     installment_plans,
+    recurring_rules,
     transaction_audit,
     transactions,
     transfer_audit,
@@ -104,11 +107,15 @@ def _to_transaction(row: RowMapping) -> Transaction:
             number=row["installment_number"],
             count=row["installment_count"],
         ),
+        recurrence=None
+        if row["recurring_rule_id"] is None
+        else RecurrenceRef(rule_id=row["recurring_rule_id"], number=row["recurrence_number"]),
     )
 
 
 def _values(transaction: Transaction) -> dict[str, object]:
     installment = transaction.installment
+    recurrence = transaction.recurrence
     return {
         "id": transaction.id,
         "owner_id": transaction.owner_id,
@@ -129,6 +136,8 @@ def _values(transaction: Transaction) -> dict[str, object]:
         "installment_plan_id": installment.plan_id if installment else None,
         "installment_number": installment.number if installment else None,
         "installment_count": installment.count if installment else None,
+        "recurring_rule_id": recurrence.rule_id if recurrence else None,
+        "recurrence_number": recurrence.number if recurrence else None,
     }
 
 
@@ -327,6 +336,19 @@ class SqlAlchemyTransactionRepository:
             .on_conflict_do_nothing(
                 index_elements=["installment_plan_id", "installment_number"],
                 index_where=transactions.c.installment_plan_id.is_not(None),
+            )
+            .returning(transactions.c.id)
+        )
+        return result.scalar_one_or_none() is not None
+
+    async def add_occurrence(self, transaction: Transaction) -> bool:
+        # Igual que las cuotas: si otro pedido la generó a la vez, esta no entra.
+        result = await self._session.execute(
+            pg_insert(transactions)
+            .values(**_values(transaction))
+            .on_conflict_do_nothing(
+                index_elements=["recurring_rule_id", "recurrence_number"],
+                index_where=transactions.c.recurring_rule_id.is_not(None),
             )
             .returning(transactions.c.id)
         )
@@ -641,6 +663,12 @@ class SqlAlchemyAuditLog:
                         "number": transaction.installment.number,
                         "count": transaction.installment.count,
                     },
+                    "recurrence": None
+                    if transaction.recurrence is None
+                    else {
+                        "rule_id": str(transaction.recurrence.rule_id),
+                        "number": transaction.recurrence.number,
+                    },
                 },
             )
         )
@@ -777,6 +805,105 @@ class SqlAlchemyInstallmentPlanRepository:
             select(func.count()).where(
                 installment_plans.c.category_id == category_id,
                 installment_plans.c.owner_id == owner_id,
+            )
+        )
+        return int(result.scalar_one())
+
+
+def _to_rule(row: RowMapping) -> RecurringRule:
+    currency = Currency(row["currency"])
+    return RecurringRule(
+        id=row["id"],
+        owner_id=row["owner_id"],
+        account_id=row["account_id"],
+        kind=TransactionKind(row["kind"]),
+        category_id=row["category_id"],
+        money=Money(Decimal(row["amount"]).quantize(currency.quantum), currency),
+        frequency=Frequency(row["frequency"]),
+        starts_on=row["starts_on"],
+        created_at=row["created_at"],
+        description=Description(row["description"]) if row["description"] else None,
+        cancelled_at=row["cancelled_at"],
+    )
+
+
+class SqlAlchemyRecurringRuleRepository:
+    """Reglas recurrentes (ADR-0027). Toda lectura filtra por el dueño."""
+
+    def __init__(self, session: AsyncSession) -> None:
+        self._session = session
+
+    async def add(self, rule: RecurringRule) -> None:
+        await self._session.execute(
+            insert(recurring_rules).values(
+                id=rule.id,
+                owner_id=rule.owner_id,
+                account_id=rule.account_id,
+                currency=rule.money.currency.value,
+                kind=rule.kind.value,
+                category_id=rule.category_id,
+                amount=rule.money.amount,
+                frequency=rule.frequency.value,
+                starts_on=rule.starts_on,
+                description=rule.description.value if rule.description else None,
+                created_at=rule.created_at,
+                cancelled_at=rule.cancelled_at,
+            )
+        )
+
+    async def get(self, rule_id: UUID, owner_id: UUID) -> RecurringRule | None:
+        result = await self._session.execute(
+            select(recurring_rules).where(
+                recurring_rules.c.id == rule_id, recurring_rules.c.owner_id == owner_id
+            )
+        )
+        row = result.mappings().first()
+        return None if row is None else _to_rule(row)
+
+    async def list_for_owner(self, owner_id: UUID) -> list[RecurringRule]:
+        result = await self._session.execute(
+            select(recurring_rules)
+            .where(recurring_rules.c.owner_id == owner_id)
+            .order_by(
+                recurring_rules.c.cancelled_at.is_not(None),
+                recurring_rules.c.starts_on.desc(),
+                recurring_rules.c.id.desc(),
+            )
+        )
+        return [_to_rule(row) for row in result.mappings()]
+
+    async def save(self, rule: RecurringRule) -> None:
+        # Lo que cambia de una regla: el monto, la descripción y si se canceló.
+        await self._session.execute(
+            update(recurring_rules)
+            .where(recurring_rules.c.id == rule.id, recurring_rules.c.owner_id == rule.owner_id)
+            .values(
+                amount=rule.money.amount,
+                description=rule.description.value if rule.description else None,
+                cancelled_at=rule.cancelled_at,
+            )
+        )
+
+    async def last_generated(self, owner_id: UUID, rule_ids: Collection[UUID]) -> dict[UUID, int]:
+        if not rule_ids:
+            return {}
+        # Sin `_alive`: una vez borrada también cuenta como generada. El índice
+        # único sobre (regla, número) resuelve el máximo sin recorrer la tabla.
+        result = await self._session.execute(
+            select(transactions.c.recurring_rule_id, func.max(transactions.c.recurrence_number))
+            .where(
+                transactions.c.owner_id == owner_id,
+                transactions.c.recurring_rule_id.in_(list(rule_ids)),
+            )
+            .group_by(transactions.c.recurring_rule_id)
+        )
+        return {rule_id: int(number) for rule_id, number in result.tuples()}
+
+    async def count_by_category(self, category_id: UUID, owner_id: UUID) -> int:
+        result = await self._session.execute(
+            select(func.count()).where(
+                recurring_rules.c.category_id == category_id,
+                recurring_rules.c.owner_id == owner_id,
             )
         )
         return int(result.scalar_one())

@@ -29,6 +29,7 @@ from rinde.transactions.application.unit import TransactionsUnit, build_transact
 from rinde.transactions.domain.category import Category, TransactionKind
 from rinde.transactions.domain.errors import TransactionAlreadyImportedError
 from rinde.transactions.domain.installments import InstallmentPlan
+from rinde.transactions.domain.recurring import RecurringRule
 from rinde.transactions.domain.transaction import AuditAction, TargetAccount, Transaction
 from rinde.transactions.domain.transfer import Transfer
 
@@ -102,6 +103,14 @@ class FakeTransactionRepository:
             and (row.installment.plan_id, row.installment.number) == (ref.plan_id, ref.number)
             for row in self.rows.values()
         ):
+            return False
+        self.rows[transaction.id] = transaction
+        return True
+
+    async def add_occurrence(self, transaction: Transaction) -> bool:
+        # Como el índice único de la base (ADR-0027): una vez ya generada no entra.
+        ref = transaction.recurrence
+        if ref is not None and any(row.recurrence == ref for row in self.rows.values()):
             return False
         self.rows[transaction.id] = transaction
         return True
@@ -415,6 +424,47 @@ class FakeInstallmentPlans:
         )
 
 
+class FakeRecurringRules:
+    """Reglas en memoria. Lo generado lo lee del repositorio de movimientos."""
+
+    def __init__(self, transactions: FakeTransactionRepository) -> None:
+        self.rows: dict[UUID, RecurringRule] = {}
+        self._transactions = transactions
+
+    async def add(self, rule: RecurringRule) -> None:
+        self.rows[rule.id] = rule
+
+    async def get(self, rule_id: UUID, owner_id: UUID) -> RecurringRule | None:
+        found = self.rows.get(rule_id)
+        return found if found is not None and found.owner_id == owner_id else None
+
+    async def list_for_owner(self, owner_id: UUID) -> list[RecurringRule]:
+        mine = sorted(
+            (row for row in self.rows.values() if row.owner_id == owner_id),
+            key=lambda row: (row.starts_on, row.id),
+            reverse=True,
+        )
+        return sorted(mine, key=lambda row: row.is_cancelled)
+
+    async def save(self, rule: RecurringRule) -> None:
+        self.rows[rule.id] = rule
+
+    async def last_generated(self, owner_id: UUID, rule_ids: Collection[UUID]) -> dict[UUID, int]:
+        found: dict[UUID, int] = {}
+        for row in self._transactions.rows.values():
+            ref = row.recurrence
+            if row.owner_id == owner_id and ref is not None and ref.rule_id in rule_ids:
+                found[ref.rule_id] = max(found.get(ref.rule_id, 0), ref.number)
+        return found
+
+    async def count_by_category(self, category_id: UUID, owner_id: UUID) -> int:
+        return sum(
+            1
+            for row in self.rows.values()
+            if row.owner_id == owner_id and row.category_id == category_id
+        )
+
+
 class FakeAuditLog:
     def __init__(self) -> None:
         self.entries: list[tuple[AuditAction, UUID, datetime]] = []
@@ -453,6 +503,7 @@ class Harness:
         self.db = FakeDatabaseTransaction()
         self.events = RecordingPublisher(self.db)
         self.installments = FakeInstallmentPlans(self.transactions)
+        self.recurring = FakeRecurringRules(self.transactions)
         self.unit: TransactionsUnit = build_transactions_unit(
             TransactionsDependencies(
                 transactions=self.transactions,
@@ -466,5 +517,6 @@ class Harness:
                 clock=self.clock,
                 events=self.events,
                 installments=self.installments,
+                recurring=self.recurring,
             )
         )

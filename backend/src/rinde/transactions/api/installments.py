@@ -85,7 +85,7 @@ class InstallmentPlanResponse(BaseModel):
 
 
 class GeneratedResponse(BaseModel):
-    created: int = Field(description="Cuántas cuotas vencidas se volvieron movimientos")
+    created: int = Field(description="Cuántos movimientos vencidos se generaron")
 
 
 @router.get("", responses=error_responses(401), summary="Listar mis compras en cuotas")

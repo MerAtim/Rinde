@@ -16,6 +16,7 @@ export function aTransaction(overrides: Partial<Transaction> = {}): Transaction 
     updated_at: "2026-09-18T13:00:00Z",
     deleted_at: null,
     installment: null,
+    recurrence: null,
     ...overrides,
   };
 }

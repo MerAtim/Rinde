@@ -16,6 +16,7 @@ from rinde.shared.domain.money import Currency, Money
 from rinde.transactions.application.events import ExpenseRecorded
 from rinde.transactions.domain.category import Category, TransactionKind
 from rinde.transactions.domain.installments import InstallmentPlan
+from rinde.transactions.domain.recurring import RecurringRule
 from rinde.transactions.domain.transaction import AuditAction, TargetAccount, Transaction
 from rinde.transactions.domain.transfer import Transfer
 
@@ -183,6 +184,12 @@ class TransactionRepository(Protocol):
         """
         ...
 
+    async def add_occurrence(self, transaction: Transaction) -> bool:
+        """Guarda una vez de una regla si todavía no se generó. `False` si ya estaba
+        (ADR-0027). Igual que las cuotas: la base tiene la última palabra.
+        """
+        ...
+
     async def imported_fingerprints(
         self, owner_id: UUID, account_id: UUID, fingerprints: Collection[str]
     ) -> set[str]:
@@ -229,6 +236,31 @@ class InstallmentPlanRepository(Protocol):
         ...
 
 
+class RecurringRuleRepository(Protocol):
+    async def add(self, rule: RecurringRule) -> None: ...
+
+    async def get(self, rule_id: UUID, owner_id: UUID) -> RecurringRule | None:
+        """Una regla ajena es lo mismo que una inexistente (ADR-0009)."""
+        ...
+
+    async def list_for_owner(self, owner_id: UUID) -> list[RecurringRule]:
+        """Todas, también las canceladas: primero las activas, después por fecha."""
+        ...
+
+    async def save(self, rule: RecurringRule) -> None: ...
+
+    async def last_generated(self, owner_id: UUID, rule_ids: Collection[UUID]) -> dict[UUID, int]:
+        """El número más alto ya generado de cada regla, borrados incluidos.
+
+        Una regla sin nada generado no aparece.
+        """
+        ...
+
+    async def count_by_category(self, category_id: UUID, owner_id: UUID) -> int:
+        """Una regla, cancelada o no, sigue usando su categoría."""
+        ...
+
+
 class CategoryRepository(Protocol):
     async def add(self, category: Category) -> None: ...
 
@@ -270,6 +302,7 @@ class IdempotentResource(StrEnum):
     TRANSACTION = "transaction"
     TRANSFER = "transfer"
     INSTALLMENT_PLAN = "installment_plan"
+    RECURRING_RULE = "recurring_rule"
 
 
 @dataclass(frozen=True, slots=True)

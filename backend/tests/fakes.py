@@ -57,6 +57,7 @@ from tests.unit.transactions.fakes import (
     FakeCategoryRepository,
     FakeIdempotencyStore,
     FakeInstallmentPlans,
+    FakeRecurringRules,
     FakeTransactionRepository,
     FakeTransferAuditLog,
     FakeTransferRepository,
@@ -313,6 +314,7 @@ class InMemoryTransactionsUnitFactory:
         # Por defecto guarda lo publicado; los tests de alertas le pasan el bus real.
         self.events = events or RecordingPublisher()
         self.installments = FakeInstallmentPlans(self.transactions)
+        self.recurring = FakeRecurringRules(self.transactions)
 
     @asynccontextmanager
     async def __call__(self) -> AsyncIterator[TransactionsUnit]:
@@ -337,6 +339,7 @@ class InMemoryTransactionsUnitFactory:
                 clock=self.clock,
                 events=self.events,
                 installments=self.installments,
+                recurring=self.recurring,
             )
         )
 
