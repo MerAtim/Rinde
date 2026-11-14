@@ -8,6 +8,7 @@ import { Button, LinkButton } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
 import { MoneyAmount } from "../../shared/ui/MoneyAmount";
 import { SegmentedButton } from "../../shared/ui/SegmentedButton";
+import { TableScroll } from "../../shared/ui/TableScroll";
 import { useAccounts } from "../accounts/useAccounts";
 import {
   type Dashboard as DashboardData,
@@ -20,7 +21,6 @@ import styles from "./Dashboard.module.css";
 import { DashboardFilters } from "./DashboardFilters";
 import { dashboardQuery, filtersFrom, type Prices, withFilters } from "./period";
 import { SpendingList } from "./SpendingList";
-import { TableScroll } from "./TableScroll";
 import { FlowTable, NetWorthTable } from "./tables";
 import { useDashboard } from "./useDashboard";
 
