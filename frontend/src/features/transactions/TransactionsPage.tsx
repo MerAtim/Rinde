@@ -43,6 +43,9 @@ export function TransactionsPage() {
           <LinkButton to="/transactions/import" variant="tonal" icon="upload">
             {t("imports.open")}
           </LinkButton>
+          <LinkButton to="/installments" variant="tonal" icon="credit-card">
+            {t("installments.open")}
+          </LinkButton>
           {rows.length > 0 || hasFilters ? (
             <LinkButton to="/transactions/new" icon="add">
               {t("transactions.list.add")}

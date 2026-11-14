@@ -83,6 +83,7 @@ for (const idioma of IDIOMAS) {
       "/alerts",
       "/transactions/import",
       `/imports/${BATCH.id}`,
+      "/installments",
       "/preferences",
     ]) {
       test(`${ruta} no se puede desplazar en horizontal`, async ({ page }) => {
@@ -102,6 +103,10 @@ for (const idioma of IDIOMAS) {
           await expect(page.getByRole("main").getByRole("listitem")).toHaveCount(2);
         } else if (ruta === "/transactions/import") {
           await expect(page.getByRole("button", { name: /CSV|file/ })).toBeVisible();
+        } else if (ruta === "/installments") {
+          // La tabla de cuotas abierta: 24 filas con montos largos.
+          await page.locator("summary").first().click();
+          await expect(page.getByRole("table")).toBeVisible();
         } else if (ruta.startsWith("/imports/")) {
           // Tres líneas, y la que entra suma "Recordar".
           await expect(page.getByRole("checkbox")).toHaveCount(4);

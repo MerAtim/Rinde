@@ -59,6 +59,10 @@ export async function mockSession(page: Page): Promise<void> {
   await page.route("**/api/alerts", (route) => route.fulfill(json(ALERTS)));
   // Descripciones y montos largos: lo más ancho que puede tener una vista previa.
   await page.route("**/api/imports/*", (route) => route.fulfill(json(BATCH)));
+  // Nada vencido: generar no cambia nada. Una compra larga y cara, con la tabla
+  // de cuotas abierta, es lo más ancho que puede tener la pantalla de cuotas.
+  await page.route("**/api/installments/due", (route) => route.fulfill(json({ created: 0 })));
+  await page.route("**/api/installments", (route) => route.fulfill(json([PLAN])));
   await page.route("**/api/preferences", (route) =>
     route.fulfill(json({ reference_currency: "ARS", rate_type: "crypto" })),
   );
@@ -263,4 +267,26 @@ export const BATCH = {
     },
   ],
   errors: [{ line: 5, problem: "LINE_AMOUNT_TOO_PRECISE" }],
+};
+
+export const PLAN = {
+  id: "7a8b9c0d-1e2f-4a3b-8c4d-5e6f7a8b9c0d",
+  account_id: "5c4b3a29-1807-4f6e-9d5c-4b3a29180706",
+  category_id: "0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9",
+  total: "123456789.00",
+  currency: "USD",
+  count: 24,
+  first_on: "2026-01-31",
+  description: "Aire acondicionado split inverter con instalación incluida",
+  created_at: "2026-01-31T13:00:00Z",
+  cancelled_at: null,
+  pending: "72016460.25",
+  installments: Array.from({ length: 24 }, (_, index) => ({
+    number: index + 1,
+    due_on: `${String(2026 + Math.floor(index / 12))}-${String((index % 12) + 1).padStart(2, "0")}-28`,
+    amount: index < 12 ? "5144032.88" : "5144032.87",
+    transaction_id:
+      index < 10 ? `00000000-0000-4000-8000-${String(index).padStart(12, "0")}` : null,
+    deleted: index === 3,
+  })),
 };

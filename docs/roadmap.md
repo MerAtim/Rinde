@@ -69,7 +69,8 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 
 ## Fase 7: diferenciales Argentina
 * [x] Reportes en pesos constantes (ajuste por IPC, ADR-0025)
-* [ ] Gastos en cuotas (reparto exacto por resto mayor) y transacciones recurrentes
+* [x] Gastos en cuotas (reparto exacto por resto mayor, ADR-0026)
+* [ ] Transacciones recurrentes
 
 ## Fase 8: portfolio
 * [ ] Cuenta demo con datos sembrados realistas (sin registro)
