@@ -6,9 +6,17 @@ export type MonthFlow = components["schemas"]["MonthFlowResponse"];
 export type NetWorthPoint = components["schemas"]["NetWorthPointResponse"];
 export type CategorySpending = components["schemas"]["CategorySpendingResponse"];
 export type Unconverted = components["schemas"]["UnconvertedResponse"];
+export type Money = MonthFlow["income"];
+export type ConstantMonthFlow = components["schemas"]["ConstantMonthFlowResponse"];
+/** Un mes del flujo, nominal o en pesos de hoy: en pesos de hoy, un mes sin IPC viene vacío. */
+export type FlowRow = MonthFlow | ConstantMonthFlow;
 
 /** Códigos estables que devuelve la API del dashboard. */
-const SERVER_CODES = ["DASHBOARD_PERIOD_INVALID", "NOT_AUTHENTICATED"] as const;
+const SERVER_CODES = [
+  "DASHBOARD_PERIOD_INVALID",
+  "DASHBOARD_CONSTANT_PRICES_ARS_ONLY",
+  "NOT_AUTHENTICATED",
+] as const;
 
 export type DashboardErrorCode = (typeof SERVER_CODES)[number] | TransportErrorCode;
 
@@ -20,12 +28,15 @@ export interface DashboardQuery {
   /** Primer mes, AAAA-MM. Sin él, el servidor usa los últimos seis meses. */
   from?: string;
   accountId?: string;
+  /** El flujo de cada mes también en pesos de hoy, ajustado por el IPC (ADR-0025). */
+  prices?: "constant";
 }
 
 export function dashboardPath(query: DashboardQuery): string {
   const params = new URLSearchParams();
   if (query.from) params.set("from", query.from);
   if (query.accountId) params.set("account", query.accountId);
+  if (query.prices) params.set("prices", query.prices);
   const search = params.toString();
   return search ? `/api/dashboard?${search}` : "/api/dashboard";
 }

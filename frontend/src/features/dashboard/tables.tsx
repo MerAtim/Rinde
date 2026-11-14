@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useMoneyFormatter, useMonthFormatter } from "../../i18n/format";
 import { cx } from "../../shared/ui/cx";
 import { MoneyAmount } from "../../shared/ui/MoneyAmount";
-import type { MonthFlow, NetWorthPoint } from "./api";
+import type { FlowRow, Money, NetWorthPoint } from "./api";
 import styles from "./Dashboard.module.css";
 
 /** El patrimonio de cada cierre. Un cierre sin cotización lo dice, no muestra un cero. */
@@ -41,9 +41,10 @@ export function NetWorthTable({ points }: { points: NetWorthPoint[] }) {
 
 /**
  * Ingresos, gastos y neto de cada mes. El neto lo calcula el servidor; su signo
- * se lee del string, sin hacer cuentas con el monto.
+ * se lee del string, sin hacer cuentas con el monto. En pesos de hoy, un mes
+ * sin IPC lo dice en vez de mostrar un cero (ADR-0025).
  */
-export function FlowTable({ monthly }: { monthly: MonthFlow[] }) {
+export function FlowTable({ monthly }: { monthly: FlowRow[] }) {
   const { t } = useTranslation();
   const monthName = useMonthFormatter();
 
@@ -69,18 +70,30 @@ export function FlowTable({ monthly }: { monthly: MonthFlow[] }) {
           <tr key={item.month}>
             <th scope="row">{monthName(item.month, "long")}</th>
             <td className={cx(styles.number)}>
-              <MoneyAmount amount={item.income.amount} currency={item.income.currency} />
+              <Cell money={item.income} />
             </td>
             <td className={cx(styles.number)}>
-              <MoneyAmount amount={item.expense.amount} currency={item.expense.currency} />
+              <Cell money={item.expense} />
             </td>
             <td className={cx(styles.number)}>
-              <SignedAmount amount={item.net.amount} currency={item.net.currency} />
+              <Cell money={item.net} signed />
             </td>
           </tr>
         ))}
       </tbody>
     </table>
+  );
+}
+
+function Cell({ money, signed = false }: { money: Money | null; signed?: boolean }) {
+  const { t } = useTranslation();
+  if (!money) {
+    return <span className={cx(styles.muted)}>{t("dashboard.flow.noIndex")}</span>;
+  }
+  return signed ? (
+    <SignedAmount amount={money.amount} currency={money.currency} />
+  ) : (
+    <MoneyAmount amount={money.amount} currency={money.currency} />
   );
 }
 

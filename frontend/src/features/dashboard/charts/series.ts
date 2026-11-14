@@ -1,4 +1,4 @@
-import type { CategorySpending, MonthFlow, NetWorthPoint } from "../api";
+import type { CategorySpending, FlowRow, NetWorthPoint } from "../api";
 
 /**
  * Los números que los gráficos necesitan para dibujar.
@@ -31,21 +31,22 @@ export interface FlowSeries {
 
 /**
  * Los ingresos suben desde el cero y los gastos bajan: la posición dice qué es
- * cada barra, así que no hace falta distinguirlas por color (ADR-0020).
+ * cada barra, así que no hace falta distinguirlas por color (ADR-0020). Un mes
+ * sin IPC, en pesos de hoy, queda como hueco y no como cero (ADR-0025).
  */
-export function flowSeries(monthly: MonthFlow[]): FlowSeries {
+export function flowSeries(monthly: FlowRow[]): FlowSeries {
   const months = monthly.map((item) => item.month);
   return {
     months,
     income: {
       months,
-      values: monthly.map((item) => Number(item.income.amount)),
-      amounts: monthly.map((item) => item.income.amount),
+      values: monthly.map((item) => (item.income ? Number(item.income.amount) : null)),
+      amounts: monthly.map((item) => item.income?.amount ?? null),
     },
     expense: {
       months,
-      values: monthly.map((item) => -Number(item.expense.amount)),
-      amounts: monthly.map((item) => item.expense.amount),
+      values: monthly.map((item) => (item.expense ? -Number(item.expense.amount) : null)),
+      amounts: monthly.map((item) => item.expense?.amount ?? null),
     },
   };
 }

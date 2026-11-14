@@ -2,10 +2,12 @@ import { lazy } from "react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 
+import { useMonthFormatter } from "../../i18n/format";
 import { Alert } from "../../shared/ui/Alert";
 import { Button, LinkButton } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
 import { MoneyAmount } from "../../shared/ui/MoneyAmount";
+import { SegmentedButton } from "../../shared/ui/SegmentedButton";
 import { useAccounts } from "../accounts/useAccounts";
 import {
   type Dashboard as DashboardData,
@@ -16,7 +18,7 @@ import {
 import { ChartCard } from "./ChartCard";
 import styles from "./Dashboard.module.css";
 import { DashboardFilters } from "./DashboardFilters";
-import { dashboardQuery, filtersFrom, withFilters } from "./period";
+import { dashboardQuery, filtersFrom, type Prices, withFilters } from "./period";
 import { SpendingList } from "./SpendingList";
 import { TableScroll } from "./TableScroll";
 import { FlowTable, NetWorthTable } from "./tables";
@@ -44,6 +46,9 @@ export function Dashboard() {
   const dashboard = useDashboard(dashboardQuery(filters, new Date()));
   // Las archivadas también: su historia sigue contando en el período.
   const accounts = useAccounts(true);
+  const setPrices = (prices: Prices) => {
+    setParams(withFilters(params, { ...filters, prices }));
+  };
 
   if (accounts.isSuccess && accounts.data.length === 0) {
     return (
@@ -89,27 +94,54 @@ export function Dashboard() {
       {dashboard.isError ? (
         <div className={cx(styles.problem)}>
           <Alert>{t(`dashboard.errors.${errorCode(dashboard.error)}`)}</Alert>
-          <Button
-            variant="tonal"
-            onPress={() => {
-              void dashboard.refetch();
-            }}
-          >
-            {t("dashboard.retry")}
-          </Button>
+          {/* Un enlace con pesos de hoy y otra moneda de referencia: se sale sin reintentar. */}
+          {errorCode(dashboard.error) === "DASHBOARD_CONSTANT_PRICES_ARS_ONLY" ? (
+            <Button
+              variant="tonal"
+              onPress={() => {
+                setPrices("nominal");
+              }}
+            >
+              {t("dashboard.prices.backToNominal")}
+            </Button>
+          ) : (
+            <Button
+              variant="tonal"
+              onPress={() => {
+                void dashboard.refetch();
+              }}
+            >
+              {t("dashboard.retry")}
+            </Button>
+          )}
         </div>
       ) : null}
       {dashboard.data ? (
-        <Summary data={dashboard.data} isUpdating={dashboard.isPlaceholderData} />
+        <Summary
+          data={dashboard.data}
+          isUpdating={dashboard.isPlaceholderData}
+          prices={filters.prices}
+          onPricesChange={setPrices}
+        />
       ) : null}
     </div>
   );
 }
 
-function Summary({ data, isUpdating }: { data: DashboardData; isUpdating: boolean }) {
+interface SummaryProps {
+  data: DashboardData;
+  isUpdating: boolean;
+  prices: Prices;
+  onPricesChange: (prices: Prices) => void;
+}
+
+function Summary({ data, isUpdating, prices, onPricesChange }: SummaryProps) {
   const { t } = useTranslation();
   const currency = data.reference.currency;
   const today = data.net_worth.at(-1);
+  // Sin ningún IPC no hay mes base: se queda en pesos de cada mes y lo dice.
+  const constant = prices === "constant" && data.constant?.base_month ? data.constant : null;
+  const monthly = constant ? constant.monthly : data.monthly;
 
   return (
     // Mientras llega el período nuevo queda el anterior, atenuado: sin saltos.
@@ -137,14 +169,61 @@ function Summary({ data, isUpdating }: { data: DashboardData; isUpdating: boolea
         />
         <ChartCard
           heading={t("dashboard.flow.heading")}
+          controls={
+            // El IPC mide precios en pesos: con otra moneda de referencia no se ofrece.
+            currency === "ARS" ? (
+              <PricesControl
+                prices={prices}
+                baseMonth={constant?.base_month ?? null}
+                missing={prices === "constant" && !constant}
+                onChange={onPricesChange}
+              />
+            ) : null
+          }
           legend={<FlowLegend />}
-          chart={<FlowChart monthly={data.monthly} currency={currency} />}
-          table={<FlowTable monthly={data.monthly} />}
+          chart={<FlowChart monthly={monthly} currency={currency} />}
+          table={<FlowTable monthly={monthly} />}
         />
         <SpendingList spending={data.spending} />
         {data.unconverted.length > 0 ? <UnconvertedTable items={data.unconverted} /> : null}
       </div>
     </div>
+  );
+}
+
+interface PricesControlProps {
+  prices: Prices;
+  baseMonth: string | null;
+  /** Se pidió en pesos de hoy, pero no hay ningún IPC: se ve en pesos de cada mes. */
+  missing: boolean;
+  onChange: (prices: Prices) => void;
+}
+
+/**
+ * Pesos de cada mes o pesos de hoy (ADR-0025). Solo cambia este bloque: el
+ * patrimonio y el gasto por categoría siguen en pesos de cada mes, y la nota
+ * lo dice.
+ */
+function PricesControl({ prices, baseMonth, missing, onChange }: PricesControlProps) {
+  const { t } = useTranslation();
+  const monthName = useMonthFormatter();
+  let description: string | undefined;
+  if (baseMonth) {
+    description = t("dashboard.prices.note", { month: monthName(baseMonth, "long") });
+  } else if (missing) {
+    description = t("dashboard.prices.missing");
+  }
+  return (
+    <SegmentedButton
+      label={t("dashboard.prices.label")}
+      {...(description ? { description } : {})}
+      options={[
+        { id: "nominal", label: t("dashboard.prices.nominal") },
+        { id: "constant", label: t("dashboard.prices.constant") },
+      ]}
+      value={prices}
+      onChange={onChange}
+    />
   );
 }
 

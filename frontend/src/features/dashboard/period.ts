@@ -17,10 +17,14 @@ export const DEFAULT_MONTHS: PeriodMonths = 6;
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export type Prices = "nominal" | "constant";
+
 export interface DashboardFilters {
   months: PeriodMonths;
   /** Vacío: todas las cuentas. */
   accountId: string;
+  /** El flujo mensual en pesos de cada mes o en pesos de hoy (ADR-0025). */
+  prices: Prices;
 }
 
 function isPeriodMonths(value: number): value is PeriodMonths {
@@ -33,6 +37,7 @@ export function filtersFrom(params: URLSearchParams): DashboardFilters {
   return {
     months: isPeriodMonths(months) ? months : DEFAULT_MONTHS,
     accountId: UUID.test(accountId) ? accountId : "",
+    prices: params.get("prices") === "constant" ? "constant" : "nominal",
   };
 }
 
@@ -48,6 +53,11 @@ export function withFilters(params: URLSearchParams, filters: DashboardFilters):
     updated.set("account", filters.accountId);
   } else {
     updated.delete("account");
+  }
+  if (filters.prices === "constant") {
+    updated.set("prices", "constant");
+  } else {
+    updated.delete("prices");
   }
   return updated;
 }
@@ -70,5 +80,6 @@ export function dashboardQuery(filters: DashboardFilters, now: Date): DashboardQ
       ? {}
       : { from: firstMonth(argentineMonth(now), filters.months) }),
     ...(filters.accountId ? { accountId: filters.accountId } : {}),
+    ...(filters.prices === "constant" ? { prices: "constant" as const } : {}),
   };
 }

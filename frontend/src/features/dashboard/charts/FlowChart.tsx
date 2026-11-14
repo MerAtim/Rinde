@@ -2,12 +2,12 @@ import { Bar } from "react-chartjs-2";
 import { useTranslation } from "react-i18next";
 
 import { useAxisMoneyFormatter, useMoneyFormatter, useMonthFormatter } from "../../../i18n/format";
-import type { MonthFlow } from "../api";
+import type { FlowRow } from "../api";
 import { flowSeries, spansYears } from "./series";
 import { chartBase, useChartTheme } from "./theme";
 
 interface FlowChartProps {
-  monthly: MonthFlow[];
+  monthly: FlowRow[];
   currency: string;
 }
 
@@ -68,8 +68,11 @@ export default function FlowChart({ monthly, currency }: FlowChartProps) {
               },
               label: (item) => {
                 const source = item.datasetIndex === 0 ? series.income : series.expense;
-                const amount = source.amounts[item.dataIndex] ?? "0";
-                return `${item.dataset.label ?? ""}: ${money(amount, currency)}`;
+                const amount = source.amounts[item.dataIndex];
+                // Un hueco no tiene barra que señalar, pero el texto no inventa un cero.
+                const value =
+                  amount == null ? t("dashboard.flow.noIndex") : money(amount, currency);
+                return `${item.dataset.label ?? ""}: ${value}`;
               },
             },
           },

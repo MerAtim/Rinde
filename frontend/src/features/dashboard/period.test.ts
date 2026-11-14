@@ -6,12 +6,16 @@ const ACCOUNT = "5c4b3a29-1807-4f6e-9d5c-4b3a29180706";
 
 describe("filtros del dashboard en la URL", () => {
   it("sin parámetros, los últimos seis meses de todas las cuentas", () => {
-    expect(filtersFrom(new URLSearchParams())).toEqual({ months: DEFAULT_MONTHS, accountId: "" });
+    expect(filtersFrom(new URLSearchParams())).toEqual({
+      months: DEFAULT_MONTHS,
+      accountId: "",
+      prices: "nominal",
+    });
   });
 
   it("lee el período y la cuenta", () => {
     const params = new URLSearchParams({ months: "12", account: ACCOUNT });
-    expect(filtersFrom(params)).toEqual({ months: 12, accountId: ACCOUNT });
+    expect(filtersFrom(params)).toEqual({ months: 12, accountId: ACCOUNT, prices: "nominal" });
   });
 
   it.each(["0", "7", "abc", "1e1", "-6", "24.0x"])(
@@ -28,13 +32,32 @@ describe("filtros del dashboard en la URL", () => {
 
   it("no escribe lo que vale lo de siempre y conserva los demás parámetros", () => {
     const params = new URLSearchParams({ months: "12", account: ACCOUNT, other: "1" });
-    const updated = withFilters(params, { months: DEFAULT_MONTHS, accountId: "" });
+    const updated = withFilters(params, {
+      months: DEFAULT_MONTHS,
+      accountId: "",
+      prices: "nominal",
+    });
     expect(updated.toString()).toBe("other=1");
   });
 
   it("escribe un período y una cuenta elegidos", () => {
-    const updated = withFilters(new URLSearchParams(), { months: 3, accountId: ACCOUNT });
-    expect(filtersFrom(updated)).toEqual({ months: 3, accountId: ACCOUNT });
+    const updated = withFilters(new URLSearchParams(), {
+      months: 3,
+      accountId: ACCOUNT,
+      prices: "nominal",
+    });
+    expect(filtersFrom(updated)).toEqual({ months: 3, accountId: ACCOUNT, prices: "nominal" });
+  });
+
+  it("los pesos de hoy quedan en la URL; cualquier otro valor vuelve a los de cada mes", () => {
+    const updated = withFilters(new URLSearchParams(), {
+      months: DEFAULT_MONTHS,
+      accountId: "",
+      prices: "constant",
+    });
+    expect(updated.toString()).toBe("prices=constant");
+    expect(filtersFrom(updated).prices).toBe("constant");
+    expect(filtersFrom(new URLSearchParams({ prices: "reales" })).prices).toBe("nominal");
   });
 });
 
@@ -56,13 +79,21 @@ describe("lo que se le pide al servidor", () => {
   const NOW = new Date("2026-12-01T02:30:00Z");
 
   it("el período de siempre no se manda: lo decide el servidor", () => {
-    expect(dashboardQuery({ months: DEFAULT_MONTHS, accountId: "" }, NOW)).toEqual({});
+    expect(
+      dashboardQuery({ months: DEFAULT_MONTHS, accountId: "", prices: "nominal" }, NOW),
+    ).toEqual({});
   });
 
   it("otro período cuenta desde el mes de Argentina, no desde el de UTC", () => {
-    expect(dashboardQuery({ months: 3, accountId: ACCOUNT }, NOW)).toEqual({
+    expect(dashboardQuery({ months: 3, accountId: ACCOUNT, prices: "nominal" }, NOW)).toEqual({
       from: "2026-09",
       accountId: ACCOUNT,
     });
+  });
+
+  it("los pesos de hoy se piden aparte", () => {
+    expect(
+      dashboardQuery({ months: DEFAULT_MONTHS, accountId: "", prices: "constant" }, NOW),
+    ).toEqual({ prices: "constant" });
   });
 });
