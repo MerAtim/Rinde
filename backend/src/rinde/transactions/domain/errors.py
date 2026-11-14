@@ -143,3 +143,9 @@ class InstallmentAmountTooSmallError(TransactionError):
     """El total no alcanza para que cada cuota sea de al menos un centavo."""
 
     code = "INSTALLMENT_AMOUNT_TOO_SMALL"
+
+
+class InstallmentKindFixedError(TransactionError):
+    """Una cuota es siempre un gasto: pasarla a ingreso la separaría de su plan."""
+
+    code = "INSTALLMENT_KIND_FIXED"

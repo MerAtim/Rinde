@@ -62,6 +62,7 @@ export function EditTransactionPage() {
           accounts={accounts.data ?? []}
           categories={categories.data}
           isAccountFixed
+          isKindFixed={transaction.data.installment !== null}
           draft={{
             accountId: transaction.data.account_id,
             kind: transaction.data.kind,
