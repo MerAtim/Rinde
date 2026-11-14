@@ -7,7 +7,7 @@ import { mockApi } from "../../test/api";
 import { jsonResponse, renderWithProviders } from "../../test/render";
 import { anAccount } from "../accounts/fixtures";
 import { Dashboard } from "./Dashboard";
-import { aDashboard } from "./fixtures";
+import { aDashboard, constantPrices } from "./fixtures";
 import { dashboardQuery } from "./period";
 
 // jsdom no tiene canvas: se reemplaza el componente que dibuja y se conserva
@@ -95,7 +95,10 @@ describe("Dashboard", () => {
   });
 
   it("toma de la URL el período y la cuenta", async () => {
-    const query = dashboardQuery({ months: 12, accountId: ACCOUNT.id }, new Date());
+    const query = dashboardQuery(
+      { months: 12, accountId: ACCOUNT.id, prices: "nominal" },
+      new Date(),
+    );
     const fetch = mockApi({
       ...ACCOUNTS,
       [`GET /api/dashboard?from=${query.from ?? ""}&account=${ACCOUNT.id}`]: jsonResponse(
@@ -125,7 +128,7 @@ describe("Dashboard", () => {
   });
 
   it("al elegir otro período, pide ese período", async () => {
-    const query = dashboardQuery({ months: 3, accountId: "" }, new Date());
+    const query = dashboardQuery({ months: 3, accountId: "", prices: "nominal" }, new Date());
     const fetch = mockApi({
       ...ACCOUNTS,
       "GET /api/dashboard": jsonResponse(200, aDashboard()),
@@ -173,6 +176,92 @@ describe("Dashboard", () => {
       await screen.findByText("Ese período no se puede mostrar. Elegí otro."),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Reintentar" })).toBeInTheDocument();
+  });
+
+  describe("pesos de hoy", () => {
+    it("pide el ajuste, lo muestra en el flujo y explica qué mes es la base", async () => {
+      const fetch = mockApi({
+        ...ACCOUNTS,
+        "GET /api/dashboard": jsonResponse(200, aDashboard()),
+        "GET /api/dashboard?prices=constant": jsonResponse(
+          200,
+          aDashboard({ constant: constantPrices() }),
+        ),
+      });
+      const { container } = renderWithProviders(<Dashboard />);
+      const user = userEvent.setup();
+
+      const flow = await screen.findByRole("region", { name: "Ingresos y gastos" });
+      await user.click(within(flow).getByRole("radio", { name: "Pesos de hoy" }));
+
+      expect(
+        await within(flow).findByText(/En pesos de octubre de 2026, ajustados por el IPC/),
+      ).toBeInTheDocument();
+      expect(fetch).toHaveBeenCalledWith("/api/dashboard?prices=constant", expect.anything());
+      await user.click(within(flow).getByRole("radio", { name: "Tabla" }));
+      const september = within(flow).getByRole("row", { name: /septiembre de 2026/ });
+      expect(september).toHaveTextContent("632.400,00");
+      // Noviembre no tiene IPC: lo dice, no muestra un cero.
+      const november = within(flow).getByRole("row", { name: /noviembre de 2026/ });
+      expect(within(november).getAllByText("Sin IPC")).toHaveLength(3);
+      // El patrimonio no se ajusta.
+      expect(screen.getByRole("region", { name: "Patrimonio · Hoy" })).toHaveTextContent(
+        "3.550.000,75",
+      );
+      await expectNoA11yViolations(container);
+    });
+
+    it("sin ningún IPC se queda en pesos de cada mes y lo dice", async () => {
+      mockApi({
+        ...ACCOUNTS,
+        "GET /api/dashboard?prices=constant": jsonResponse(
+          200,
+          aDashboard({ constant: { base_month: null, monthly: [] } }),
+        ),
+      });
+      renderWithProviders(<Dashboard />, { route: "/?prices=constant" });
+      const user = userEvent.setup();
+
+      const flow = await screen.findByRole("region", { name: "Ingresos y gastos" });
+      expect(within(flow).getByText(/No pudimos obtener el IPC/)).toBeInTheDocument();
+      await user.click(within(flow).getByRole("radio", { name: "Tabla" }));
+      expect(within(flow).getByRole("row", { name: /septiembre de 2026/ })).toHaveTextContent(
+        "620.000,00",
+      );
+    });
+
+    it("con otra moneda de referencia no se ofrece", async () => {
+      mockApi({
+        ...ACCOUNTS,
+        "GET /api/dashboard": jsonResponse(
+          200,
+          aDashboard({ reference: { currency: "USD", rate_type: "mep" } }),
+        ),
+      });
+      renderWithProviders(<Dashboard />);
+
+      const flow = await screen.findByRole("region", { name: "Ingresos y gastos" });
+      expect(within(flow).queryByRole("radio", { name: "Pesos de hoy" })).not.toBeInTheDocument();
+    });
+
+    it("un enlace con pesos de hoy y otra moneda vuelve a los de cada mes", async () => {
+      mockApi({
+        ...ACCOUNTS,
+        "GET /api/dashboard?prices=constant": jsonResponse(422, {
+          code: "DASHBOARD_CONSTANT_PRICES_ARS_ONLY",
+        }),
+        "GET /api/dashboard": jsonResponse(200, aDashboard()),
+      });
+      renderWithProviders(<Dashboard />, { route: "/?prices=constant" });
+      const user = userEvent.setup();
+
+      expect(
+        await screen.findByText(/solo se calculan con el peso como moneda de referencia/),
+      ).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Ver en pesos de cada mes" }));
+
+      expect(await screen.findByRole("region", { name: "Patrimonio · Hoy" })).toBeInTheDocument();
+    });
   });
 
   it("en inglés, todo el texto cambia de idioma", async () => {

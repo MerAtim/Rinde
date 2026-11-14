@@ -472,6 +472,7 @@
     "retry": "Try again",
     "errors": {
       "DASHBOARD_PERIOD_INVALID": "That period can't be shown. Choose another one.",
+      "DASHBOARD_CONSTANT_PRICES_ARS_ONLY": "Today's pesos can only be calculated with the peso as reference currency.",
       "NOT_AUTHENTICATED": "Your session ended. Sign in again.",
       "NETWORK_ERROR": "You're offline. Check your connection and try again.",
       "UNKNOWN_ERROR": "We couldn't build the overview."
@@ -505,7 +506,8 @@
       "expense": "Expenses",
       "net": "Net",
       "above": "above zero",
-      "below": "below zero"
+      "below": "below zero",
+      "noIndex": "No CPI"
     },
     "spending": {
       "heading": "Spending by category",
@@ -521,6 +523,14 @@
       "balance": "Balance",
       "income": "Income",
       "expense": "Expenses"
+    },
+    "prices": {
+      "label": "Values",
+      "nominal": "Pesos of each month",
+      "constant": "Today's pesos",
+      "note": "In pesos of {{month}}, adjusted by INDEC's CPI. A month without a published CPI stays empty. Net worth and spending by category stay in pesos of each month.",
+      "missing": "We couldn't get the CPI: showing pesos of each month.",
+      "backToNominal": "Show pesos of each month"
     }
   },
   "budgets": {

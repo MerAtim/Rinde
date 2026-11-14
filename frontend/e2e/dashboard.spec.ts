@@ -125,6 +125,37 @@ for (const idioma of IDIOMAS) {
   });
 }
 
+test.describe("pesos de hoy", () => {
+  test.use({ locale: "es-AR" });
+
+  test("a 360 px el flujo ajustado se dibuja, su nota entra y su tabla también", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 900 });
+    await withProductionCsp(page);
+    await mockSession(page);
+    await page.goto("/?prices=constant");
+
+    const flujo = page.getByRole("region", { name: "Ingresos y gastos", exact: true });
+    await expect(flujo.getByText(/En pesos de octubre de 2026/)).toBeVisible();
+    const caja = await flujo.locator("canvas").boundingBox();
+    expect(caja?.height ?? 0).toBeGreaterThan(100);
+
+    await flujo.getByRole("radio", { name: "Tabla" }).click();
+    await expect(flujo.getByRole("row", { name: /noviembre de 2026/ })).toContainText("Sin IPC");
+    await page.evaluate(() => document.fonts.ready);
+
+    const desborde = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(desborde).toBeLessThanOrEqual(0);
+    const violaciones = await page.evaluate(
+      () => (window as unknown as { cspViolations: string[] }).cspViolations,
+    );
+    expect(violaciones).toEqual([]);
+  });
+});
+
 test.describe("filtros", () => {
   test.use({ locale: "es-AR" });
 

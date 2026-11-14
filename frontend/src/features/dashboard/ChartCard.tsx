@@ -12,6 +12,8 @@ interface ChartCardProps {
   heading: string;
   /** Va arriba del gráfico y también vale para la tabla: la leyenda, por ejemplo. */
   legend?: ReactNode;
+  /** Lo que cambia qué se muestra, además del gráfico o la tabla: va junto al título. */
+  controls?: ReactNode;
   chart: ReactNode;
   table: ReactNode;
 }
@@ -23,7 +25,7 @@ interface ChartCardProps {
  * tabla tiene los mismos valores, a un clic, y es la forma accesible de leerlos
  * (docs/design-system.md, "Gráfico de magnitud").
  */
-export function ChartCard({ heading, legend, chart, table }: ChartCardProps) {
+export function ChartCard({ heading, legend, controls, chart, table }: ChartCardProps) {
   const { t } = useTranslation();
   const headingId = useId();
   const [view, setView] = useState<View>("chart");
@@ -44,6 +46,7 @@ export function ChartCard({ heading, legend, chart, table }: ChartCardProps) {
           onChange={setView}
         />
       </div>
+      {controls}
       {legend}
       {view === "chart" ? (
         <div className={cx(styles.chart)}>

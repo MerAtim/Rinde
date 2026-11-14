@@ -472,6 +472,7 @@
     "retry": "Reintentar",
     "errors": {
       "DASHBOARD_PERIOD_INVALID": "Ese período no se puede mostrar. Elegí otro.",
+      "DASHBOARD_CONSTANT_PRICES_ARS_ONLY": "Los pesos de hoy solo se calculan con el peso como moneda de referencia.",
       "NOT_AUTHENTICATED": "Tu sesión terminó. Volvé a ingresar.",
       "NETWORK_ERROR": "No hay conexión. Revisá tu red y reintentá.",
       "UNKNOWN_ERROR": "No pudimos armar el resumen."
@@ -505,7 +506,8 @@
       "expense": "Gastos",
       "net": "Neto",
       "above": "arriba del cero",
-      "below": "abajo del cero"
+      "below": "abajo del cero",
+      "noIndex": "Sin IPC"
     },
     "spending": {
       "heading": "Gastos por categoría",
@@ -521,6 +523,14 @@
       "balance": "Saldo",
       "income": "Ingresos",
       "expense": "Gastos"
+    },
+    "prices": {
+      "label": "Valores",
+      "nominal": "Pesos de cada mes",
+      "constant": "Pesos de hoy",
+      "note": "En pesos de {{month}}, ajustados por el IPC del INDEC. Un mes sin IPC publicado queda vacío. El patrimonio y el gasto por categoría siguen en pesos de cada mes.",
+      "missing": "No pudimos obtener el IPC: se ven los pesos de cada mes.",
+      "backToNominal": "Ver en pesos de cada mes"
     }
   },
   "budgets": {

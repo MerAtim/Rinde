@@ -47,7 +47,11 @@ export async function mockSession(page: Page): Promise<void> {
   );
   // Un resumen con montos largos y una categoría de nombre largo: lo más ancho
   // que puede tener el inicio.
-  await page.route("**/api/dashboard*", (route) => route.fulfill(json(DASHBOARD)));
+  // En pesos de hoy, el mismo resumen con el flujo ajustado y un mes sin IPC.
+  await page.route("**/api/dashboard*", (route) => {
+    const constant = new URL(route.request().url()).searchParams.get("prices") === "constant";
+    return route.fulfill(json(constant ? { ...DASHBOARD, constant: CONSTANT } : DASHBOARD));
+  });
   // Montos largos, un tope pasado y una categoría propia de nombre largo: lo más
   // ancho que puede tener una fila de presupuestos.
   await page.route("**/api/budgets*", (route) => route.fulfill(json(BUDGETS)));
@@ -142,6 +146,22 @@ export const DASHBOARD = {
       balance: { amount: "12.34567890", currency: "BTC" },
     },
   ],
+  constant: null,
+};
+
+/** El flujo en pesos de octubre, con montos más largos: noviembre no tiene IPC. */
+export const CONSTANT = {
+  base_month: "2026-10",
+  monthly: DASHBOARD.monthly.map((item, index) =>
+    index === DASHBOARD.monthly.length - 1
+      ? { month: item.month, income: null, expense: null, net: null }
+      : {
+          month: item.month,
+          income: ars("118200000.00"),
+          expense: ars(index % 2 === 0 ? "73440000.00" : "119940000.00"),
+          net: ars(index % 2 === 0 ? "44760000.00" : "-1740000.00"),
+        },
+  ),
 };
 
 export const BUDGETS = {
