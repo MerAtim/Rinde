@@ -26,14 +26,19 @@ export function RequireSession() {
   return <Outlet />;
 }
 
-/** Pantallas de ingreso: con sesión abierta no tienen sentido, se va al inicio. */
+/**
+ * Pantallas de ingreso: con sesión abierta no tienen sentido, se va al inicio.
+ * Salvo en una demo, que no es la cuenta de nadie: desde ella se puede crear la
+ * propia o ingresar, y la sesión nueva reemplaza a la de la demo (ADR-0028).
+ */
 export function RedirectIfSession() {
   const session = useSession();
 
   if (session.isPending) {
     return <SessionScreen state="loading" />;
   }
-  if (session.data) {
+  const isDemo = Boolean(session.data?.demo_expires_at);
+  if (session.data && !isDemo) {
     return <Navigate to="/" replace />;
   }
   return <Outlet />;

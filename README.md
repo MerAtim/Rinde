@@ -23,6 +23,7 @@ Aplicación web de finanzas personales para Argentina y LatAm. Responde una preg
 * **Reglas de categoría al importar:** en la vista previa podés recordar "si dice COTO, es Supermercado", y las próximas importaciones lo aplican solas. Si coinciden dos reglas gana la más específica, y cada categoría propuesta dice qué regla la eligió ([ADR-0024](docs/adr/0024-reglas-de-categoria.md)).
 * **Filtros por categoría y por texto**, que se comparten en la dirección. La búsqueda no distingue tildes ni mayúsculas: "panaderia" encuentra "Panadería".
 * **Cuenta y sesión** con usuario, contraseña y código de recuperación, sin email ([ADR-0007](docs/adr/0007-autenticacion.md)).
+* **Demo sin registrarse:** "Probar la demo", en la pantalla de ingreso, abre una cuenta propia con tres meses de datos inventados: cuentas en pesos y en dólares, gastos, transferencias, una compra en cuotas, recurrentes y un presupuesto con su alerta. Cada visita tiene la suya, se carga por los mismos casos de uso que cualquier dato y se borra sola a las dos horas, con todo lo que tenga. Un aviso fijo dice a qué hora ([ADR-0028](docs/adr/0028-cuenta-demo.md)).
 * **Interfaz en español y en inglés**, con modo oscuro y claro.
 
 ## Qué falta

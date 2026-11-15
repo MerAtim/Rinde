@@ -14,7 +14,10 @@ export async function mockSession(page: Page): Promise<void> {
     body: JSON.stringify(body),
   });
 
-  await page.route("**/api/auth/me", (route) => route.fulfill(json({ username: "mechi" })));
+  // Una demo: todas las pantallas llevan su aviso arriba, que es el caso más ancho.
+  await page.route("**/api/auth/me", (route) =>
+    route.fulfill(json({ username: "demo-k3v9q2m7xa", demo_expires_at: "2026-11-15T20:30:00Z" })),
+  );
   await page.route("**/api/health/ready", (route) =>
     route.fulfill(json({ status: "ok", database: "ok" })),
   );

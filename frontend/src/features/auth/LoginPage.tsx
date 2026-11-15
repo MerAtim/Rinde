@@ -11,6 +11,7 @@ import { TextField } from "../../shared/ui/TextField";
 import { type AuthErrorCode, login } from "./api";
 import styles from "./AuthForm.module.css";
 import { AuthLayout } from "./AuthLayout";
+import { DemoStart } from "./DemoStart";
 import { errorCodeOf, fieldOf } from "./errors";
 import { SESSION_QUERY_KEY } from "./useSession";
 
@@ -107,6 +108,7 @@ export function LoginPage() {
             </Link>
           </p>
         </div>
+        <DemoStart />
       </section>
     </AuthLayout>
   );
