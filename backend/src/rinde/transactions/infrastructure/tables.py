@@ -297,7 +297,15 @@ transaction_audit = Table(
     metadata,
     Column("id", Uuid, primary_key=True),
     Column("transaction_id", Uuid, nullable=False),
-    Column("owner_id", Uuid, nullable=False),
+    # La auditoría se va con su dueño, y solo así (ADR-0028): el disparador
+    # rechaza cualquier otro cambio o borrado.
+    Column(
+        "owner_id",
+        Uuid,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    ),
     Column("action", String(16), nullable=False),
     Column("recorded_at", DateTime(timezone=True), nullable=False),
     # Cómo quedó el movimiento después de la acción, para poder reconstruir la historia.
@@ -409,7 +417,15 @@ transfer_audit = Table(
     metadata,
     Column("id", Uuid, primary_key=True),
     Column("transfer_id", Uuid, nullable=False),
-    Column("owner_id", Uuid, nullable=False),
+    # La auditoría se va con su dueño, y solo así (ADR-0028): el disparador
+    # rechaza cualquier otro cambio o borrado.
+    Column(
+        "owner_id",
+        Uuid,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    ),
     Column("action", String(16), nullable=False),
     Column("recorded_at", DateTime(timezone=True), nullable=False),
     Column("snapshot", JSONB, nullable=False),

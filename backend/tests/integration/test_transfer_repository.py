@@ -12,7 +12,7 @@ from decimal import Decimal
 from uuid import UUID, uuid4
 
 import pytest
-from sqlalchemy import insert, select, update
+from sqlalchemy import insert, select, text, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
@@ -301,6 +301,22 @@ class TestAuditoria:
         assert action == "registered"
         assert snapshot["amount_out"] == "50000.00"
         assert snapshot["currency_in"] == "ARS"
+
+    async def test_se_va_con_su_dueno(self, session: AsyncSession) -> None:
+        """ADR-0028: el disparador deja pasar solo el borrado en cascada."""
+        owner_id = await _user(session, "mechi")
+        banco = await _account(session, owner_id)
+        efectivo = await _account(session, owner_id)
+        transferencia = _a_transfer(owner_id, TransferRoute(banco, efectivo))
+        await SqlAlchemyTransferRepository(session).add(transferencia)
+        await SqlAlchemyTransferAuditLog(session).record(AuditAction.REGISTERED, transferencia, NOW)
+
+        await session.execute(text("DELETE FROM users WHERE id = :id"), {"id": owner_id})
+
+        quedan = await session.execute(
+            select(transfer_audit).where(transfer_audit.c.transfer_id == transferencia.id)
+        )
+        assert quedan.all() == []
 
     async def test_el_log_no_se_puede_modificar_ni_borrar(self, session: AsyncSession) -> None:
         """La regla vale también desde psql: la sostiene un disparador."""
