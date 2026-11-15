@@ -49,6 +49,8 @@ PUBLIC_ROUTES = {
     ("POST", "/api/auth/register"),
     ("POST", "/api/auth/login"),
     ("POST", "/api/auth/recover"),
+    # Crea una cuenta propia y nueva, como el registro; nunca da acceso a otra (ADR-0028).
+    ("POST", "/api/auth/demo"),
     # Cerrar una sesión que no existe no revela nada y deja limpia la cookie.
     ("POST", "/api/auth/logout"),
 }

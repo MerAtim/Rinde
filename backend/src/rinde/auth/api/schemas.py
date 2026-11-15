@@ -32,6 +32,11 @@ class RecoverResponse(BaseModel):
     recovery_code: str
 
 
+class DemoResponse(BaseModel):
+    username: str
+    demo_expires_at: datetime
+
+
 class MeResponse(BaseModel):
     username: str
     demo_expires_at: datetime | None = Field(

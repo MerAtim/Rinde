@@ -359,6 +359,86 @@
         }
       }
     },
+    "/api/auth/demo": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Probar la demo",
+        "description": "Crea una cuenta demo con datos de ejemplo y abre su sesión (ADR-0028).\n\nLa cuenta se borra a las dos horas con todo lo que tenga, y la cookie vence\ncon ella. Nadie puede iniciar sesión en una demo: se entra solo así.",
+        "operationId": "start_demo_api_auth_demo_post",
+        "parameters": [
+          {
+            "name": "x-requested-with",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Requested-With"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DemoResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Too Many Requests"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Service Unavailable"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/me": {
       "get": {
         "tags": [
@@ -5341,6 +5421,25 @@
           "constant"
         ],
         "title": "DashboardResponse"
+      },
+      "DemoResponse": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "demo_expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Demo Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "demo_expires_at"
+        ],
+        "title": "DemoResponse"
       },
       "EditTransactionRequest": {
         "properties": {

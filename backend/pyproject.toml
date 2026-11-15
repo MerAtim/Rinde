@@ -119,6 +119,7 @@ containers = [
     "rinde.alerts",
     "rinde.imports",
     "rinde.inflation",
+    "rinde.demo",
 ]
 layers = ["(api) | infrastructure", "application", "(domain)"]
 
@@ -147,6 +148,7 @@ source_modules = [
     "rinde.imports.domain",
     "rinde.inflation.application",
     "rinde.inflation.domain",
+    "rinde.demo.application",
     "rinde.shared.domain",
 ]
 forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic", "httpx", "argon2"]
@@ -156,6 +158,7 @@ name = "El kernel compartido no depende de ningún módulo: todos dependen de é
 type = "forbidden"
 source_modules = ["rinde.shared"]
 forbidden_modules = [
+    "rinde.demo",
     "rinde.auth",
     "rinde.health",
     "rinde.accounts",
@@ -356,3 +359,45 @@ source_modules = [
     "rinde.health", "rinde.dashboard", "rinde.budgets", "rinde.alerts",
 ]
 forbidden_modules = ["rinde.imports"]
+
+[[tool.importlinter.contracts]]
+name = "Solo el adaptador de la demo conoce otros módulos: su aplicación, no"
+type = "forbidden"
+source_modules = ["rinde.demo.application"]
+forbidden_modules = [
+    "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
+    "rinde.health", "rinde.dashboard", "rinde.budgets", "rinde.alerts", "rinde.imports",
+    "rinde.inflation",
+]
+
+[[tool.importlinter.contracts]]
+name = "La demo escribe por la capa de aplicación de cuentas, movimientos y presupuestos, y a nadie más"
+type = "forbidden"
+# Solo las importaciones directas, como en presupuestos. Del dominio de cuentas
+# y de movimientos usa los enumerados con que se tipan sus casos de uso
+# (tipo de cuenta, tipo de movimiento, frecuencia), nada más.
+allow_indirect_imports = true
+source_modules = ["rinde.demo"]
+forbidden_modules = [
+    "rinde.auth",
+    "rinde.health",
+    "rinde.rates",
+    "rinde.preferences",
+    "rinde.dashboard",
+    "rinde.alerts",
+    "rinde.imports",
+    "rinde.inflation",
+    "rinde.accounts.api", "rinde.accounts.infrastructure",
+    "rinde.transactions.api", "rinde.transactions.infrastructure",
+    "rinde.budgets.api", "rinde.budgets.infrastructure", "rinde.budgets.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Ningún módulo depende de la demo: auth la usa por su puerto, y la conecta la raíz de composición"
+type = "forbidden"
+source_modules = [
+    "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
+    "rinde.health", "rinde.dashboard", "rinde.budgets", "rinde.alerts", "rinde.imports",
+    "rinde.inflation",
+]
+forbidden_modules = ["rinde.demo"]

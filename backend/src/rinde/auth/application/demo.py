@@ -1,44 +1,61 @@
-"""Casos de uso de la cuenta demo: una por visita, que vence sola (ADR-0028).
+"""Caso de uso de la cuenta demo: una por visita, que vence sola (ADR-0028).
 
 La demo es una cuenta más: el aislamiento entre personas es el de siempre. Lo
-propio es cómo nace (sin contraseña que alguien conozca) y cómo muere (vencida,
-se borra con todo lo suyo la próxima vez que alguien crea una).
+propio es cómo nace (sin contraseña que alguien conozca, con datos sembrados)
+y cómo muere (vencida, se borra con todo lo suyo la próxima vez que alguien
+crea una).
 """
 
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from rinde.auth.application.dependencies import AuthDependencies
 from rinde.auth.application.ports import ClientAction
 from rinde.auth.application.rate_limits import ensure_client_under_limit, record_client_action
 from rinde.auth.application.sessions import SessionIssuer
-from rinde.auth.domain.errors import DemoUnavailableError, NotAuthenticatedError
+from rinde.auth.domain.errors import DemoUnavailableError
 from rinde.auth.domain.user import User
 from rinde.auth.domain.username import DEMO_PREFIX, Username
 
 DEMO_TTL = timedelta(hours=2)
-# Con unos 200 kB por demo, 100 ocupan unos 20 MB de los 500 de la base (ADR-0028).
+# Una demo ocupa unos 35 kB de datos: 100, con índices, menos de 15 MB de los 500 (ADR-0028).
 MAX_DEMOS = 100
 
 
 @dataclass(frozen=True, slots=True)
-class DemoUser:
-    id: UUID
+class StartedDemo:
     username: str
     expires_at: datetime
+    session_token: str
 
 
-class CreateDemoUser:
-    """Crea la cuenta, todavía sin sesión: la sesión se emite cuando está sembrada."""
+class StartDemo:
+    """Crea la cuenta, la siembra y recién entonces abre su sesión."""
 
-    def __init__(self, deps: AuthDependencies) -> None:
+    def __init__(self, deps: AuthDependencies, issuer: SessionIssuer) -> None:
         self._deps = deps
+        self._issuer = issuer
 
-    async def execute(self, client: str | None = None) -> DemoUser:
+    async def execute(self, client: str | None = None) -> StartedDemo:
+        deps = self._deps
+        user, expires_at = await self._create(client)
+        # Cada módulo siembra en su propia transacción: si algo falla a mitad de
+        # camino, no se emite la sesión, nadie entra y la demo se borra al vencer.
+        await deps.services.demo_seeder.seed(user.id)
+        token = await self._issuer.issue(user.id, expires_at=expires_at)
+        await deps.transaction.commit()
+        return StartedDemo(
+            username=user.username.value,
+            expires_at=expires_at,
+            session_token=token,
+        )
+
+    async def _create(self, client: str | None) -> tuple[User, datetime]:
         deps = self._deps
         services = deps.services
         now = services.clock.now()
+        expires_at = now + DEMO_TTL
 
         # Con el lock, contar y crear es atómico: dos pedidos a la vez no pasan
         # juntos el tope. Se toma antes de borrar para no pisar otra limpieza.
@@ -57,31 +74,10 @@ class CreateDemoUser:
             password_hash=await services.hasher.hash(services.secrets.session_token()),
             recovery_code_hash=await services.hasher.hash(services.secrets.session_token()),
             created_at=now,
-            demo_expires_at=now + DEMO_TTL,
+            demo_expires_at=expires_at,
         )
         await deps.users.add(user)
         await record_client_action(deps, ClientAction.DEMO, client)
+        # Se confirma antes de sembrar: los otros módulos necesitan ver la cuenta.
         await deps.transaction.commit()
-        return DemoUser(id=user.id, username=user.username.value, expires_at=now + DEMO_TTL)
-
-
-class StartDemoSession:
-    """Abre la sesión de una demo, que vence con ella."""
-
-    def __init__(self, deps: AuthDependencies, issuer: SessionIssuer) -> None:
-        self._deps = deps
-        self._issuer = issuer
-
-    async def execute(self, user_id: UUID) -> str:
-        deps = self._deps
-        user = await deps.users.by_id(user_id)
-        # Solo una demo vigente: este caso de uso no abre sesiones de cuentas comunes.
-        if (
-            user is None
-            or user.demo_expires_at is None
-            or user.is_expired(deps.services.clock.now())
-        ):
-            raise NotAuthenticatedError
-        token = await self._issuer.issue(user.id, expires_at=user.demo_expires_at)
-        await deps.transaction.commit()
-        return token
+        return user, expires_at

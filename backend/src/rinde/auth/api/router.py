@@ -12,11 +12,13 @@ from rinde.auth.api.cookies import SessionCookie, session_cookie
 from rinde.auth.api.dependencies import auth_unit
 from rinde.auth.api.schemas import (
     Credentials,
+    DemoResponse,
     MeResponse,
     RecoverRequest,
     RecoverResponse,
     RegisterResponse,
 )
+from rinde.auth.application.demo import DEMO_TTL
 from rinde.auth.application.unit import AuthUnit
 from rinde.shared.api.csrf import CSRF
 from rinde.shared.api.schemas import error_responses
@@ -106,6 +108,26 @@ async def recover(
     )
     cookie.set(response, recovery.session_token)
     return RecoverResponse(recovery_code=recovery.recovery_code)
+
+
+@router.post(
+    "/demo",
+    status_code=status.HTTP_201_CREATED,
+    dependencies=CSRF,
+    responses=error_responses(403, 429, 503),
+    summary="Probar la demo",
+)
+async def start_demo(
+    response: Response, unit: Unit, cookie: SessionCookieDep, client: ClientAddress
+) -> DemoResponse:
+    """Crea una cuenta demo con datos de ejemplo y abre su sesión (ADR-0028).
+
+    La cuenta se borra a las dos horas con todo lo que tenga, y la cookie vence
+    con ella. Nadie puede iniciar sesión en una demo: se entra solo así.
+    """
+    demo = await unit.start_demo.execute(client)
+    cookie.set(response, demo.session_token, max_age_seconds=int(DEMO_TTL.total_seconds()))
+    return DemoResponse(username=demo.username, demo_expires_at=demo.expires_at)
 
 
 @router.get("/me", responses=error_responses(401), summary="Cuenta de la sesión actual")

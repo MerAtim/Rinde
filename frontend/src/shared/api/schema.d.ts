@@ -106,6 +106,29 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/auth/demo": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Probar la demo
+     * @description Crea una cuenta demo con datos de ejemplo y abre su sesión (ADR-0028).
+     *
+     *     La cuenta se borra a las dos horas con todo lo que tenga, y la cookie vence
+     *     con ella. Nadie puede iniciar sesión en una demo: se entra solo así.
+     */
+    post: operations["start_demo_api_auth_demo_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/auth/me": {
     parameters: {
       query?: never;
@@ -1156,6 +1179,16 @@ export interface components {
       /** @description Solo con `prices=constant` */
       constant: components["schemas"]["ConstantPricesResponse"] | null;
     };
+    /** DemoResponse */
+    DemoResponse: {
+      /** Username */
+      username: string;
+      /**
+       * Demo Expires At
+       * Format: date-time
+       */
+      demo_expires_at: string;
+    };
     /**
      * EditTransactionRequest
      * @description La cuenta no se edita: mover plata de cuenta es otra operación.
@@ -2131,6 +2164,64 @@ export interface operations {
       };
       /** @description Too Many Requests */
       429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  start_demo_api_auth_demo_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["DemoResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Service Unavailable */
+      503: {
         headers: {
           [name: string]: unknown;
         };

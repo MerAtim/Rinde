@@ -21,7 +21,7 @@ FAILURE_WINDOW = timedelta(minutes=15)
 MAX_REGISTRATIONS_PER_CLIENT = 5
 REGISTRATION_WINDOW = timedelta(hours=1)
 
-# Una demo escribe unos setenta movimientos sin autenticación (ADR-0028).
+# Una demo escribe unos cincuenta movimientos sin autenticación (ADR-0028).
 MAX_DEMOS_PER_CLIENT = 3
 DEMO_WINDOW = timedelta(hours=1)
 
