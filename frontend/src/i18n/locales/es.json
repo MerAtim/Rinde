@@ -106,6 +106,16 @@
     "home": {
       "logout": "Cerrar sesión"
     },
+    "demo": {
+      "label": "Cuenta demo",
+      "lead": "¿Querés verla funcionando antes de crear una cuenta?",
+      "start": "Probar la demo",
+      "starting": "Preparando la demo…",
+      "note": "Con datos de ejemplo. Se borra sola a las dos horas.",
+      "tooMany": "Ya abriste varias demos en la última hora. Probá más tarde o creá una cuenta.",
+      "banner": "Estás en una demo con datos de ejemplo. Se borra a las {{time}} con todo lo que cargues.",
+      "createAccount": "Crear mi cuenta"
+    },
     "session": {
       "loading": "Cargando",
       "waking": "Despertando el servidor: la primera visita del día puede tardar hasta un minuto.",
@@ -127,6 +137,7 @@
       "RECOVERY_CODE_INVALID": "El usuario o el código de recuperación no son correctos.",
       "INVALID_CREDENTIALS": "El usuario o la contraseña no son correctos.",
       "TOO_MANY_ATTEMPTS": "Demasiados intentos fallidos. Esperá 15 minutos y probá de nuevo.",
+      "DEMO_UNAVAILABLE": "Hay muchas demos abiertas en este momento. Probá de nuevo en un rato.",
       "NOT_AUTHENTICATED": "Tu sesión terminó. Ingresá de nuevo.",
       "CSRF_REJECTED": "No pudimos validar el pedido. Recargá la página y probá de nuevo.",
       "NETWORK_ERROR": "No hay conexión con Rinde. Revisá tu internet y probá de nuevo.",

@@ -27,6 +27,21 @@ export function useDateFormatter(): (iso: string) => string {
 }
 
 /**
+ * Solo la hora de un instante, como "14:30", en la zona de quien mira.
+ *
+ * A diferencia de los montos y los movimientos, no es un dato del negocio
+ * argentino: es cuándo vence algo para quien está frente a la pantalla, que
+ * puede estar en cualquier país (ADR-0028).
+ */
+export function useLocalTimeFormatter(): (iso: string) => string {
+  const locale = useLocale();
+  return useMemo(() => {
+    const formatter = new Intl.DateTimeFormat(locale, { timeStyle: "short" });
+    return (iso: string) => formatter.format(new Date(iso));
+  }, [locale]);
+}
+
+/**
  * Un instante del servidor (ISO con zona) como "10 nov 2026, 12:00", en la hora
  * de Argentina: es la del calendario de Rinde, viaje o no quien la mira.
  */

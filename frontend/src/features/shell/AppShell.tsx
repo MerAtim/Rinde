@@ -6,7 +6,7 @@ import { Outlet, useLocation } from "react-router";
 import { AlertNotice } from "../alerts/AlertNotice";
 import { AlertsButton } from "../alerts/AlertsButton";
 import { logout } from "../auth/api";
-import { useSetSession } from "../auth/useSession";
+import { useSession, useSetSession } from "../auth/useSession";
 import { useGenerateDueInstallments } from "../installments/useInstallments";
 import { useGenerateDueRecurring } from "../recurring/useRecurring";
 import { announcementFrom } from "../../shared/navigation/announcement";
@@ -20,12 +20,15 @@ import { type Destination, NavigationRail } from "../../shared/ui/NavigationRail
 import { TopAppBar } from "../../shared/ui/TopAppBar";
 import { useMediaQuery } from "../../shared/ui/useMediaQuery";
 import styles from "./AppShell.module.css";
+import { DemoBanner } from "./DemoBanner";
 
 /** Marco de las pantallas con sesión: barra superior, navegación principal y contenido. */
 export function AppShell() {
   const { t } = useTranslation();
   const location = useLocation();
+  const session = useSession();
   const setSession = useSetSession();
+  const demoExpiresAt = session.data?.demo_expires_at ?? null;
   useGenerateDueInstallments();
   useGenerateDueRecurring();
   // En un celular el texto no entra junto al idioma y el tema: queda el ícono,
@@ -88,6 +91,7 @@ export function AppShell() {
       <div className={cx(styles.layout)}>
         <NavigationRail label={t("nav.label")} destinations={destinations} />
         <main className={cx(styles.main)}>
+          {demoExpiresAt ? <DemoBanner expiresAt={demoExpiresAt} /> : null}
           {signOut.isError ? <Alert>{t("auth.errors.NETWORK_ERROR")}</Alert> : null}
           <p role="status" className={cx(styles.announcement)}>
             {announcementFrom(location.state)}

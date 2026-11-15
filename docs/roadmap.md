@@ -73,7 +73,7 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * [x] Transacciones recurrentes (se generan solas al llegar su fecha, ADR-0027)
 
 ## Fase 8: portfolio
-* [ ] Cuenta demo con datos sembrados realistas (sin registro)
+* [x] Cuenta demo con datos sembrados realistas (sin registro): una por visita, que se borra sola (ADR-0028)
 * [ ] README: arquitectura, diagrama, ADRs, capturas, cómo correrlo, métricas reales
 * [ ] Playwright e2e de los 3 flujos críticos contra el entorno completo. El
   andamiaje ya existe y corre en CI desde la fase 0: se adelantó porque es el

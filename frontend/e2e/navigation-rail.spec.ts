@@ -32,6 +32,7 @@ const IDIOMAS = [
     navegacion: "Navegación principal",
     dolar: "Dólar hoy",
     recurrentes: "Recurrentes",
+    demo: "Cuenta demo",
   },
   {
     codigo: "en-US",
@@ -39,6 +40,7 @@ const IDIOMAS = [
     navegacion: "Main navigation",
     dolar: "Dollar today",
     recurrentes: "Recurring",
+    demo: "Demo account",
   },
 ] as const;
 
@@ -105,6 +107,7 @@ for (const idioma of IDIOMAS) {
         await mockSession(page);
         await page.goto(ruta);
         await expect(page.getByRole("navigation", { name: idioma.navegacion })).toBeVisible();
+        await expect(page.getByRole("region", { name: idioma.demo })).toBeVisible();
         // Lo más ancho de cada pantalla tiene que estar a la vista antes de medir.
         if (ruta === "/") {
           await expect(page.getByRole("region", { name: idioma.dolar })).toBeVisible();

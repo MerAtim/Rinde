@@ -4,6 +4,7 @@ import type { components } from "../../shared/api/schema";
 export type Session = components["schemas"]["MeResponse"];
 export type RegisterResponse = components["schemas"]["RegisterResponse"];
 export type RecoverResponse = components["schemas"]["RecoverResponse"];
+export type DemoResponse = components["schemas"]["DemoResponse"];
 
 /** Códigos estables que devuelve la API (ADR-0007). */
 const SERVER_CODES = [
@@ -18,6 +19,7 @@ const SERVER_CODES = [
   "INVALID_CREDENTIALS",
   "RECOVERY_CODE_INVALID",
   "TOO_MANY_ATTEMPTS",
+  "DEMO_UNAVAILABLE",
   "NOT_AUTHENTICATED",
   "CSRF_REJECTED",
 ] as const;
@@ -54,6 +56,12 @@ export async function register(username: string, password: string): Promise<Regi
 
 export async function login(username: string, password: string): Promise<void> {
   await api.post("/api/auth/login", { username, password });
+}
+
+/** Una cuenta demo propia, con datos de ejemplo, que se borra sola (ADR-0028). */
+export async function startDemo(): Promise<DemoResponse> {
+  const response = await api.post("/api/auth/demo");
+  return (await response.json()) as DemoResponse;
 }
 
 export async function logout(): Promise<void> {

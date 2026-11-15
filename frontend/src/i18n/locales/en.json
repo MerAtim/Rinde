@@ -106,6 +106,16 @@
     "home": {
       "logout": "Sign out"
     },
+    "demo": {
+      "label": "Demo account",
+      "lead": "Want to see it working before creating an account?",
+      "start": "Try the demo",
+      "starting": "Preparing the demo…",
+      "note": "With sample data. It deletes itself after two hours.",
+      "tooMany": "You already opened several demos in the last hour. Try later or create an account.",
+      "banner": "You are in a demo with sample data. It is deleted at {{time}} with everything you add.",
+      "createAccount": "Create my account"
+    },
     "session": {
       "loading": "Loading",
       "waking": "Waking up the server: the first visit of the day can take up to a minute.",
@@ -127,6 +137,7 @@
       "RECOVERY_CODE_INVALID": "The username or the recovery code is not correct.",
       "INVALID_CREDENTIALS": "The username or the password is not correct.",
       "TOO_MANY_ATTEMPTS": "Too many failed attempts. Wait 15 minutes and try again.",
+      "DEMO_UNAVAILABLE": "There are many demos open right now. Try again in a while.",
       "NOT_AUTHENTICATED": "Your session ended. Sign in again.",
       "CSRF_REJECTED": "We could not validate the request. Reload the page and try again.",
       "NETWORK_ERROR": "No connection to Rinde. Check your internet and try again.",
