@@ -327,6 +327,31 @@ async def test_the_audit_log_only_accepts_inserts(session: AsyncSession) -> None
     assert still_there.mappings().one()["action"] == "registered"
 
 
+async def test_the_audit_log_leaves_with_its_owner_and_only_then(session: AsyncSession) -> None:
+    """ADR-0028: borrar la cuenta borra su auditoría; la de los demás queda."""
+    owner_id = await _user(session, "mechi")
+    other_id = await _user(session, "otra")
+    for who in (owner_id, other_id):
+        account = await _account(session, who)
+        movement = _a_transaction(who, account, await _category(session, who))
+        await SqlAlchemyTransactionRepository(session).add(movement)
+        await SqlAlchemyAuditLog(session).record(AuditAction.REGISTERED, movement, NOW)
+
+    await session.execute(text("DELETE FROM users WHERE id = :id"), {"id": owner_id})
+
+    owners = await session.execute(
+        select(transaction_audit.c.owner_id).where(
+            transaction_audit.c.owner_id.in_([owner_id, other_id])
+        )
+    )
+    assert owners.scalars().all() == [other_id]
+    with pytest.raises(DBAPIError):
+        async with session.begin_nested():
+            await session.execute(
+                text("DELETE FROM transaction_audit WHERE owner_id = :id"), {"id": other_id}
+            )
+
+
 async def test_the_same_seeds_are_not_planted_twice(session: AsyncSession) -> None:
     owner_id = await _user(session, "mechi")
     repository = SqlAlchemyCategoryRepository(session)
