@@ -66,6 +66,8 @@ from rinde.dashboard.infrastructure.gateways import (
     RatesConverterFactory,
     TransactionsLedgerReader,
 )
+from rinde.demo.application.seed import SeedDemo
+from rinde.demo.infrastructure.writer import ModulesDemoWriter
 from rinde.health.api.router import router as health_router
 from rinde.health.application.check_readiness import CheckReadiness, DatabaseProbe
 from rinde.health.infrastructure.database_probe import SqlAlchemyDatabaseProbe
@@ -172,20 +174,6 @@ def create_app(  # noqa: PLR0913
 
     if database_probe is None:
         database_probe = SqlAlchemyDatabaseProbe(shared_engine())
-    if auth_factory is None:
-        auth_factory = SqlAlchemyAuthUnitFactory(
-            async_sessionmaker(shared_engine(), expire_on_commit=False),
-            AuthServices(
-                hasher=Argon2PasswordHasher(),
-                breaches=PwnedPasswordsChecker(
-                    shared_http_client(), base_url=config.pwned_passwords_url
-                ),
-                clock=SystemClock(),
-                secrets=SecureRandomSecrets(),
-                session_ttl=timedelta(days=config.session_ttl_days),
-            ),
-        )
-
     accounts_factory = accounts_factory or SqlAlchemyAccountsUnitFactory(
         async_sessionmaker(shared_engine(), expire_on_commit=False), SystemClock()
     )
@@ -234,6 +222,26 @@ def create_app(  # noqa: PLR0913
     )
     # Un gasto evalúa las alertas de su dueño, después de confirmarse (ADR-0022).
     events.subscribe(ExpenseRecorded, EvaluateOnExpense(alerts_factory))
+
+    # Auth va al final: la demo se siembra por los casos de uso de los otros
+    # módulos, con las mismas fábricas que usan sus endpoints (ADR-0028).
+    if auth_factory is None:
+        auth_factory = SqlAlchemyAuthUnitFactory(
+            async_sessionmaker(shared_engine(), expire_on_commit=False),
+            AuthServices(
+                hasher=Argon2PasswordHasher(),
+                breaches=PwnedPasswordsChecker(
+                    shared_http_client(), base_url=config.pwned_passwords_url
+                ),
+                clock=SystemClock(),
+                secrets=SecureRandomSecrets(),
+                session_ttl=timedelta(days=config.session_ttl_days),
+                demo_seeder=SeedDemo(
+                    ModulesDemoWriter(accounts_factory, transactions_factory, budgets_factory),
+                    SystemClock(),
+                ),
+            ),
+        )
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:

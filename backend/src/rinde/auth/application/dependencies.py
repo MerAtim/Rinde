@@ -7,6 +7,7 @@ from rinde.auth.application.ports import (
     BreachedPasswordChecker,
     ClientActivityRepository,
     Clock,
+    DemoSeeder,
     FailedAttemptRepository,
     PasswordHasher,
     SecretGenerator,
@@ -25,6 +26,7 @@ class AuthServices:
     clock: Clock
     secrets: SecretGenerator
     session_ttl: timedelta
+    demo_seeder: DemoSeeder
 
 
 @dataclass(frozen=True, slots=True)

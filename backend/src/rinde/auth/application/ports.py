@@ -84,6 +84,15 @@ class ClientActivityRepository(Protocol):
     async def purge_before(self, cutoff: datetime) -> None: ...
 
 
+class DemoSeeder(Protocol):
+    """Llena una demo recién creada con datos de ejemplo (ADR-0028).
+
+    Lo implementa otro módulo: auth no sabe qué es una cuenta ni un movimiento.
+    """
+
+    async def seed(self, owner_id: UUID) -> None: ...
+
+
 class PasswordHasher(Protocol):
     """Hash lento para secretos elegidos por personas.
 

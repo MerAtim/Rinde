@@ -15,7 +15,7 @@ from rinde.alerts.infrastructure.gateways import (
     TransactionsCategoryReader as AlertsCategoryReader,
 )
 from rinde.auth.application.dependencies import AuthDependencies, AuthServices
-from rinde.auth.application.ports import ClientAction, Session
+from rinde.auth.application.ports import ClientAction, DemoSeeder, Session
 from rinde.auth.application.unit import AuthUnit, build_auth_unit
 from rinde.auth.domain.errors import UsernameTakenError
 from rinde.auth.domain.user import User
@@ -228,23 +228,41 @@ class FakeTransaction:
         self.commits += 1
 
 
+class RecordingSeeder:
+    """Anota a quién sembró; los tests de la demo completa le pasan el sembrador real."""
+
+    def __init__(self) -> None:
+        self.seeded: list[UUID] = []
+
+    async def seed(self, owner_id: UUID) -> None:
+        self.seeded.append(owner_id)
+
+
 class InMemoryAuthUnitFactory:
     """Estado compartido entre pedidos, como si fuera la base de datos."""
 
-    def __init__(self, *, compromised: Iterable[str] = ()) -> None:
+    def __init__(
+        self,
+        *,
+        compromised: Iterable[str] = (),
+        seeder: DemoSeeder | None = None,
+        clock: FakeClock | None = None,
+    ) -> None:
         self.users = InMemoryUsers()
         self.sessions = InMemorySessions()
         self.failed_attempts = InMemoryFailedAttempts()
         self.client_activity = InMemoryClientActivity()
         self.transaction = FakeTransaction()
         self.hasher = FakeHasher()
-        self.clock = FakeClock()
+        self.clock = clock or FakeClock()
+        self.seeder = seeder or RecordingSeeder()
         self.services = AuthServices(
             hasher=self.hasher,
             breaches=FakeBreachChecker(compromised),
             clock=self.clock,
             secrets=FakeSecrets(),
             session_ttl=timedelta(days=30),
+            demo_seeder=self.seeder,
         )
 
     @asynccontextmanager

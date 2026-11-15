@@ -44,7 +44,7 @@ from rinde.shared.domain.calendar import argentine_day
 from rinde.shared.domain.rate_type import RateType
 from rinde.shared.infrastructure.clock import SystemClock
 from rinde.transactions.infrastructure.tables import categories, transactions, transfers
-from tests.fakes import FakeBreachChecker
+from tests.fakes import FakeBreachChecker, RecordingSeeder
 
 pytestmark = [pytest.mark.anyio, pytest.mark.integration]
 
@@ -204,6 +204,7 @@ async def test_the_dashboard_answers_under_300_ms_at_p95(
                 clock=clock,
                 secrets=SecureRandomSecrets(),
                 session_ttl=timedelta(days=1),
+                demo_seeder=RecordingSeeder(),
             ),
         ),
         rates_factory=SqlAlchemyRatesUnitFactory(sessionmaker, no_network, no_network, clock),
