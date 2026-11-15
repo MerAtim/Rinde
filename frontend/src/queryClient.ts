@@ -1,4 +1,12 @@
-import { type DefaultOptions, MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
+import {
+  type DefaultOptions,
+  hashKey,
+  MutationCache,
+  QueryCache,
+  QueryClient,
+} from "@tanstack/react-query";
+
+import type { Session } from "./features/auth/api";
 
 import { SESSION_QUERY_KEY } from "./features/auth/useSession";
 import { ApiRequestError } from "./shared/api/http";
@@ -33,5 +41,31 @@ export function createQueryClient(defaultOptions: DefaultOptions = {}): QueryCli
       queries: { retry: shouldRetry, ...defaultOptions.queries },
     },
   });
+  forgetDataOfOtherUsers(client);
   return client;
+}
+
+const SESSION_HASH = hashKey(SESSION_QUERY_KEY);
+
+/**
+ * Cuando cambia quién está en la sesión (cierra, ingresa otra persona, se pasa
+ * de una demo a una cuenta propia), se descarta todo lo que estaba en caché: lo
+ * de la persona anterior no tiene que aparecer, ni por un instante, a la nueva.
+ */
+function forgetDataOfOtherUsers(client: QueryClient): void {
+  let current: string | null | undefined;
+  client.getQueryCache().subscribe((event) => {
+    if (event.type !== "updated" || event.query.queryHash !== SESSION_HASH) {
+      return;
+    }
+    const session = event.query.state.data as Session | null | undefined;
+    if (session === undefined) {
+      return;
+    }
+    const next = session?.username ?? null;
+    if (current !== undefined && next !== current) {
+      client.removeQueries({ predicate: (query) => query.queryHash !== SESSION_HASH });
+    }
+    current = next;
+  });
 }
