@@ -2,6 +2,20 @@
 
 Aplicación web de finanzas personales para Argentina y LatAm. Responde una pregunta concreta: ¿me rinde el sueldo?
 
+## Probalo
+
+**https://rinde.meratim.workers.dev**: en la pantalla de ingreso, "Probar la demo" abre una cuenta propia con tres meses de datos inventados, sin registrarse. Se borra sola a las dos horas ([ADR-0028](docs/adr/0028-cuenta-demo.md)).
+
+La API corre en un plan gratuito que se suspende sin tráfico: si es la primera visita en un rato, la pantalla dice que el servidor se está despertando y puede tardar alrededor de un minuto.
+
+![Dashboard de una demo: patrimonio de hoy, su evolución y los ingresos y gastos de cada mes](docs/capturas/dashboard.png)
+
+| Movimientos | Presupuestos | Compras en cuotas | En el celular |
+| --- | --- | --- | --- |
+| ![Lista de movimientos con cuotas y recurrentes marcados](docs/capturas/movimientos.png) | ![Presupuestos del mes, uno cerca del tope](docs/capturas/presupuestos.png) | ![Una compra en seis cuotas con lo que falta pagar](docs/capturas/cuotas.png) | ![Presupuestos en una pantalla de 390 px](docs/capturas/presupuestos-celular.png) |
+
+Las capturas salen de una demo real, contra la API y la base de verdad, con el aviso que ve cualquier visitante.
+
 **Estado:** en construcción. El avance está en el [roadmap](docs/roadmap.md).
 
 ## Qué hace hoy
@@ -26,6 +40,76 @@ Aplicación web de finanzas personales para Argentina y LatAm. Responde una preg
 * **Demo sin registrarse:** "Probar la demo", en la pantalla de ingreso, abre una cuenta propia con tres meses de datos inventados: cuentas en pesos y en dólares, gastos, transferencias, una compra en cuotas, recurrentes y un presupuesto con su alerta. Cada visita tiene la suya, se carga por los mismos casos de uso que cualquier dato y se borra sola a las dos horas, con todo lo que tenga. Un aviso fijo dice a qué hora ([ADR-0028](docs/adr/0028-cuenta-demo.md)).
 * **Interfaz en español y en inglés**, con modo oscuro y claro.
 
+## Arquitectura
+
+Un monolito modular ([ADR-0001](docs/adr/0001-monolito-modular-fastapi-clean-architecture.md)): un solo despliegue, con módulos que se comunican como si fueran servicios. Cada módulo tiene cuatro capas, y la regla de dependencia la verifica [import-linter](backend/pyproject.toml) en cada cambio, con 25 contratos:
+
+* `domain`: entidades y reglas en Python puro. No importa FastAPI, SQLAlchemy, Pydantic ni httpx.
+* `application`: casos de uso y puertos (`Protocol`). Solo conoce al dominio.
+* `infrastructure`: repositorios SQLAlchemy y adaptadores a servicios externos.
+* `api`: routers FastAPI y esquemas Pydantic.
+
+Un módulo usa a otro solo por su capa de aplicación. Así quedan las dependencias, tal como están en el código:
+
+```mermaid
+flowchart LR
+  dashboard --> transactions
+  dashboard --> rates
+  dashboard --> preferences
+  dashboard --> inflation
+  budgets --> transactions
+  budgets --> rates
+  budgets --> preferences
+  alerts --> budgets
+  alerts --> transactions
+  imports --> transactions
+  demo --> accounts
+  demo --> transactions
+  demo --> budgets
+  transactions --> accounts
+  transactions -. "evento: gasto registrado" .-> alerts
+  demo -. "implementa el puerto DemoSeeder" .-> auth
+```
+
+Las flechas punteadas no son importaciones. Las alertas se enteran de un gasto por un evento de dominio ([ADR-0022](docs/adr/0022-alertas-de-presupuesto.md)), y auth siembra la demo por un puerto que implementa otro módulo: ninguno de los dos conoce al otro. Todos usan el kernel compartido (`Money`, `Currency`, el calendario argentino), que no depende de nadie.
+
+Algunos patrones, donde resuelven un problema concreto:
+
+* **Chain of Responsibility y Decorator** en las cotizaciones: si una fuente no responde contesta la siguiente, y lo respondido se guarda en memoria un rato ([ADR-0016](docs/adr/0016-fuentes-de-cotizaciones.md)).
+* **Strategy** en la importación: CSV configurable y PDF de Banco Macro detrás de la misma interfaz ([ADR-0023](docs/adr/0023-modelo-de-importacion.md)).
+* **Specification** en las reglas de categoría: gana la más específica ([ADR-0024](docs/adr/0024-reglas-de-categoria.md)).
+* **Unit of Work** por pedido, y operaciones de varias filas en una sola transacción.
+
+En producción ([ADR-0005](docs/adr/0005-hosting-gratuito.md)):
+
+```mermaid
+flowchart LR
+  navegador["Navegador"] --> worker["Cloudflare Worker<br/>frontend y proxy de /api"]
+  worker --> api["Render<br/>API FastAPI en Docker"]
+  api --> base[("Neon<br/>PostgreSQL 18")]
+  api --> fuentes["Fuentes públicas<br/>dólar, IPC del INDEC"]
+```
+
+El navegador ve un único origen, así que no hace falta CORS y la política de contenido puede quedar en `'self'`.
+
+**Dinero.** Nunca `float`: `Decimal` en Python, `NUMERIC` en PostgreSQL y strings en JSON. El frontend no hace cuentas con montos, solo los formatea. Una conversión guarda la tasa, el tipo de dólar, la fuente y la fecha, y un monto histórico se convierte con la cotización de su día.
+
+## Calidad, medida
+
+| Qué | Cuánto | Cómo se verifica |
+| --- | --- | --- |
+| Tests del backend | 1131: dominio, casos de uso, API e integración contra PostgreSQL | En cada cambio, en la CI |
+| Cobertura del backend | 98 % | La CI falla por debajo del mínimo |
+| Tests del frontend | 361, con axe-core en las pantallas | En cada cambio, en la CI |
+| Pruebas de extremo a extremo | 42 en Chromium, a 360 px y en los dos idiomas | Contra el build de producción ([ADR-0013](docs/adr/0013-pruebas-de-extremo-a-extremo.md)) |
+| Dashboard con 50.000 movimientos | p95 de 133 ms, con un límite de 300 ms | Una prueba lo mide en cada cambio y deja el número en el resumen de la corrida |
+| Una cuenta demo | 127 filas y 34 kB | Una prueba falla si pasa de 100 kB |
+| Acceso a datos ajenos | Ningún endpoint lo permite | Una prueba recorre todas las rutas: sin sesión dan 401, con recursos de otra persona dan 404 |
+| Dependencias e imágenes | Auditadas todos los días | Si aparece una vulnerabilidad, se abre un issue solo |
+| Decisiones | 28 ADR, con alternativas y costos | [docs/adr](docs/adr/README.md) |
+
+Los números de tiempo son de una corrida local; los de la CI quedan en cada corrida.
+
 ## Qué falta
 
 * El precio del Bitcoin.
@@ -34,8 +118,8 @@ El detalle y el orden están en el [roadmap](docs/roadmap.md).
 
 ## Stack
 
-* **Backend:** Python, FastAPI, SQLAlchemy, PostgreSQL.
-* **Frontend:** React, TypeScript, TanStack Query, React Aria, Chart.js.
+* **Backend:** Python 3.14, FastAPI, SQLAlchemy 2 con mapeo imperativo, Alembic, Pydantic v2, PostgreSQL 18, uv.
+* **Frontend:** React 19, TypeScript, Vite, TanStack Query, React Aria, Chart.js, react-i18next.
 * **Infraestructura:** Docker Compose y GitHub Actions.
 
 ## Cómo correrlo
@@ -62,7 +146,7 @@ Se publica automáticamente al integrar en `main` ([ADR-0005](docs/adr/0005-host
 
 **Dirección pública:** https://rinde.meratim.workers.dev
 
-La API corre en una instancia gratuita de Render (0,1 CPU, 512 MB de RAM) que se suspende tras 15 minutos sin tráfico: el primer pedido después de una pausa puede tardar alrededor de un minuto.
+La API corre en una instancia gratuita de Render (0,1 CPU, 512 MB de RAM) que se suspende tras 15 minutos sin tráfico: el primer pedido después de una pausa puede tardar alrededor de un minuto. Por eso los números de rendimiento se miden en la CI y no contra producción.
 
 ## Decisiones de arquitectura
 
