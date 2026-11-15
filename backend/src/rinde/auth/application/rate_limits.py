@@ -21,12 +21,17 @@ FAILURE_WINDOW = timedelta(minutes=15)
 MAX_REGISTRATIONS_PER_CLIENT = 5
 REGISTRATION_WINDOW = timedelta(hours=1)
 
+# Una demo escribe unos setenta movimientos sin autenticación (ADR-0028).
+MAX_DEMOS_PER_CLIENT = 3
+DEMO_WINDOW = timedelta(hours=1)
+
 # Más allá de la ventana más larga, una fila ya no cuenta para nada.
-RETENTION = max(FAILURE_WINDOW, REGISTRATION_WINDOW)
+RETENTION = max(FAILURE_WINDOW, REGISTRATION_WINDOW, DEMO_WINDOW)
 
 _LIMITS = {
     ClientAction.LOGIN_FAILURE: (MAX_FAILURES_PER_CLIENT, FAILURE_WINDOW),
     ClientAction.REGISTRATION: (MAX_REGISTRATIONS_PER_CLIENT, REGISTRATION_WINDOW),
+    ClientAction.DEMO: (MAX_DEMOS_PER_CLIENT, DEMO_WINDOW),
 }
 
 

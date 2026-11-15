@@ -57,3 +57,13 @@ class TooManyAttemptsError(AuthError):
     def __init__(self, retry_after_seconds: int) -> None:
         super().__init__(self.code)
         self.retry_after_seconds = retry_after_seconds
+
+
+class DemoUnavailableError(AuthError):
+    """Ya hay tantas demos como admite el servicio: no es culpa de quien pide."""
+
+    code = "DEMO_UNAVAILABLE"
+
+    def __init__(self, retry_after_seconds: int) -> None:
+        super().__init__(self.code)
+        self.retry_after_seconds = retry_after_seconds

@@ -4,6 +4,7 @@ from contextlib import AbstractAsyncContextManager
 from dataclasses import dataclass
 from typing import Protocol
 
+from rinde.auth.application.demo import CreateDemoUser, StartDemoSession
 from rinde.auth.application.dependencies import AuthDependencies
 from rinde.auth.application.login import LoginUser
 from rinde.auth.application.recover import RecoverAccount
@@ -19,6 +20,8 @@ class AuthUnit:
     logout: LogoutUser
     recover: RecoverAccount
     authenticate: AuthenticateSession
+    create_demo: CreateDemoUser
+    start_demo_session: StartDemoSession
 
 
 class AuthUnitFactory(Protocol):
@@ -35,4 +38,6 @@ def build_auth_unit(deps: AuthDependencies) -> AuthUnit:
         logout=LogoutUser(deps),
         recover=RecoverAccount(deps, issuer),
         authenticate=AuthenticateSession(deps),
+        create_demo=CreateDemoUser(deps),
+        start_demo_session=StartDemoSession(deps, issuer),
     )

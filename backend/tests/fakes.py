@@ -127,10 +127,15 @@ class FakeSecrets:
         self._counter += 1
         return f"token-{self._counter}"
 
+    def demo_suffix(self) -> str:
+        self._counter += 1
+        return f"{self._counter:010d}"
+
 
 class InMemoryUsers:
     def __init__(self) -> None:
         self.store: dict[UUID, User] = {}
+        self.demo_locks = 0
 
     async def add(self, user: User) -> None:
         if any(existing.username == user.username for existing in self.store.values()):
@@ -154,6 +159,15 @@ class InMemoryUsers:
             password_hash=password_hash,
             recovery_code_hash=recovery_code_hash,
         )
+
+    async def lock_demos(self) -> None:
+        self.demo_locks += 1
+
+    async def count_demos(self) -> int:
+        return sum(1 for user in self.store.values() if user.is_demo)
+
+    async def purge_expired_demos(self, now: datetime) -> None:
+        self.store = {key: user for key, user in self.store.items() if not user.is_expired(now)}
 
 
 class InMemorySessions:

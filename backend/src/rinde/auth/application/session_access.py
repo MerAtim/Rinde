@@ -23,7 +23,9 @@ class AuthenticateSession:
             await deps.transaction.commit()
             raise NotAuthenticatedError
         user = await deps.users.by_id(session.user_id)
-        if user is None:
+        # La sesión de una demo vence con ella; esto cubre una demo vencida que
+        # todavía no se borró, aunque la sesión dijera otra cosa.
+        if user is None or user.is_expired(deps.services.clock.now()):
             raise NotAuthenticatedError
         return user
 

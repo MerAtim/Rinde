@@ -110,7 +110,8 @@ export function RecoveryCodePage() {
           <Button
             isDisabled={!saved}
             onPress={() => {
-              setSession({ username });
+              // Una cuenta recién registrada nunca es demo.
+              setSession({ username, demo_expires_at: null });
               void navigate("/", { replace: true });
             }}
           >

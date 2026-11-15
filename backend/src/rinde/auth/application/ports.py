@@ -33,6 +33,16 @@ class UserRepository(Protocol):
         self, user_id: UUID, *, password_hash: str, recovery_code_hash: str
     ) -> None: ...
 
+    async def lock_demos(self) -> None:
+        """Hasta el final de la transacción, nadie más crea ni borra demos."""
+        ...
+
+    async def count_demos(self) -> int: ...
+
+    async def purge_expired_demos(self, now: datetime) -> None:
+        """Borra las demos vencidas y, en cascada, todos sus datos."""
+        ...
+
 
 class SessionRepository(Protocol):
     async def add(self, session: Session) -> None: ...
@@ -61,6 +71,7 @@ class ClientAction(StrEnum):
 
     LOGIN_FAILURE = "login_failure"
     REGISTRATION = "registration"
+    DEMO = "demo"
 
 
 class ClientActivityRepository(Protocol):
@@ -101,6 +112,10 @@ class SecretGenerator(Protocol):
     def recovery_code(self) -> str: ...
 
     def session_token(self) -> str: ...
+
+    def demo_suffix(self) -> str:
+        """Lo que sigue a `demo-` en el nombre de una demo."""
+        ...
 
 
 class Transaction(Protocol):

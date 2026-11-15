@@ -9,6 +9,8 @@ from rinde.auth.domain.errors import UsernameInvalidError, UsernameReservedError
 
 MIN_LENGTH = 3
 MAX_LENGTH = 30
+# Las cuentas demo se llaman así (ADR-0028): nadie más puede registrarse con este prefijo.
+DEMO_PREFIX = "demo-"
 _PATTERN = re.compile(r"[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?")
 _RESERVED = frozenset(
     {
@@ -41,3 +43,7 @@ class Username:
         if value in _RESERVED:
             raise UsernameReservedError
         return cls(value)
+
+    @property
+    def is_demo(self) -> bool:
+        return self.value.startswith(DEMO_PREFIX)

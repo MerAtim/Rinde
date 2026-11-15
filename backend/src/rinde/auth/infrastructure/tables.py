@@ -14,6 +14,7 @@ from sqlalchemy import (
     String,
     Table,
     Uuid,
+    text,
 )
 
 from rinde.shared.infrastructure.database import metadata
@@ -26,8 +27,24 @@ users = Table(
     Column("password_hash", String(255), nullable=False),
     Column("recovery_code_hash", String(255), nullable=False),
     Column("created_at", DateTime(timezone=True), nullable=False),
+    # Solo en una demo (ADR-0028); en una cuenta común es NULL.
+    Column("demo_expires_at", DateTime(timezone=True), nullable=True),
     CheckConstraint("username = lower(username)", name="username_lowercase"),
     CheckConstraint("char_length(username) BETWEEN 3 AND 30", name="username_length"),
+    CheckConstraint(
+        "demo_expires_at IS NULL OR demo_expires_at > created_at",
+        name="demo_expires_after_created",
+    ),
+    # El nombre y la vigencia van juntos: una demo se llama demo-algo, y nadie más.
+    CheckConstraint(
+        "(demo_expires_at IS NOT NULL) = (username LIKE 'demo-%')",
+        name="demo_name_matches",
+    ),
+    Index(
+        "ix_users_demo_expires_at",
+        "demo_expires_at",
+        postgresql_where=text("demo_expires_at IS NOT NULL"),
+    ),
 )
 
 sessions = Table(
