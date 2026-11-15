@@ -193,7 +193,17 @@ class SeedDemo:
         )
 
 
+# El último día que usa el calendario de la demo: cabe en cualquier mes.
+LAST_DAY = 28
+
+
 def _day(month_start: date, day: int, today: date) -> date:
-    """El día del mes, salvo en el mes en curso: ahí, como mucho hoy."""
-    wanted = month_start.replace(day=day)
-    return min(wanted, today)
+    """El día del mes; en el mes en curso, el mismo orden comprimido hasta hoy.
+
+    Correr a hoy todo lo que todavía no pasó apilaría la mitad del mes en un
+    solo día. Comprimir mantiene el orden y la separación, y todo entra en el
+    mes, así el súper sigue cruzando el 80 % de su tope.
+    """
+    if month_start != today.replace(day=1):
+        return month_start.replace(day=day)
+    return month_start.replace(day=1 + (day - 1) * (today.day - 1) // (LAST_DAY - 1))
