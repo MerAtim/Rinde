@@ -3,6 +3,8 @@
 La política real vive en el dominio: acá solo se acota el tamaño de la entrada.
 """
 
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 
@@ -32,3 +34,6 @@ class RecoverResponse(BaseModel):
 
 class MeResponse(BaseModel):
     username: str
+    demo_expires_at: datetime | None = Field(
+        description="Solo en una cuenta demo: cuándo se borra con todo lo suyo."
+    )

@@ -18,6 +18,10 @@ from rinde.auth.infrastructure.tables import (
     users,
 )
 
+# Clave del lock que serializa la creación y el borrado de demos. Cualquier
+# número fijo sirve mientras ningún otro lock use el mismo.
+DEMO_LOCK = 0x52494E4445_00_01
+
 
 def _to_user(row: RowMapping) -> User:
     return User(
@@ -26,6 +30,7 @@ def _to_user(row: RowMapping) -> User:
         password_hash=row["password_hash"],
         recovery_code_hash=row["recovery_code_hash"],
         created_at=row["created_at"],
+        demo_expires_at=row["demo_expires_at"],
     )
 
 
@@ -42,6 +47,7 @@ class SqlAlchemyUserRepository:
                     password_hash=user.password_hash,
                     recovery_code_hash=user.recovery_code_hash,
                     created_at=user.created_at,
+                    demo_expires_at=user.demo_expires_at,
                 )
             )
         except IntegrityError as error:
@@ -72,6 +78,24 @@ class SqlAlchemyUserRepository:
             update(users)
             .where(users.c.id == user_id)
             .values(password_hash=password_hash, recovery_code_hash=recovery_code_hash)
+        )
+
+    async def lock_demos(self) -> None:
+        await self._session.execute(select(func.pg_advisory_xact_lock(DEMO_LOCK)))
+
+    async def count_demos(self) -> int:
+        result = await self._session.execute(
+            select(func.count()).select_from(users).where(users.c.demo_expires_at.is_not(None))
+        )
+        return int(result.scalar_one())
+
+    async def purge_expired_demos(self, now: datetime) -> None:
+        # Las claves foráneas con ON DELETE CASCADE se llevan todo lo de la demo,
+        # auditoría incluida (ADR-0028).
+        await self._session.execute(
+            delete(users).where(
+                users.c.demo_expires_at.is_not(None), users.c.demo_expires_at <= now
+            )
         )
 
 

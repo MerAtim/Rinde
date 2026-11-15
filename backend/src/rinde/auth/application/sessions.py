@@ -1,7 +1,7 @@
 """Emisión de sesiones y control de intentos fallidos, compartidos por varios casos de uso."""
 
 import hashlib
-from datetime import timedelta
+from datetime import datetime, timedelta
 from uuid import UUID
 
 from rinde.auth.application.dependencies import AuthDependencies
@@ -23,7 +23,8 @@ class SessionIssuer:
     def __init__(self, deps: AuthDependencies) -> None:
         self._deps = deps
 
-    async def issue(self, user_id: UUID) -> str:
+    async def issue(self, user_id: UUID, *, expires_at: datetime | None = None) -> str:
+        """Sin `expires_at`, la sesión dura lo de siempre; una demo la acorta a su vencimiento."""
         services = self._deps.services
         token = services.secrets.session_token()
         now = services.clock.now()
@@ -32,7 +33,7 @@ class SessionIssuer:
                 token_hash=hash_token(token),
                 user_id=user_id,
                 created_at=now,
-                expires_at=now + services.session_ttl,
+                expires_at=expires_at or now + services.session_ttl,
             )
         )
         return token

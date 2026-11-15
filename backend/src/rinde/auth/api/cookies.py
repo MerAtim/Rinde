@@ -13,11 +13,12 @@ class SessionCookie:
     secure: bool
     max_age_seconds: int
 
-    def set(self, response: Response, token: str) -> None:
+    def set(self, response: Response, token: str, *, max_age_seconds: int | None = None) -> None:
+        """`max_age_seconds` acorta la cookie, como la de una demo, que vence con ella."""
         response.set_cookie(
             key=self.name,
             value=token,
-            max_age=self.max_age_seconds,
+            max_age=self.max_age_seconds if max_age_seconds is None else max_age_seconds,
             path="/",
             secure=self.secure,
             httponly=True,

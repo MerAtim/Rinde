@@ -7,7 +7,11 @@ from rinde.auth.application.dependencies import AuthDependencies
 from rinde.auth.application.ports import ClientAction
 from rinde.auth.application.rate_limits import ensure_client_under_limit, record_client_action
 from rinde.auth.application.sessions import SessionIssuer
-from rinde.auth.domain.errors import PasswordCompromisedError, UsernameTakenError
+from rinde.auth.domain.errors import (
+    PasswordCompromisedError,
+    UsernameReservedError,
+    UsernameTakenError,
+)
 from rinde.auth.domain.password_policy import check_password_policy
 from rinde.auth.domain.recovery_code import format_recovery_code
 from rinde.auth.domain.user import User
@@ -35,6 +39,8 @@ class RegisterUser:
 
         await ensure_client_under_limit(deps, ClientAction.REGISTRATION, client)
         username = Username.parse(raw_username)
+        if username.is_demo:
+            raise UsernameReservedError
         if await deps.users.by_username(username) is not None:
             raise UsernameTakenError
         normalized = check_password_policy(password, username)

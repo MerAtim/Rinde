@@ -1382,6 +1382,11 @@ export interface components {
     MeResponse: {
       /** Username */
       username: string;
+      /**
+       * Demo Expires At
+       * @description Solo en una cuenta demo: cuándo se borra con todo lo suyo.
+       */
+      demo_expires_at: string | null;
     };
     /** MoneyResponse */
     MoneyResponse: {

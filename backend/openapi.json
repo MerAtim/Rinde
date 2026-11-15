@@ -5779,11 +5779,25 @@
           "username": {
             "type": "string",
             "title": "Username"
+          },
+          "demo_expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Demo Expires At",
+            "description": "Solo en una cuenta demo: cuándo se borra con todo lo suyo."
           }
         },
         "type": "object",
         "required": [
-          "username"
+          "username",
+          "demo_expires_at"
         ],
         "title": "MeResponse"
       },

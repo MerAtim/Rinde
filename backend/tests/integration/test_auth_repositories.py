@@ -1,12 +1,16 @@
 """Repositorios de autenticación contra PostgreSQL real. Cada test se deshace al terminar."""
 
 from collections.abc import AsyncIterator
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
+from sqlalchemy import insert, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
+from rinde.accounts.infrastructure.tables import accounts
 from rinde.auth.application.ports import ClientAction, Session
 from rinde.auth.domain.errors import UsernameTakenError
 from rinde.auth.domain.user import User
@@ -17,6 +21,7 @@ from rinde.auth.infrastructure.repositories import (
     SqlAlchemySessionRepository,
     SqlAlchemyUserRepository,
 )
+from rinde.auth.infrastructure.tables import users as users_table
 
 pytestmark = [pytest.mark.anyio, pytest.mark.integration]
 
@@ -145,3 +150,63 @@ async def test_client_activity_is_counted_by_action_and_address(
     old = NOW - timedelta(days=1)
     assert await activity.count_since(ClientAction.LOGIN_FAILURE, attacker, old) == 1
     assert await activity.count_since(ClientAction.REGISTRATION, attacker, old) == 1
+
+
+def _demo(name: str, expires_at: datetime) -> User:
+    return replace(_user(name), demo_expires_at=expires_at)
+
+
+async def test_expired_demos_leave_with_everything_they_own(session: AsyncSession) -> None:
+    """ADR-0028: la cascada se lleva sus datos; las vigentes y las comunes quedan."""
+    users = SqlAlchemyUserRepository(session)
+    expired = _demo("demo-vencida0", NOW + timedelta(hours=2))
+    alive = _demo("demo-vigente0", NOW + timedelta(hours=3))
+    common = _user()
+    for user in (expired, alive, common):
+        await users.add(user)
+    await session.execute(
+        insert(accounts).values(
+            id=uuid4(),
+            owner_id=expired.id,
+            name="Banco",
+            kind="bank",
+            currency="ARS",
+            created_at=NOW,
+        )
+    )
+    before = await users.count_demos()
+
+    await users.lock_demos()
+    await users.purge_expired_demos(NOW + timedelta(hours=2))
+
+    assert await users.by_id(expired.id) is None
+    assert await users.by_id(alive.id) == alive
+    assert await users.by_id(common.id) == common
+    assert await users.count_demos() == before - 1
+    left = await session.execute(select(accounts).where(accounts.c.owner_id == expired.id))
+    assert left.all() == []
+
+
+@pytest.mark.parametrize(
+    ("name", "expires_at", "constraint"),
+    [
+        # Una cuenta común no puede llamarse demo-algo, ni una demo llamarse de otra forma.
+        ("demo-trucha", None, "demo_name_matches"),
+        ("mechi", NOW + timedelta(hours=2), "demo_name_matches"),
+        ("demo-al-reves", NOW - timedelta(hours=1), "demo_expires_after_created"),
+    ],
+)
+async def test_the_database_keeps_demo_names_and_expiry_together(
+    session: AsyncSession, name: str, expires_at: datetime | None, constraint: str
+) -> None:
+    with pytest.raises(IntegrityError, match=constraint):
+        await session.execute(
+            insert(users_table).values(
+                id=uuid4(),
+                username=name,
+                password_hash="x",
+                recovery_code_hash="x",
+                created_at=NOW,
+                demo_expires_at=expires_at,
+            )
+        )

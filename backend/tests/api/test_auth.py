@@ -53,7 +53,7 @@ def test_register_creates_the_account_a_session_and_a_recovery_code(client: Test
     cookie = response.headers["set-cookie"].lower()
     for attribute in (f"{COOKIE.lower()}=", "httponly", "secure", "samesite=strict", "path=/"):
         assert attribute in cookie
-    assert client.get("/api/auth/me").json() == {"username": "mechi"}
+    assert client.get("/api/auth/me").json() == {"username": "mechi", "demo_expires_at": None}
 
 
 def test_actions_that_change_state_require_the_csrf_header(client: TestClient) -> None:

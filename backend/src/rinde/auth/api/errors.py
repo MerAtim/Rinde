@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from rinde.auth.domain.errors import (
     AuthError,
+    DemoUnavailableError,
     InvalidCredentialsError,
     InvalidRecoveryCodeError,
     NotAuthenticatedError,
@@ -20,6 +21,7 @@ _STATUS_BY_ERROR: tuple[tuple[type[AuthError], int], ...] = (
     (InvalidRecoveryCodeError, status.HTTP_401_UNAUTHORIZED),
     (NotAuthenticatedError, status.HTTP_401_UNAUTHORIZED),
     (TooManyAttemptsError, status.HTTP_429_TOO_MANY_REQUESTS),
+    (DemoUnavailableError, status.HTTP_503_SERVICE_UNAVAILABLE),
 )
 
 
@@ -31,7 +33,7 @@ async def auth_error_handler(_: Request, exc: Exception) -> JSONResponse:
     )
     headers = (
         {"Retry-After": str(exc.retry_after_seconds)}
-        if isinstance(exc, TooManyAttemptsError)
+        if isinstance(exc, TooManyAttemptsError | DemoUnavailableError)
         else None
     )
     return JSONResponse({"code": exc.code}, status_code=status_code, headers=headers)

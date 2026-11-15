@@ -111,4 +111,4 @@ async def recover(
 @router.get("/me", responses=error_responses(401), summary="Cuenta de la sesión actual")
 async def me(request: Request, unit: Unit, cookie: SessionCookieDep) -> MeResponse:
     user = await unit.authenticate.execute(cookie.read(request))
-    return MeResponse(username=user.username.value)
+    return MeResponse(username=user.username.value, demo_expires_at=user.demo_expires_at)
