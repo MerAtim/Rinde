@@ -69,7 +69,8 @@
       "submit": "Crear cuenta",
       "submitting": "Creando la cuenta…",
       "haveAccount": "¿Ya tenés cuenta?",
-      "goLogin": "Ingresá"
+      "goLogin": "Ingresá",
+      "tooMany": "Ya se crearon varias cuentas desde esta conexión en la última hora. Probá de nuevo más tarde."
     },
     "login": {
       "title": "Ingresá a Rinde",
