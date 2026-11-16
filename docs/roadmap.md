@@ -75,7 +75,7 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 ## Fase 8: portfolio
 * [x] Cuenta demo con datos sembrados realistas (sin registro): una por visita, que se borra sola (ADR-0028)
 * [x] README: arquitectura, diagrama, ADRs, capturas, cómo correrlo, métricas reales
-* [ ] Playwright e2e de los 3 flujos críticos contra el entorno completo. El
+* [x] Playwright e2e de los 3 flujos críticos contra el entorno completo. El
   andamiaje ya existe y corre en CI desde la fase 0: se adelantó porque es el
   único tipo de prueba que ve el maquetado (ADR-0013)
 

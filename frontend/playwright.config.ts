@@ -22,6 +22,8 @@ const BASE_URL = `http://127.0.0.1:${String(PORT)}`;
 
 export default defineConfig({
   testDir: "./e2e",
+  // Los flujos contra el entorno completo tienen su propia configuración.
+  testIgnore: "flujos/**",
   fullyParallel: true,
   // En CI, un `test.only` olvidado dejaría pasar todo lo demás sin correr.
   forbidOnly: Boolean(process.env.CI),

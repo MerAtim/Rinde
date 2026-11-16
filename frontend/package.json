@@ -11,7 +11,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "generate:api": "openapi-typescript ../backend/openapi.json -o src/shared/api/schema.d.ts && prettier --write src/shared/api/schema.d.ts",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:flujos": "playwright test --config playwright.flujos.config.ts"
   },
   "dependencies": {
     "@fontsource-variable/google-sans-flex": "^5.3.2",
