@@ -46,6 +46,20 @@ describe("Crear cuenta", () => {
     );
   });
 
+  it("con el límite de registros, dice que es por hora y no por intentos fallidos", async () => {
+    mockApi({
+      ...NO_SESSION,
+      "POST /api/auth/register": jsonResponse(429, { code: "TOO_MANY_ATTEMPTS" }),
+    });
+    renderWithProviders(<App />, { route: "/signup" });
+
+    await fillAndSubmit("mechi", PASSPHRASE);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Ya se crearon varias cuentas desde esta conexión en la última hora. Probá de nuevo más tarde.",
+    );
+  });
+
   it("muestra el código y no deja seguir hasta confirmar que se guardó", async () => {
     mockApi({
       ...NO_SESSION,

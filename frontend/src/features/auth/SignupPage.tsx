@@ -42,7 +42,10 @@ export function SignupPage() {
 
   const code = localError ?? errorCodeOf(signup.error);
   const field = code ? fieldOf(code) : null;
-  const message = code ? t(`auth.errors.${code}`) : "";
+  // El límite del registro es por cuentas creadas en una hora, no por intentos
+  // fallidos: tiene su propio texto.
+  const message =
+    code === "TOO_MANY_ATTEMPTS" ? t("auth.signup.tooMany") : code ? t(`auth.errors.${code}`) : "";
 
   return (
     <AuthLayout>

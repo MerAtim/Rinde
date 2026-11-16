@@ -69,7 +69,8 @@
       "submit": "Create account",
       "submitting": "Creating account…",
       "haveAccount": "Already have an account?",
-      "goLogin": "Sign in"
+      "goLogin": "Sign in",
+      "tooMany": "Several accounts were already created from this connection in the last hour. Try again later."
     },
     "login": {
       "title": "Sign in to Rinde",
