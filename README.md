@@ -102,6 +102,7 @@ El navegador ve un único origen, así que no hace falta CORS y la política de 
 | Cobertura del backend | 98 % | La CI falla por debajo del mínimo |
 | Tests del frontend | 361, con axe-core en las pantallas | En cada cambio, en la CI |
 | Pruebas de extremo a extremo | 42 en Chromium, a 360 px y en los dos idiomas | Contra el build de producción ([ADR-0013](docs/adr/0013-pruebas-de-extremo-a-extremo.md)) |
+| Flujos críticos | 3, sin nada simulado: registrarse y volver a entrar, abrir una cuenta y registrar un gasto, y probar la demo | Contra el entorno completo de `docker compose`, en cada cambio |
 | Dashboard con 50.000 movimientos | p95 de 133 ms, con un límite de 300 ms | Una prueba lo mide en cada cambio y deja el número en el resumen de la corrida |
 | Una cuenta demo | 127 filas y 34 kB | Una prueba falla si pasa de 100 kB |
 | Acceso a datos ajenos | Ningún endpoint lo permite | Una prueba recorre todas las rutas: sin sesión dan 401, con recursos de otra persona dan 404 |
@@ -193,7 +194,19 @@ El navegador se baja una sola vez por clon:
 cd frontend && npx playwright install chromium
 ```
 
-Para omitirlas a sabiendas: `RINDE_SKIP_E2E=1`. Usan el puerto 4173, el de
+Los tres flujos críticos van aparte, porque necesitan el entorno completo arriba y
+no simulan nada: nginx, la API y PostgreSQL de verdad. La CI los corre en cada
+cambio; a mano, con el compose levantado:
+
+```bash
+cd frontend && npm run e2e:flujos   # otra dirección: RINDE_FLUJOS_URL
+```
+
+Cada corrida registra dos cuentas y abre una demo, y el registro y la demo tienen
+límite por dirección de origen: repetirlas muchas veces en una hora termina en
+"demasiados intentos", que es la protección funcionando.
+
+Para omitir las de maquetado a sabiendas: `RINDE_SKIP_E2E=1`. Usan el puerto 4173, el de
 `vite preview`. Si otro proyecto lo tiene ocupado, el arranque falla en lugar de
 probar contra esa aplicación; se cambia con `RINDE_E2E_PORT=4199`.
 
