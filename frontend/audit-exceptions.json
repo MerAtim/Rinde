@@ -1,0 +1,8 @@
+[
+  {
+    "id": "GHSA-fc5q-39xc-vjpf",
+    "package": "picomatch",
+    "reason": "Sin versión corregida: el aviso cubre hasta la 4.0.7, que es la última. Solo lo usan Vite, Vitest y vite-plugin-svgr al compilar y al correr tests, con los patrones de nuestra configuración; no llega al navegador ni recibe datos de usuarios. La salida que propone npm es bajar a Vite 6.",
+    "review_by": "2026-12-17"
+  }
+]
