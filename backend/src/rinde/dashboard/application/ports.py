@@ -52,9 +52,18 @@ class ReferenceReader(Protocol):
 
 class ConverterFactory(Protocol):
     async def converter(
-        self, target: Currency, rate_type: RateType, since: date, until: date
+        self,
+        target: Currency,
+        rate_type: RateType,
+        since: date,
+        until: date,
+        currencies: frozenset[Currency],
     ) -> Converter:
-        """Con la cotización de cada día del rango ya traída: convertir no consulta nada."""
+        """Con la cotización de cada día del rango ya traída: convertir no consulta nada.
+
+        `currencies` son las monedas que se van a convertir: con Bitcoin hace
+        falta también su precio, y sin Bitcoin no se espera a nadie (ADR-0029).
+        """
         ...
 
 

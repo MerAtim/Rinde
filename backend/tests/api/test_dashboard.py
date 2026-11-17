@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 
 from rinde.config import Settings
 from rinde.main import create_app
-from rinde.rates.domain.quote import RateSource
+from rinde.rates.domain.quote import Market, RateSource
 from rinde.shared.domain.rate_type import RateType
 from tests.fakes import (
     FakeClock,
@@ -193,7 +193,34 @@ def test_totals_in_dollars_follow_the_preferences(client: TestClient) -> None:
     assert body["net_worth"][-1]["total"] == _money("0.52", "USD")
 
 
-def test_bitcoin_is_reported_apart_and_not_mixed_in(client: TestClient) -> None:
+def test_bitcoin_counts_with_its_price_of_each_day_and_the_dollar(
+    client: TestClient, rates: InMemoryRatesUnitFactory
+) -> None:
+    """ADR-0029: a dólares con el precio del Bitcoin de su día, y a pesos con el MEP."""
+    days = [date(2026, 8, 20) + timedelta(days=n) for n in range((TODAY - date(2026, 8, 20)).days)]
+    rates.history.stock += [
+        quote(Market.BITCOIN, day, buy="50000", sell="50000", source=RateSource.KRAKEN)
+        for day in days
+    ]
+    rates.provider.stock.append(
+        quote(Market.BITCOIN, TODAY, buy="60000", sell="60100", source=RateSource.KRAKEN)
+    )
+    _sign_in(client, "mechi")
+    wallet = _account(client, "BTC")
+    _move(client, wallet, "income", "0.01000000", "2026-09-04")
+
+    body = client.get("/api/dashboard", params=PERIOD).json()
+
+    # 0,01 BTC a 50.000 dólares, a 1.000 pesos el MEP de septiembre.
+    assert body["monthly"][0]["income"] == _money("500000.00")
+    # Hoy: a 60.000 la compra del Bitcoin y a 2.000 la del MEP.
+    assert body["net_worth"][-1]["total"] == _money("1200000.00")
+    assert body["unconverted"] == []
+
+
+def test_bitcoin_without_any_price_is_reported_apart_and_not_mixed_in(
+    client: TestClient,
+) -> None:
     _sign_in(client, "mechi")
     wallet = _account(client, "BTC")
     _move(client, wallet, "income", "0.01000000", "2026-09-04")

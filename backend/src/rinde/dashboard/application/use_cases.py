@@ -69,7 +69,11 @@ class GetDashboard:
         # todo en pesos no espera a ninguna fuente.
         if currencies - {reference.currency}:
             converter = await self._deps.converters.converter(
-                reference.currency, reference.rate_type, period.since, period.until
+                reference.currency,
+                reference.rate_type,
+                period.since,
+                period.until,
+                frozenset(currencies),
             )
         prices: PriceIndex | None = None
         # El IPC se consulta solo si se pidió: el dashboard de siempre no cambia.

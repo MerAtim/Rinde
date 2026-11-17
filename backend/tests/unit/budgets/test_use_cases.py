@@ -221,7 +221,8 @@ class TestGetBudgets:
         assert result.items == []
         assert world.spending.calls == []
 
-    async def test_only_fetches_rates_for_convertible_currencies_it_needs(self) -> None:
+    async def test_asks_for_each_target_the_currencies_it_has_to_convert(self) -> None:
+        """Un gasto en Bitcoin también cuenta: se pide su precio (ADR-0029)."""
         world = World(
             _expense(FOOD, 3, "100.00", "USD"),
             _expense(RENT, 4, "0.01000000", "BTC"),
@@ -231,12 +232,18 @@ class TestGetBudgets:
 
         result = await world.get()
 
-        # Bitcoin no tiene cotización: no se sale a buscar un dólar para él.
+        until = date(2026, 11, 10)
         assert world.converters.calls == [
-            (Currency.ARS, RateType.BLUE, NOVEMBER, date(2026, 11, 10))
+            (Currency.ARS, RateType.BLUE, NOVEMBER, until),
+            (Currency.USD, RateType.BLUE, NOVEMBER, until),
+        ]
+        assert world.converters.currencies == [
+            frozenset({Currency.USD}),
+            frozenset({Currency.BTC}),
         ]
         rent, food = result.items
         assert food.progress.spent == ars("110000.00")
+        # El conversor de prueba no tiene precio del Bitcoin: queda informado aparte.
         assert rent.progress.unconverted == [btc("0.01000000")]
 
     async def test_someone_else_sees_nothing(self) -> None:
