@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     dolarapi_url: str = "https://dolarapi.com"
     argentinadatos_url: str = "https://api.argentinadatos.com"
     criptoya_url: str = "https://criptoya.com"
+    # Precio del Bitcoin (ADR-0029).
+    kraken_url: str = "https://api.kraken.com"
+    bitstamp_url: str = "https://www.bitstamp.net"
     # IPC del INDEC para los pesos constantes (ADR-0025).
     datos_gob_ar_url: str = "https://apis.datos.gob.ar"
 

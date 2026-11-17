@@ -20,9 +20,8 @@ from rinde.auth.infrastructure.tables import sessions, users
 from rinde.config import Settings
 from rinde.main import create_app
 from rinde.rates.application.ports import QuoteRequest, RateSourceUnavailableError
-from rinde.rates.domain.quote import Quote
+from rinde.rates.domain.quote import Quote, QuoteKind
 from rinde.rates.infrastructure.factory import SqlAlchemyRatesUnitFactory
-from rinde.shared.domain.rate_type import RateType
 from rinde.shared.infrastructure.clock import SystemClock
 from rinde.shared.infrastructure.database import metadata
 from tests.integration.test_dashboard_performance import _publish
@@ -35,10 +34,10 @@ MAX_DATA_BYTES = 100_000
 
 
 class _NoNetwork:
-    async def quotes(self, request: QuoteRequest) -> dict[RateType, Quote]:
+    async def quotes(self, request: QuoteRequest) -> dict[QuoteKind, Quote]:
         raise RateSourceUnavailableError
 
-    async def series(self, rate_type: RateType) -> list[Quote]:
+    async def series(self, rate_type: QuoteKind) -> list[Quote]:
         raise RateSourceUnavailableError
 
 

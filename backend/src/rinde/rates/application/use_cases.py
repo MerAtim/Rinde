@@ -17,21 +17,20 @@ from rinde.rates.application.ports import (
     RateSourceUnavailableError,
     Transaction,
 )
-from rinde.rates.domain.conversion import Conversion, convert
+from rinde.rates.domain.conversion import Conversion, convert, route
 from rinde.rates.domain.errors import (
-    ConversionNotSupportedError,
     ConversionSameCurrencyError,
     RateDateInFutureError,
     RateNotFoundError,
     RateRangeInvalidError,
     RatesUnavailableError,
 )
-from rinde.rates.domain.quote import Quote
+from rinde.rates.domain.quote import ALL_KINDS, Market, Quote, QuoteKind, pair_of
 from rinde.shared.domain.calendar import argentine_day
 from rinde.shared.domain.money import Currency, Money
 from rinde.shared.domain.rate_type import ALL_RATE_TYPES, RateType
 
-_ORDER = {rate_type: index for index, rate_type in enumerate(RateType)}
+_ORDER = {kind: index for index, kind in enumerate(ALL_KINDS)}
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,7 +55,7 @@ class GetQuotes:
         self._deps = deps
 
     async def execute(
-        self, day: date | None = None, types: frozenset[RateType] = ALL_RATE_TYPES
+        self, day: date | None = None, types: frozenset[QuoteKind] = ALL_RATE_TYPES
     ) -> list[Quote]:
         now = self._deps.clock.now()
         today = argentine_day(now)
@@ -69,7 +68,7 @@ class GetQuotes:
             {} if current else {q.rate_type: q for q in await self._deps.quotes.for_day(day, types)}
         )
         missing = types - stored.keys()
-        fetched: dict[RateType, Quote] = {}
+        fetched: dict[QuoteKind, Quote] = {}
         if missing:
             try:
                 fetched = await self._deps.provider.quotes(QuoteRequest(day, missing, current))
@@ -98,28 +97,39 @@ class GetQuote:
         return quotes[0]
 
 
-# Los pares que tienen cotización. Bitcoin necesita su propia fuente (ADR-0016).
-CONVERTIBLE = frozenset({Currency.ARS, Currency.USD})
+def kinds_for(source: Currency, target: Currency, rate_type: RateType) -> tuple[QuoteKind, ...]:
+    """Qué cotizaciones hacen falta, en orden, para llevar `source` a `target`.
+
+    El tramo entre dólares y pesos usa el dólar elegido; el tramo entre Bitcoin
+    y dólares, el precio del Bitcoin (ADR-0029).
+    """
+    bitcoin = pair_of(Market.BITCOIN)
+    return tuple(Market.BITCOIN if pair == bitcoin else rate_type for pair in route(source, target))
 
 
 class ConvertAmount:
-    """Un monto en la otra moneda, con el dólar elegido y la cotización del día (ADR-0017).
+    """Un monto en otra moneda, con el dólar elegido y las cotizaciones del día (ADR-0017).
 
     Se convierte al consultar, con el histórico guardado: el mismo día da
-    siempre el mismo resultado, porque una fila guardada no cambia.
+    siempre el mismo resultado, porque una fila guardada no cambia. Bitcoin a
+    pesos son dos pasos, y la respuesta dice los dos (ADR-0029).
     """
 
     def __init__(self, deps: RatesDependencies) -> None:
-        self._quote = GetQuote(deps)
+        self._quotes = GetQuotes(deps)
 
     async def execute(
         self, money: Money, target: Currency, rate_type: RateType, day: date | None = None
     ) -> Conversion:
         if money.currency is target:
             raise ConversionSameCurrencyError
-        if money.currency not in CONVERTIBLE or target not in CONVERTIBLE:
-            raise ConversionNotSupportedError
-        return convert(money, await self._quote.execute(rate_type, day))
+        kinds = kinds_for(money.currency, target, rate_type)
+        found = {
+            quote.rate_type: quote for quote in await self._quotes.execute(day, frozenset(kinds))
+        }
+        if any(kind not in found for kind in kinds):
+            raise RateNotFoundError
+        return convert(money, *(found[kind] for kind in kinds))
 
 
 # Un día sin cotización propia (un feriado que la fuente no completó) toma la
@@ -134,7 +144,7 @@ _ONE_DAY = timedelta(days=1)
 
 
 class GetQuoteSeries:
-    """Un tipo de dólar para cada día de un rango (ADR-0018).
+    """Un tipo de dólar, o un mercado, para cada día de un rango (ADR-0018, ADR-0029).
 
     * Los días cerrados salen de la base. Si falta alguno, se trae la serie
       completa de la fuente en un solo pedido y se guarda lo que faltaba.
@@ -147,7 +157,7 @@ class GetQuoteSeries:
         self._deps = deps
         self._quotes = GetQuotes(deps)
 
-    async def execute(self, rate_type: RateType, since: date, until: date) -> dict[date, Quote]:
+    async def execute(self, rate_type: QuoteKind, since: date, until: date) -> dict[date, Quote]:
         now = self._deps.clock.now()
         today = argentine_day(now)
         if since > until or until - since > MAX_RANGE:
@@ -169,7 +179,7 @@ class GetQuoteSeries:
 
     async def _load(
         self,
-        rate_type: RateType,
+        rate_type: QuoteKind,
         now: datetime,
         stored: dict[date, Quote],
         since: date,
@@ -193,7 +203,7 @@ class GetQuoteSeries:
             await self._deps.transaction.commit()
         return missing
 
-    async def _current(self, rate_type: RateType) -> dict[date, Quote]:
+    async def _current(self, rate_type: QuoteKind) -> dict[date, Quote]:
         try:
             quotes = await self._quotes.execute(None, frozenset({rate_type}))
         except RatesUnavailableError:

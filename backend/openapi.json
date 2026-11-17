@@ -5274,6 +5274,25 @@
           "converted": {
             "$ref": "#/components/schemas/MoneyResponse"
           },
+          "steps": {
+            "items": {
+              "$ref": "#/components/schemas/ConversionStepResponse"
+            },
+            "type": "array",
+            "title": "Steps",
+            "description": "Cada cotización por la que pasó el monto, en orden. Bitcoin a pesos son dos"
+          }
+        },
+        "type": "object",
+        "required": [
+          "original",
+          "converted",
+          "steps"
+        ],
+        "title": "ConversionResponse"
+      },
+      "ConversionStepResponse": {
+        "properties": {
           "rate": {
             "type": "string",
             "title": "Rate",
@@ -5285,12 +5304,10 @@
         },
         "type": "object",
         "required": [
-          "original",
-          "converted",
           "rate",
           "quote"
         ],
-        "title": "ConversionResponse"
+        "title": "ConversionStepResponse"
       },
       "Credentials": {
         "properties": {
@@ -5873,6 +5890,14 @@
         "title": "MarkReadRequest",
         "description": "Las alertas que la persona vio. Las de otra persona se ignoran: no cambian."
       },
+      "Market": {
+        "type": "string",
+        "enum": [
+          "bitcoin"
+        ],
+        "title": "Market",
+        "description": "Lo que se cotiza en dólares y no es un dólar: por ahora, el Bitcoin (ADR-0029)."
+      },
       "MeResponse": {
         "properties": {
           "username": {
@@ -6079,7 +6104,16 @@
       "QuoteResponse": {
         "properties": {
           "rate_type": {
-            "$ref": "#/components/schemas/RateType"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RateType"
+              },
+              {
+                "$ref": "#/components/schemas/Market"
+              }
+            ],
+            "title": "Rate Type",
+            "description": "Un tipo de dólar, o un mercado como el Bitcoin (ADR-0029)"
           },
           "base": {
             "$ref": "#/components/schemas/Currency"
@@ -6096,12 +6130,12 @@
           "buy": {
             "type": "string",
             "title": "Buy",
-            "description": "Pesos que se reciben por un dólar"
+            "description": "Cuánto de counter se recibe por un base"
           },
           "sell": {
             "type": "string",
             "title": "Sell",
-            "description": "Pesos que se pagan por un dólar"
+            "description": "Cuánto de counter se paga por un base"
           },
           "source": {
             "$ref": "#/components/schemas/RateSource"
@@ -6138,9 +6172,12 @@
         "enum": [
           "dolarapi",
           "argentinadatos",
-          "criptoya"
+          "criptoya",
+          "kraken",
+          "bitstamp"
         ],
-        "title": "RateSource"
+        "title": "RateSource",
+        "description": "En orden de prioridad, como en la cadena de fuentes de cada par."
       },
       "RateType": {
         "type": "string",

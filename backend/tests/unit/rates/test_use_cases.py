@@ -12,13 +12,12 @@ from rinde.rates.application.use_cases import (
     RatesDependencies,
 )
 from rinde.rates.domain.errors import (
-    ConversionNotSupportedError,
     ConversionSameCurrencyError,
     RateDateInFutureError,
     RateNotFoundError,
     RatesUnavailableError,
 )
-from rinde.rates.domain.quote import RateSource
+from rinde.rates.domain.quote import Market, RateSource
 from rinde.shared.domain.money import Currency, Money
 from rinde.shared.domain.rate_type import ALL_RATE_TYPES, RateType
 from tests.fakes import FakeClock, FakeTransaction
@@ -147,26 +146,58 @@ async def test_an_amount_is_converted_with_the_quote_of_its_day() -> None:
     )
 
     assert result.converted == Money(Decimal(119000), Currency.ARS)
-    assert result.quote.day == PAST
+    assert [step.quote.day for step in result.steps] == [PAST]
 
 
-@pytest.mark.parametrize(
-    ("currency", "target", "error"),
-    [
-        (Currency.ARS, Currency.ARS, ConversionSameCurrencyError),
-        (Currency.BTC, Currency.ARS, ConversionNotSupportedError),
-        (Currency.USD, Currency.BTC, ConversionNotSupportedError),
-    ],
-)
-async def test_what_cannot_be_converted_does_not_ask_the_sources(
-    currency: Currency, target: Currency, error: type[Exception]
-) -> None:
+async def test_the_same_currency_is_not_converted_nor_asked_for() -> None:
     provider = FakeRateProvider(quote())
     deps, _ = _deps(provider)
 
-    with pytest.raises(error):
-        await ConvertAmount(deps).execute(Money(Decimal(1), currency), target, RateType.MEP)
+    with pytest.raises(ConversionSameCurrencyError):
+        await ConvertAmount(deps).execute(
+            Money(Decimal(1), Currency.ARS), Currency.ARS, RateType.MEP
+        )
     assert provider.requests == []
+
+
+async def test_bitcoin_to_pesos_goes_through_the_chosen_dollar() -> None:
+    """ADR-0029: a dólares con su precio, a pesos con el MEP. Cada paso, del lado prudente."""
+    bitcoin = quote(Market.BITCOIN, buy="60000", sell="60100", source=RateSource.KRAKEN)
+    mep = quote(RateType.MEP, buy="1500", sell="1550")
+    deps, _ = _deps(FakeRateProvider(bitcoin, mep))
+
+    result = await ConvertAmount(deps).execute(
+        Money(Decimal("0.5"), Currency.BTC), Currency.ARS, RateType.MEP
+    )
+
+    # Medio Bitcoin que tenés: lo venderías a 60.000, y esos dólares a 1.500.
+    assert result.converted == Money(Decimal(45_000_000), Currency.ARS)
+    assert [(step.quote, step.rate) for step in result.steps] == [
+        (bitcoin, bitcoin.buy),
+        (mep, mep.buy),
+    ]
+
+
+async def test_pesos_to_bitcoin_walks_the_route_backwards() -> None:
+    bitcoin = quote(Market.BITCOIN, buy="60000", sell="60000", source=RateSource.KRAKEN)
+    mep = quote(RateType.MEP, buy="1500", sell="1500")
+    deps, _ = _deps(FakeRateProvider(bitcoin, mep))
+
+    result = await ConvertAmount(deps).execute(
+        Money(Decimal(90_000_000), Currency.ARS), Currency.BTC, RateType.MEP
+    )
+
+    assert result.converted == Money(Decimal(1), Currency.BTC)
+    assert [step.quote.rate_type for step in result.steps] == [RateType.MEP, Market.BITCOIN]
+
+
+async def test_without_the_bitcoin_price_there_is_no_conversion() -> None:
+    deps, _ = _deps(FakeRateProvider(quote(RateType.MEP)))
+
+    with pytest.raises(RateNotFoundError):
+        await ConvertAmount(deps).execute(
+            Money(Decimal(1), Currency.BTC), Currency.ARS, RateType.MEP
+        )
 
 
 async def test_without_a_quote_there_is_no_conversion() -> None:

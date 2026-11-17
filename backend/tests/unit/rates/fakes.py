@@ -5,19 +5,29 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from rinde.rates.application.ports import QuoteRequest, RateSourceUnavailableError
-from rinde.rates.domain.quote import Quote, RateSource
+from rinde.rates.domain.quote import Quote, QuoteKind, RateSource, pair_of
 from rinde.shared.domain.rate_type import RateType
 
 
 def quote(
-    rate_type: RateType = RateType.MEP,
+    rate_type: QuoteKind = RateType.MEP,
     day: date = date(2026, 11, 10),
     *,
     buy: str = "1560.2",
     sell: str = "1587.9",
     source: RateSource = RateSource.DOLARAPI,
 ) -> Quote:
-    return Quote(rate_type=rate_type, day=day, buy=Decimal(buy), sell=Decimal(sell), source=source)
+    """Una cotización de prueba. El par sale de la clase, como exige `Quote`."""
+    base, counter = pair_of(rate_type)
+    return Quote(
+        rate_type=rate_type,
+        day=day,
+        buy=Decimal(buy),
+        sell=Decimal(sell),
+        source=source,
+        base=base,
+        counter=counter,
+    )
 
 
 class FakeRateProvider:
@@ -28,7 +38,7 @@ class FakeRateProvider:
         self.down = down
         self.requests: list[QuoteRequest] = []
 
-    async def quotes(self, request: QuoteRequest) -> dict[RateType, Quote]:
+    async def quotes(self, request: QuoteRequest) -> dict[QuoteKind, Quote]:
         self.requests.append(request)
         if self.down:
             raise RateSourceUnavailableError
@@ -45,9 +55,9 @@ class FakeHistoryProvider:
     def __init__(self, *quotes: Quote, down: bool = False) -> None:
         self.stock = list(quotes)
         self.down = down
-        self.requests: list[RateType] = []
+        self.requests: list[QuoteKind] = []
 
-    async def series(self, rate_type: RateType) -> list[Quote]:
+    async def series(self, rate_type: QuoteKind) -> list[Quote]:
         self.requests.append(rate_type)
         if self.down:
             raise RateSourceUnavailableError
@@ -56,19 +66,19 @@ class FakeHistoryProvider:
 
 class InMemoryQuotes:
     def __init__(self, *quotes: Quote) -> None:
-        self.rows: dict[tuple[date, RateType, RateSource], Quote] = {}
-        self.fetched_at: dict[tuple[date, RateType, RateSource], datetime] = {}
+        self.rows: dict[tuple[date, QuoteKind, RateSource], Quote] = {}
+        self.fetched_at: dict[tuple[date, QuoteKind, RateSource], datetime] = {}
         for item in quotes:
             self.rows[(item.day, item.rate_type, item.source)] = item
 
-    async def for_day(self, day: date, types: frozenset[RateType]) -> list[Quote]:
-        found: dict[RateType, Quote] = {}
+    async def for_day(self, day: date, types: frozenset[QuoteKind]) -> list[Quote]:
+        found: dict[QuoteKind, Quote] = {}
         for (row_day, rate_type, _), item in sorted(self.rows.items()):
             if row_day == day and rate_type in types:
                 found.setdefault(rate_type, item)
         return list(found.values())
 
-    async def for_range(self, rate_type: RateType, since: date, until: date) -> list[Quote]:
+    async def for_range(self, rate_type: QuoteKind, since: date, until: date) -> list[Quote]:
         found: dict[date, Quote] = {}
         for (row_day, row_type, _), item in sorted(self.rows.items()):
             if row_type is rate_type and since <= row_day <= until:

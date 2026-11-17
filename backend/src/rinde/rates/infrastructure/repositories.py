@@ -7,10 +7,9 @@ from sqlalchemy import RowMapping, case, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from rinde.rates.domain.quote import Quote, RateSource
+from rinde.rates.domain.quote import Quote, QuoteKind, RateSource, kind_of
 from rinde.rates.infrastructure.tables import exchange_rates
 from rinde.shared.domain.money import Currency
-from rinde.shared.domain.rate_type import RateType
 
 # Si un día quedó guardado de más de una fuente, gana la de mayor prioridad:
 # la misma que en la cadena de fuentes.
@@ -22,7 +21,7 @@ _PRIORITY = case(
 
 def _to_quote(row: RowMapping) -> Quote:
     return Quote(
-        rate_type=RateType(row["rate_type"]),
+        rate_type=kind_of(row["rate_type"]),
         day=row["day"],
         buy=row["buy"],
         sell=row["sell"],
@@ -37,15 +36,14 @@ class SqlAlchemyQuoteRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
-    async def for_day(self, day: date, types: frozenset[RateType]) -> list[Quote]:
+    async def for_day(self, day: date, types: frozenset[QuoteKind]) -> list[Quote]:
         if not types:
             return []
+        # El par sale de la clase: la base exige que vayan juntos (pair_matches_kind).
         result = await self._session.execute(
             select(exchange_rates)
             .where(
                 exchange_rates.c.day == day,
-                exchange_rates.c.base == Currency.USD.value,
-                exchange_rates.c.counter == Currency.ARS.value,
                 exchange_rates.c.rate_type.in_([t.value for t in types]),
             )
             .order_by(exchange_rates.c.rate_type, _PRIORITY)
@@ -53,13 +51,11 @@ class SqlAlchemyQuoteRepository:
         )
         return [_to_quote(row) for row in result.mappings()]
 
-    async def for_range(self, rate_type: RateType, since: date, until: date) -> list[Quote]:
+    async def for_range(self, rate_type: QuoteKind, since: date, until: date) -> list[Quote]:
         result = await self._session.execute(
             select(exchange_rates)
             .where(
                 exchange_rates.c.day.between(since, until),
-                exchange_rates.c.base == Currency.USD.value,
-                exchange_rates.c.counter == Currency.ARS.value,
                 exchange_rates.c.rate_type == rate_type.value,
             )
             .order_by(exchange_rates.c.day, _PRIORITY)

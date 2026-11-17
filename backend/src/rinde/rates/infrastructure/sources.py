@@ -21,7 +21,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Strict, ValidationErr
 
 from rinde.rates.application.ports import Clock, QuoteRequest, RateSourceUnavailableError
 from rinde.rates.domain.errors import QuoteInvalidError
-from rinde.rates.domain.quote import Quote, RateSource, round_rate
+from rinde.rates.domain.quote import Quote, QuoteKind, RateSource, round_rate
 from rinde.rates.infrastructure.http import get_json
 from rinde.shared.domain.rate_type import RateType
 
@@ -111,14 +111,14 @@ class DolarApiProvider:
         self._clock = clock
         self._url = f"{base_url.rstrip('/')}/v1/dolares"
 
-    async def quotes(self, request: QuoteRequest) -> dict[RateType, Quote]:
+    async def quotes(self, request: QuoteRequest) -> dict[QuoteKind, Quote]:
         if not request.current:
             return {}
         body = await get_json(self._client, self._url, timeout_seconds=TIMEOUT_SECONDS)
         if not isinstance(body, list):
             raise RateSourceUnavailableError(self._url)
         now = self._clock.now()
-        found: dict[RateType, Quote] = {}
+        found: dict[QuoteKind, Quote] = {}
         for raw in body:
             try:
                 item = _DolarApiItem.model_validate(raw)
@@ -150,12 +150,13 @@ class ArgentinaDatosProvider:
         self._client = client
         self._base_url = f"{base_url.rstrip('/')}/v1/cotizaciones/dolares"
 
-    async def quotes(self, request: QuoteRequest) -> dict[RateType, Quote]:
-        types = sorted(request.types)
+    async def quotes(self, request: QuoteRequest) -> dict[QuoteKind, Quote]:
+        # Solo dólares: el Bitcoin no lo publica (ADR-0029).
+        types = sorted(t for t in request.types if isinstance(t, RateType))
         results = await asyncio.gather(
             *(self._one(rate_type, request.day) for rate_type in types), return_exceptions=True
         )
-        found: dict[RateType, Quote] = {}
+        found: dict[QuoteKind, Quote] = {}
         failures = 0
         for rate_type, result in zip(types, results, strict=True):
             if isinstance(result, RateSourceUnavailableError):
@@ -169,12 +170,14 @@ class ArgentinaDatosProvider:
             raise RateSourceUnavailableError(self._base_url)
         return found
 
-    async def series(self, rate_type: RateType) -> list[Quote]:
+    async def series(self, rate_type: QuoteKind) -> list[Quote]:
         """Todos los días que la fuente tiene de ese dólar, en un solo pedido.
 
         Un elemento inválido se descarta solo; un cuerpo que no es una lista
         es otra forma de respuesta y la fuente cuenta como caída.
         """
+        if not isinstance(rate_type, RateType):
+            return []
         url = f"{self._base_url}/{_CASA_BY_TYPE[rate_type]}"
         body = await get_json(
             self._client, url, timeout_seconds=SERIES_TIMEOUT_SECONDS, max_bytes=SERIES_MAX_BYTES
@@ -235,7 +238,7 @@ class CriptoYaProvider:
         self._clock = clock
         self._url = f"{base_url.rstrip('/')}/api/dolar"
 
-    async def quotes(self, request: QuoteRequest) -> dict[RateType, Quote]:
+    async def quotes(self, request: QuoteRequest) -> dict[QuoteKind, Quote]:
         wanted = {key: t for key, t in self._KEYS.items() if t in request.types}
         if not request.current or not wanted:
             return {}
@@ -243,7 +246,7 @@ class CriptoYaProvider:
         if not isinstance(body, dict):
             raise RateSourceUnavailableError(self._url)
         now = self._clock.now()
-        found: dict[RateType, Quote] = {}
+        found: dict[QuoteKind, Quote] = {}
         for key, rate_type in wanted.items():
             try:
                 item = _CriptoYaItem.model_validate(body.get(key))

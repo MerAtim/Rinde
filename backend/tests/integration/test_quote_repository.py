@@ -10,9 +10,10 @@ from sqlalchemy import insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
-from rinde.rates.domain.quote import Quote, RateSource
+from rinde.rates.domain.quote import Market, Quote, RateSource
 from rinde.rates.infrastructure.repositories import SqlAlchemyQuoteRepository
 from rinde.rates.infrastructure.tables import exchange_rates
+from rinde.shared.domain.money import Currency
 from rinde.shared.domain.rate_type import ALL_RATE_TYPES, RateType
 
 pytestmark = [pytest.mark.anyio, pytest.mark.integration]
@@ -104,6 +105,9 @@ async def test_with_two_sources_for_one_day_the_chain_priority_wins(
         {"base": "EUR"},
         {"rate_type": "mayorista"},
         {"source": "bcra"},
+        # Cada clase cotiza su par (ADR-0029): el Bitcoin no va en pesos ni un dólar en BTC.
+        {"rate_type": "bitcoin", "source": "kraken"},
+        {"base": "BTC", "counter": "USD"},
     ],
 )
 async def test_the_database_rejects_an_impossible_row(
@@ -154,3 +158,46 @@ async def test_a_range_brings_one_quote_per_day_in_order(session: AsyncSession) 
         (DAY, RateSource.DOLARAPI),
         (date(2026, 3, 3), RateSource.ARGENTINADATOS),
     ]
+
+
+def _bitcoin(day: date, source: RateSource, price: str) -> Quote:
+    return Quote(
+        rate_type=Market.BITCOIN,
+        day=day,
+        buy=Decimal(price),
+        sell=Decimal(price),
+        source=source,
+        base=Currency.BTC,
+        counter=Currency.USD,
+    )
+
+
+async def test_the_bitcoin_series_lives_next_to_the_dollars(session: AsyncSession) -> None:
+    """ADR-0029: misma tabla, su propio par, y gana Kraken si las dos fuentes guardaron el día."""
+    repository = SqlAlchemyQuoteRepository(session)
+    later = date(2026, 3, 3)
+    await repository.add_all(
+        [
+            _quote(),
+            _bitcoin(DAY, RateSource.BITSTAMP, "64190"),
+            _bitcoin(DAY, RateSource.KRAKEN, "64200.5"),
+            _bitcoin(later, RateSource.BITSTAMP, "65080"),
+        ],
+        FETCHED_AT,
+    )
+
+    [bitcoin] = await repository.for_day(DAY, frozenset({Market.BITCOIN}))
+    series = await repository.for_range(Market.BITCOIN, DAY, later)
+    dollars = await repository.for_day(DAY, ALL_RATE_TYPES)
+
+    assert (bitcoin.source, bitcoin.buy, bitcoin.base, bitcoin.counter) == (
+        RateSource.KRAKEN,
+        Decimal("64200.5"),
+        Currency.BTC,
+        Currency.USD,
+    )
+    assert [(q.day, q.source) for q in series] == [
+        (DAY, RateSource.KRAKEN),
+        (later, RateSource.BITSTAMP),
+    ]
+    assert [q.rate_type for q in dollars] == [RateType.MEP]

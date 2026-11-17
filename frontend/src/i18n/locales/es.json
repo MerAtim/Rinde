@@ -229,6 +229,8 @@
     },
     "equivalent": {
       "value": "≈ {{amount}} {{rate}}",
+      "bitcoin": "≈ {{amount}} al precio del Bitcoin",
+      "bitcoinAndRate": "≈ {{amount}} con el precio del Bitcoin, {{rate}}",
       "unavailable": "Sin cotización para convertir"
     }
   },
@@ -404,12 +406,15 @@
       "ccl": "CCL",
       "blue": "Blue",
       "card": "Tarjeta",
-      "crypto": "Cripto"
+      "crypto": "Cripto",
+      "bitcoin": "Bitcoin"
     },
     "sources": {
       "dolarapi": "DolarAPI",
       "argentinadatos": "ArgentinaDatos",
-      "criptoya": "CriptoYa"
+      "criptoya": "CriptoYa",
+      "kraken": "Kraken",
+      "bitstamp": "Bitstamp"
     },
     "updatedOn": "{{source}}, actualizado el {{date}}",
     "caption": "Pesos por dólar",

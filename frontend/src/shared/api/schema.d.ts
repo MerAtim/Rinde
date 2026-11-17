@@ -1118,6 +1118,14 @@ export interface components {
       original: components["schemas"]["MoneyResponse"];
       converted: components["schemas"]["MoneyResponse"];
       /**
+       * Steps
+       * @description Cada cotización por la que pasó el monto, en orden. Bitcoin a pesos son dos
+       */
+      steps: components["schemas"]["ConversionStepResponse"][];
+    };
+    /** ConversionStepResponse */
+    ConversionStepResponse: {
+      /**
        * Rate
        * @description El precio que se aplicó: la compra o la venta (ADR-0017)
        */
@@ -1411,6 +1419,12 @@ export interface components {
       /** Ids */
       ids: string[];
     };
+    /**
+     * Market
+     * @description Lo que se cotiza en dólares y no es un dólar: por ahora, el Bitcoin (ADR-0029).
+     * @enum {string}
+     */
+    Market: "bitcoin";
     /** MeResponse */
     MeResponse: {
       /** Username */
@@ -1497,7 +1511,11 @@ export interface components {
     Prices: "nominal" | "constant";
     /** QuoteResponse */
     QuoteResponse: {
-      rate_type: components["schemas"]["RateType"];
+      /**
+       * Rate Type
+       * @description Un tipo de dólar, o un mercado como el Bitcoin (ADR-0029)
+       */
+      rate_type: components["schemas"]["RateType"] | components["schemas"]["Market"];
       base: components["schemas"]["Currency"];
       counter: components["schemas"]["Currency"];
       /**
@@ -1508,12 +1526,12 @@ export interface components {
       day: string;
       /**
        * Buy
-       * @description Pesos que se reciben por un dólar
+       * @description Cuánto de counter se recibe por un base
        */
       buy: string;
       /**
        * Sell
-       * @description Pesos que se pagan por un dólar
+       * @description Cuánto de counter se paga por un base
        */
       sell: string;
       source: components["schemas"]["RateSource"];
@@ -1525,9 +1543,10 @@ export interface components {
     };
     /**
      * RateSource
+     * @description En orden de prioridad, como en la cadena de fuentes de cada par.
      * @enum {string}
      */
-    RateSource: "dolarapi" | "argentinadatos" | "criptoya";
+    RateSource: "dolarapi" | "argentinadatos" | "criptoya" | "kraken" | "bitstamp";
     /**
      * RateType
      * @description Los dólares que se usan en Argentina.
