@@ -43,7 +43,8 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 
 ## Fase 3: cotizaciones (ADR-0002)
 * [x] Puerto `RateProvider` + adaptadores + fallback + caché + histórico propio
-  (ADR-0016). Falta el precio del Bitcoin (par BTC/USD)
+  (ADR-0016). El precio del Bitcoin (par BTC/USD) llegó después, con Kraken y
+  Bitstamp y conversión en dos pasos (ADR-0029)
 * [x] Conversión al consultar, con el histórico guardado, y moneda y tipo de
   referencia por usuario (ADR-0017, reemplaza el snapshot por transacción)
 

@@ -29,13 +29,35 @@ const BALANCES = [
   aBalance({ account_id: LEMON.id, amount: "0.01000000", currency: "BTC" }),
 ];
 const CONVERSION_URL = "GET /api/rates/mep/conversion?amount=1500.00&currency=USD&target=ARS";
+const BITCOIN_URL = "GET /api/rates/mep/conversion?amount=0.01000000&currency=BTC&target=ARS";
+const BITCOIN_IN_DOLLARS_URL =
+  "GET /api/rates/mep/conversion?amount=0.01000000&currency=BTC&target=USD";
+const BITCOIN_QUOTE = aQuote({
+  rate_type: "bitcoin",
+  base: "BTC",
+  counter: "USD",
+  buy: "64000.00000000",
+  sell: "64010.00000000",
+  source: "kraken",
+});
 
 function conversion() {
   return jsonResponse(200, {
     original: { amount: "1500.00", currency: "USD" },
     converted: { amount: "2340300.00", currency: "ARS" },
-    rate: "1560.20000000",
-    quote: aQuote(),
+    steps: [{ rate: "1560.20000000", quote: aQuote() }],
+  });
+}
+
+/** Bitcoin a pesos: dos pasos, el precio del Bitcoin y el dólar elegido (ADR-0029). */
+function bitcoinConversion() {
+  return jsonResponse(200, {
+    original: { amount: "0.01000000", currency: "BTC" },
+    converted: { amount: "998528.00", currency: "ARS" },
+    steps: [
+      { rate: "64000.00000000", quote: BITCOIN_QUOTE },
+      { rate: "1560.20000000", quote: aQuote() },
+    ],
   });
 }
 
@@ -47,6 +69,7 @@ describe("Equivalente de cada cuenta", () => {
       "GET /api/transactions/balances": jsonResponse(200, BALANCES),
       "GET /api/preferences": jsonResponse(200, PESOS_AT_MEP),
       [CONVERSION_URL]: conversion(),
+      [BITCOIN_URL]: bitcoinConversion(),
     });
     renderWithProviders(<App />, { route: "/accounts" });
 
@@ -56,10 +79,45 @@ describe("Equivalente de cada cuenta", () => {
     const asked = fetchMock.mock.calls
       .map(([input]) => (typeof input === "string" ? input : ""))
       .filter((url) => url.startsWith("/api/rates/mep/conversion"));
-    expect(asked).toEqual(["/api/rates/mep/conversion?amount=1500.00&currency=USD&target=ARS"]);
-    // En pesos no hay nada que convertir, y Bitcoin todavía no tiene cotización.
+    expect(asked).toContain("/api/rates/mep/conversion?amount=1500.00&currency=USD&target=ARS");
+    // En pesos no hay nada que convertir.
     expect(within(screen.getByRole("link", { name: /Galicia/ })).queryByText(/≈/)).toBeNull();
-    expect(within(screen.getByRole("link", { name: /Lemon/ })).queryByText(/≈/)).toBeNull();
+  });
+
+  it("muestra el Bitcoin en pesos y dice que pasó por su precio y por el dólar", async () => {
+    mockApi({
+      ...SESSION,
+      "GET /api/accounts": jsonResponse(200, [LEMON]),
+      "GET /api/transactions/balances": jsonResponse(200, BALANCES),
+      "GET /api/preferences": jsonResponse(200, PESOS_AT_MEP),
+      [BITCOIN_URL]: bitcoinConversion(),
+    });
+    renderWithProviders(<App />, { route: "/accounts" });
+
+    const lemon = await screen.findByRole("link", { name: /Lemon/ });
+    expect(
+      await within(lemon).findByText(/≈\s\$\s998\.528,00 con el precio del Bitcoin, al MEP/),
+    ).toBeInTheDocument();
+  });
+
+  it("con dólares de referencia, el Bitcoin solo pasa por su precio", async () => {
+    mockApi({
+      ...SESSION,
+      "GET /api/accounts": jsonResponse(200, [LEMON]),
+      "GET /api/transactions/balances": jsonResponse(200, BALANCES),
+      "GET /api/preferences": jsonResponse(200, { reference_currency: "USD", rate_type: "mep" }),
+      [BITCOIN_IN_DOLLARS_URL]: jsonResponse(200, {
+        original: { amount: "0.01000000", currency: "BTC" },
+        converted: { amount: "640.00", currency: "USD" },
+        steps: [{ rate: "64000.00000000", quote: BITCOIN_QUOTE }],
+      }),
+    });
+    renderWithProviders(<App />, { route: "/accounts" });
+
+    const lemon = await screen.findByRole("link", { name: /Lemon/ });
+    expect(
+      await within(lemon).findByText(/≈\sUS\$\s640,00 al precio del Bitcoin$/),
+    ).toBeInTheDocument();
   });
 
   it("dice que no hay cotización en vez de inventar un número", async () => {
