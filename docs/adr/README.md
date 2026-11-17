@@ -30,3 +30,4 @@
 | [0026](0026-compras-en-cuotas.md) | Compras en cuotas: plan con reparto exacto, cada cuota se genera al llegar su fecha | Aceptado | 2026-11-14 |
 | [0027](0027-movimientos-recurrentes.md) | Movimientos recurrentes: una regla que genera cada vez al llegar su fecha | Aceptado | 2026-11-14 |
 | [0028](0028-cuenta-demo.md) | Cuenta demo: una por visita, sembrada al crearse, que se borra sola | Aceptado | 2026-11-15 |
+| [0029](0029-precio-del-bitcoin.md) | Precio del Bitcoin: Kraken con Bitstamp de respaldo, y conversión en dos pasos | Aceptado | 2026-11-16 |
