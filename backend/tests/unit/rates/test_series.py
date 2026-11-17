@@ -14,7 +14,7 @@ from rinde.rates.application.use_cases import (
 )
 from rinde.rates.domain.conversion import convert, convert_exact
 from rinde.rates.domain.errors import RateDateInFutureError, RateRangeInvalidError
-from rinde.rates.domain.quote import Quote, RateSource
+from rinde.rates.domain.quote import Quote, QuoteKind, RateSource
 from rinde.shared.domain.money import Currency, Money
 from rinde.shared.domain.rate_type import RateType
 from tests.fakes import FakeClock, FakeTransaction
@@ -187,7 +187,7 @@ class _Counting:
         self.calls = 0
         self.down = False
 
-    async def series(self, rate_type: RateType) -> list[Quote]:
+    async def series(self, rate_type: QuoteKind) -> list[Quote]:
         self.calls += 1
         if self.down:
             raise RuntimeError
@@ -234,15 +234,18 @@ def test_the_exact_conversion_rounds_to_the_same_as_the_single_one() -> None:
         exact = convert_exact(money, mep)
         single = convert(money, mep)
         assert Money.rounded(exact.amount, exact.currency) == single.converted
-        assert exact.rate == single.rate
+        assert exact.steps == single.steps
 
 
 def test_the_day_converter_uses_the_quote_of_each_day() -> None:
     converter = DayConverter(
         Currency.ARS,
+        RateType.MEP,
         {
-            _day(3, 2): quote(RateType.MEP, _day(3, 2), buy="1000", sell="1100"),
-            _day(3, 3): quote(RateType.MEP, _day(3, 3), buy="2000", sell="2100"),
+            RateType.MEP: {
+                _day(3, 2): quote(RateType.MEP, _day(3, 2), buy="1000", sell="1100"),
+                _day(3, 3): quote(RateType.MEP, _day(3, 3), buy="2000", sell="2100"),
+            }
         },
     )
     ten = Money(Decimal(10), Currency.USD)
@@ -256,8 +259,11 @@ def test_the_day_converter_uses_the_quote_of_each_day() -> None:
     assert converter.to_target(Money(Decimal(5), Currency.ARS), _day(9, 9)) == Decimal(5)
 
 
-def test_bitcoin_is_not_supported_yet() -> None:
-    converter = DayConverter(Currency.ARS, {_day(3, 2): quote(RateType.MEP, _day(3, 2))})
+def test_bitcoin_without_its_series_is_not_supported() -> None:
+    """Quien no pidió el precio del Bitcoin no lo tiene: el monto queda sin convertir."""
+    converter = DayConverter(
+        Currency.ARS, RateType.MEP, {RateType.MEP: {_day(3, 2): quote(RateType.MEP, _day(3, 2))}}
+    )
     btc = Money(Decimal("0.5"), Currency.BTC)
 
     assert not converter.supports(Currency.BTC)

@@ -37,11 +37,10 @@ from rinde.auth.infrastructure.tables import users
 from rinde.config import Settings
 from rinde.main import create_app
 from rinde.rates.application.ports import QuoteRequest, RateSourceUnavailableError
-from rinde.rates.domain.quote import Quote
+from rinde.rates.domain.quote import Quote, QuoteKind
 from rinde.rates.infrastructure.factory import SqlAlchemyRatesUnitFactory
 from rinde.rates.infrastructure.tables import exchange_rates
 from rinde.shared.domain.calendar import argentine_day
-from rinde.shared.domain.rate_type import RateType
 from rinde.shared.infrastructure.clock import SystemClock
 from rinde.transactions.infrastructure.tables import categories, transactions, transfers
 from tests.fakes import FakeBreachChecker, RecordingSeeder
@@ -66,11 +65,11 @@ class _NoNetwork:
     def __init__(self) -> None:
         self.calls = 0
 
-    async def quotes(self, request: QuoteRequest) -> dict[RateType, Quote]:
+    async def quotes(self, request: QuoteRequest) -> dict[QuoteKind, Quote]:
         self.calls += 1
         raise RateSourceUnavailableError
 
-    async def series(self, rate_type: RateType) -> list[Quote]:
+    async def series(self, rate_type: QuoteKind) -> list[Quote]:
         self.calls += 1
         raise RateSourceUnavailableError
 

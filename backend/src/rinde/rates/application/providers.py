@@ -18,8 +18,7 @@ from rinde.rates.application.ports import (
     RateProvider,
     RateSourceUnavailableError,
 )
-from rinde.rates.domain.quote import Quote
-from rinde.shared.domain.rate_type import RateType
+from rinde.rates.domain.quote import Market, Quote, QuoteKind
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +34,8 @@ class FallbackRateProvider:
     def __init__(self, providers: Sequence[tuple[str, RateProvider]]) -> None:
         self._providers = tuple(providers)
 
-    async def quotes(self, request: QuoteRequest) -> dict[RateType, Quote]:
-        found: dict[RateType, Quote] = {}
+    async def quotes(self, request: QuoteRequest) -> dict[QuoteKind, Quote]:
+        found: dict[QuoteKind, Quote] = {}
         answered = False
         for name, provider in self._providers:
             missing = request.types - found.keys()
@@ -86,14 +85,14 @@ class CachedRateProvider:
         self._clock = clock
         self._ttl = ttl
         self._max_entries = max_entries
-        self._entries: dict[tuple[QuoteRequest, RateType], _Entry] = {}
+        self._entries: dict[tuple[QuoteRequest, QuoteKind], _Entry] = {}
         self._lock = asyncio.Lock()
 
-    async def quotes(self, request: QuoteRequest) -> dict[RateType, Quote]:
+    async def quotes(self, request: QuoteRequest) -> dict[QuoteKind, Quote]:
         async with self._lock:
             now = self._clock.now()
-            hits: dict[RateType, Quote] = {}
-            misses: set[RateType] = set()
+            hits: dict[QuoteKind, Quote] = {}
+            misses: set[QuoteKind] = set()
             for rate_type in request.types:
                 entry = self._entries.get((self._key(request), rate_type))
                 if entry is None or entry.expires_at <= now:
@@ -123,7 +122,7 @@ class CachedRateProvider:
 
 
 class CachedHistoryProvider:
-    """Decorador: la última serie de cada dólar, en memoria durante un rato (ADR-0018).
+    """Decorador: la última serie de cada dólar o mercado, en memoria un rato (ADR-0018).
 
     Una serie pesa unos cientos de KB y solo cambia una vez por día. Sin esto,
     un período con días que la fuente no tiene (antes de 2018, por ejemplo)
@@ -134,16 +133,79 @@ class CachedHistoryProvider:
         self._inner = inner
         self._clock = clock
         self._ttl = ttl
-        self._entries: dict[RateType, tuple[datetime, list[Quote]]] = {}
+        self._entries: dict[QuoteKind, tuple[datetime, list[Quote]]] = {}
         self._lock = asyncio.Lock()
 
-    async def series(self, rate_type: RateType) -> list[Quote]:
+    async def series(self, rate_type: QuoteKind) -> list[Quote]:
         async with self._lock:
             now = self._clock.now()
             entry = self._entries.get(rate_type)
             if entry is not None and entry[0] > now:
                 return entry[1]
             series = await self._inner.series(rate_type)
-            # Una por tipo de dólar: son seis como mucho, no hace falta tope.
+            # Una por clase: seis dólares y un mercado, no hace falta tope.
             self._entries[rate_type] = (now + self._ttl, series)
             return series
+
+
+class FallbackHistoryProvider:
+    """Cadena de responsabilidad para las series: si una fuente no responde, la siguiente.
+
+    A diferencia del precio de hoy, una serie no se completa entre fuentes: se
+    toma entera de la primera que responda con algo, para que los días de un
+    rango no salgan de fuentes distintas sin motivo.
+    """
+
+    def __init__(self, providers: Sequence[tuple[str, RateHistoryProvider]]) -> None:
+        self._providers = tuple(providers)
+
+    async def series(self, rate_type: QuoteKind) -> list[Quote]:
+        for name, provider in self._providers:
+            try:
+                series = await provider.series(rate_type)
+            except RateSourceUnavailableError:
+                logger.warning("La fuente de series %s no respondió", name, exc_info=True)
+                continue
+            if series:
+                return series
+        raise RateSourceUnavailableError
+
+
+class RoutingRateProvider:
+    """Manda cada clase a su cadena: los dólares a la suya, los mercados a la suya (ADR-0029).
+
+    Así una fuente de dólares nunca recibe un pedido del Bitcoin, ni al revés.
+    """
+
+    def __init__(self, dollars: RateProvider, markets: RateProvider) -> None:
+        self._dollars = dollars
+        self._markets = markets
+
+    async def quotes(self, request: QuoteRequest) -> dict[QuoteKind, Quote]:
+        markets = frozenset(kind for kind in request.types if isinstance(kind, Market))
+        dollars = request.types - markets
+        found: dict[QuoteKind, Quote] = {}
+        failures = 0
+        for provider, kinds in ((self._dollars, dollars), (self._markets, markets)):
+            if not kinds:
+                continue
+            try:
+                found |= await provider.quotes(replace(request, types=kinds))
+            except RateSourceUnavailableError:
+                failures += 1
+        # Caída es que no haya respondido ninguna de las cadenas que se usaron.
+        if failures and failures == bool(dollars) + bool(markets):
+            raise RateSourceUnavailableError
+        return found
+
+
+class RoutingHistoryProvider:
+    """Lo mismo que `RoutingRateProvider`, para las series."""
+
+    def __init__(self, dollars: RateHistoryProvider, markets: RateHistoryProvider) -> None:
+        self._dollars = dollars
+        self._markets = markets
+
+    async def series(self, rate_type: QuoteKind) -> list[Quote]:
+        provider = self._markets if isinstance(rate_type, Market) else self._dollars
+        return await provider.series(rate_type)

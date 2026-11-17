@@ -100,6 +100,7 @@ from rinde.rates.api.router import router as rates_router
 from rinde.rates.application.unit import RatesUnitFactory
 from rinde.rates.domain.errors import RateError
 from rinde.rates.infrastructure.factory import (
+    SourceUrls,
     SqlAlchemyRatesUnitFactory,
     build_history_provider,
     build_rate_provider,
@@ -287,16 +288,17 @@ def _sql_rates(
     sessionmaker: async_sessionmaker[AsyncSession], client: httpx.AsyncClient, config: Settings
 ) -> RatesUnitFactory:
     clock = SystemClock()
+    urls = SourceUrls(
+        dolarapi=config.dolarapi_url,
+        argentinadatos=config.argentinadatos_url,
+        criptoya=config.criptoya_url,
+        kraken=config.kraken_url,
+        bitstamp=config.bitstamp_url,
+    )
     return SqlAlchemyRatesUnitFactory(
         sessionmaker,
-        build_rate_provider(
-            client,
-            clock,
-            dolarapi_url=config.dolarapi_url,
-            argentinadatos_url=config.argentinadatos_url,
-            criptoya_url=config.criptoya_url,
-        ),
-        build_history_provider(client, clock, argentinadatos_url=config.argentinadatos_url),
+        build_rate_provider(client, clock, urls),
+        build_history_provider(client, clock, urls),
         clock,
     )
 

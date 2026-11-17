@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 
 from rinde.config import Settings
 from rinde.main import create_app
-from rinde.rates.domain.quote import RateSource
+from rinde.rates.domain.quote import Market, RateSource
 from rinde.shared.domain.rate_type import RateType
 from tests.fakes import FakeDatabaseProbe, InMemoryAuthUnitFactory, InMemoryRatesUnitFactory
 from tests.unit.rates.fakes import FakeRateProvider, quote
@@ -25,6 +25,7 @@ def rates() -> InMemoryRatesUnitFactory:
             quote(RateType.MEP),
             quote(RateType.BLUE, buy="1535", sell="1555"),
             quote(RateType.MEP, PAST, buy="1190.5", sell="1210", source=RateSource.ARGENTINADATOS),
+            quote(Market.BITCOIN, buy="64000", sell="64010", source=RateSource.KRAKEN),
         )
     )
 
@@ -140,8 +141,26 @@ def test_an_amount_is_converted_with_the_rate_that_applies(client: TestClient) -
     body = response.json()
     assert body["original"] == {"amount": "100.00", "currency": "USD"}
     assert body["converted"] == {"amount": "156020.00", "currency": "ARS"}
-    assert body["rate"] == "1560.20000000"
-    assert (body["quote"]["rate_type"], body["quote"]["day"]) == ("mep", "2026-11-10")
+    [step] = body["steps"]
+    assert step["rate"] == "1560.20000000"
+    assert (step["quote"]["rate_type"], step["quote"]["day"]) == ("mep", "2026-11-10")
+
+
+def test_bitcoin_is_converted_in_two_steps_and_says_both(client: TestClient) -> None:
+    """ADR-0029: el precio del Bitcoin en dólares, y después el dólar elegido."""
+    response = client.get(
+        "/api/rates/mep/conversion",
+        params={"amount": "0.10000000", "currency": "BTC", "target": "ARS"},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    body = response.json()
+    # 0,1 BTC a 64.000 dólares la compra, y esos 6.400 dólares a 1.560,20.
+    assert body["converted"] == {"amount": "9985280.00", "currency": "ARS"}
+    assert [(s["quote"]["rate_type"], s["quote"]["base"], s["rate"]) for s in body["steps"]] == [
+        ("bitcoin", "BTC", "64000.00000000"),
+        ("mep", "USD", "1560.20000000"),
+    ]
 
 
 def test_a_past_day_converts_with_that_day(client: TestClient) -> None:
@@ -158,7 +177,6 @@ def test_a_past_day_converts_with_that_day(client: TestClient) -> None:
     ("params", "code"),
     [
         ({"amount": "1.00", "currency": "ARS", "target": "ARS"}, "CONVERSION_SAME_CURRENCY"),
-        ({"amount": "1.00", "currency": "BTC", "target": "ARS"}, "CONVERSION_NOT_SUPPORTED"),
         ({"amount": "1.001", "currency": "USD", "target": "ARS"}, "AMOUNT_TOO_PRECISE"),
     ],
 )

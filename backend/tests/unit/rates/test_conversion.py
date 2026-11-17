@@ -24,8 +24,8 @@ def test_dollars_you_have_are_valued_at_the_buy_price() -> None:
     result = convert(_money("100.00", Currency.USD), MEP)
 
     assert result.converted == _money("156020.00", Currency.ARS)
-    assert result.rate == MEP.buy
-    assert result.quote == MEP
+    assert [step.rate for step in result.steps] == [MEP.buy]
+    assert [step.quote for step in result.steps] == [MEP]
 
 
 def test_dollars_you_owe_are_valued_at_the_sell_price() -> None:
@@ -33,21 +33,21 @@ def test_dollars_you_owe_are_valued_at_the_sell_price() -> None:
     result = convert(_money("-100.00", Currency.USD), MEP)
 
     assert result.converted == _money("-158790.00", Currency.ARS)
-    assert result.rate == MEP.sell
+    assert [step.rate for step in result.steps] == [MEP.sell]
 
 
 def test_pesos_you_have_buy_dollars_at_the_sell_price() -> None:
     result = convert(_money("158790.00", Currency.ARS), MEP)
 
     assert result.converted == _money("100.00", Currency.USD)
-    assert result.rate == MEP.sell
+    assert [step.rate for step in result.steps] == [MEP.sell]
 
 
 def test_pesos_you_owe_are_valued_at_the_buy_price() -> None:
     result = convert(_money("-156020.00", Currency.ARS), MEP)
 
     assert result.converted == _money("-100.00", Currency.USD)
-    assert result.rate == MEP.buy
+    assert [step.rate for step in result.steps] == [MEP.buy]
 
 
 def test_zero_is_zero_in_the_other_currency() -> None:

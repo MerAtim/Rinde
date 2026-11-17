@@ -229,6 +229,8 @@
     },
     "equivalent": {
       "value": "≈ {{amount}} {{rate}}",
+      "bitcoin": "≈ {{amount}} at the Bitcoin price",
+      "bitcoinAndRate": "≈ {{amount}} with the Bitcoin price, {{rate}}",
       "unavailable": "No rate available to convert"
     }
   },
@@ -404,12 +406,15 @@
       "ccl": "CCL",
       "blue": "Blue",
       "card": "Card",
-      "crypto": "Crypto"
+      "crypto": "Crypto",
+      "bitcoin": "Bitcoin"
     },
     "sources": {
       "dolarapi": "DolarAPI",
       "argentinadatos": "ArgentinaDatos",
-      "criptoya": "CriptoYa"
+      "criptoya": "CriptoYa",
+      "kraken": "Kraken",
+      "bitstamp": "Bitstamp"
     },
     "updatedOn": "{{source}}, updated on {{date}}",
     "caption": "Argentine pesos per US dollar",

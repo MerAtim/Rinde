@@ -1,8 +1,11 @@
-"""Cotización del dólar en pesos para un día (ADR-0002, ADR-0016).
+"""Cotización de un día: un dólar en pesos, o un mercado (ADR-0002, ADR-0016, ADR-0029).
 
 En Argentina conviven varios dólares el mismo día y la diferencia entre ellos
 puede pasar del 30 %. Por eso una cotización siempre dice de qué dólar es, de
 qué día y de qué fuente salió: "el dólar" a secas no existe.
+
+El precio del Bitcoin no es un dólar más: es un mercado, el par BTC/USD. Se
+separan para que nadie lo pueda elegir como el dólar con que se convierte.
 """
 
 from dataclasses import dataclass
@@ -23,9 +26,40 @@ _MAX_RATE = Decimal(10) ** 16
 
 
 class RateSource(StrEnum):
+    """En orden de prioridad, como en la cadena de fuentes de cada par."""
+
     DOLARAPI = "dolarapi"
     ARGENTINADATOS = "argentinadatos"
     CRIPTOYA = "criptoya"
+    KRAKEN = "kraken"
+    BITSTAMP = "bitstamp"
+
+
+class Market(StrEnum):
+    """Lo que se cotiza en dólares y no es un dólar: por ahora, el Bitcoin (ADR-0029)."""
+
+    BITCOIN = "bitcoin"
+
+
+type QuoteKind = RateType | Market
+"""Qué cotiza una `Quote`: un tipo de dólar en pesos, o un mercado en dólares."""
+
+ALL_KINDS: tuple[QuoteKind, ...] = (*RateType, *Market)
+
+
+def pair_of(kind: QuoteKind) -> tuple[Currency, Currency]:
+    """El par que cotiza cada clase: (base, counter). Es fijo, y la base lo exige."""
+    if isinstance(kind, Market):
+        return Currency.BTC, Currency.USD
+    return Currency.USD, Currency.ARS
+
+
+def kind_of(value: str) -> QuoteKind:
+    """La clase guardada como texto: un tipo de dólar o un mercado."""
+    try:
+        return RateType(value)
+    except ValueError:
+        return Market(value)
 
 
 def round_rate(value: Decimal) -> Decimal:
@@ -59,7 +93,8 @@ class Quote:
     de hoy puede ser el del último día hábil, y eso se muestra, no se esconde.
     """
 
-    rate_type: RateType
+    rate_type: QuoteKind
+    """Un tipo de dólar o un mercado. Se llama así por la columna, que es anterior."""
     day: date
     buy: Decimal
     sell: Decimal
@@ -74,7 +109,7 @@ class Quote:
             raise QuoteInvalidError
         if self.updated_at is not None and self.updated_at.tzinfo is None:
             raise QuoteInvalidError
-        if self.base is self.counter:
+        if (self.base, self.counter) != pair_of(self.rate_type):
             raise QuoteInvalidError
         buy, sell = _exact_rate(self.buy), _exact_rate(self.sell)
         # Comprarle dólares a alguien más barato de lo que te los vende no existe:

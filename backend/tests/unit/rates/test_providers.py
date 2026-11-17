@@ -6,7 +6,7 @@ import pytest
 
 from rinde.rates.application.ports import QuoteRequest, RateSourceUnavailableError
 from rinde.rates.application.providers import CachedRateProvider, FallbackRateProvider
-from rinde.rates.domain.quote import Quote, RateSource
+from rinde.rates.domain.quote import Quote, QuoteKind, RateSource
 from rinde.shared.domain.rate_type import ALL_RATE_TYPES, RateType
 from tests.fakes import FakeClock
 from tests.unit.rates.fakes import FakeRateProvider, quote
@@ -50,7 +50,7 @@ async def test_each_source_is_only_asked_for_what_the_previous_ones_did_not_have
 
 async def test_a_source_cannot_slip_in_another_day_or_another_type() -> None:
     class Liar:
-        async def quotes(self, request: QuoteRequest) -> dict[RateType, Quote]:
+        async def quotes(self, request: QuoteRequest) -> dict[QuoteKind, Quote]:
             return {
                 RateType.MEP: quote(RateType.MEP, date(2026, 11, 9)),
                 RateType.BLUE: quote(RateType.CCL),

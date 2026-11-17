@@ -1,6 +1,7 @@
 """Histórico propio de cotizaciones (SQLAlchemy Core, ADR-0002).
 
-Una fila por día, par, tipo y fuente. Las reglas de `Quote` se repiten como
+Una fila por día, par, clase y fuente. La clase es un tipo de dólar o un
+mercado, como el Bitcoin (ADR-0029). Las reglas de `Quote` se repiten como
 restricciones: una fila escrita sin pasar por el dominio se rechaza igual.
 
 No tiene dueño: las cotizaciones son las mismas para todos los usuarios.
@@ -41,7 +42,17 @@ exchange_rates = Table(
     CheckConstraint("base IN ('ARS', 'USD', 'BTC')", name="base_known"),
     CheckConstraint("counter IN ('ARS', 'USD', 'BTC')", name="counter_known"),
     CheckConstraint(
-        "rate_type IN ('official', 'mep', 'ccl', 'blue', 'card', 'crypto')", name="rate_type_known"
+        "rate_type IN ('official', 'mep', 'ccl', 'blue', 'card', 'crypto', 'bitcoin')",
+        name="rate_type_known",
     ),
-    CheckConstraint("source IN ('dolarapi', 'argentinadatos', 'criptoya')", name="source_known"),
+    CheckConstraint(
+        "source IN ('dolarapi', 'argentinadatos', 'criptoya', 'kraken', 'bitstamp')",
+        name="source_known",
+    ),
+    # Cada clase cotiza un solo par: los dólares en pesos, el Bitcoin en dólares.
+    CheckConstraint(
+        "CASE WHEN rate_type = 'bitcoin' THEN base = 'BTC' AND counter = 'USD'"
+        " ELSE base = 'USD' AND counter = 'ARS' END",
+        name="pair_matches_kind",
+    ),
 )

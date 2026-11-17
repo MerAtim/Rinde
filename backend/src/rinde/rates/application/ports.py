@@ -5,8 +5,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Protocol
 
-from rinde.rates.domain.quote import Quote
-from rinde.shared.domain.rate_type import RateType
+from rinde.rates.domain.quote import Quote, QuoteKind
 
 
 class RateSourceUnavailableError(Exception):
@@ -19,19 +18,19 @@ class RateSourceUnavailableError(Exception):
 
 @dataclass(frozen=True, slots=True)
 class QuoteRequest:
-    """Qué tipos de dólar se piden y de qué día.
+    """Qué tipos de dólar, o qué mercados, se piden y de qué día.
 
     `current` dice si es el día de hoy. Hoy la cotización todavía se mueve y
     algunas fuentes solo publican el último valor; un día cerrado ya no cambia.
     """
 
     day: date
-    types: frozenset[RateType]
+    types: frozenset[QuoteKind]
     current: bool
 
 
 class RateProvider(Protocol):
-    async def quotes(self, request: QuoteRequest) -> dict[RateType, Quote]:
+    async def quotes(self, request: QuoteRequest) -> dict[QuoteKind, Quote]:
         """Lo que la fuente tenga de lo pedido, y nada más.
 
         Que falte un tipo significa que la fuente no lo tiene. Si la fuente no
@@ -41,7 +40,7 @@ class RateProvider(Protocol):
 
 
 class RateHistoryProvider(Protocol):
-    async def series(self, rate_type: RateType) -> list[Quote]:
+    async def series(self, rate_type: QuoteKind) -> list[Quote]:
         """Todos los días cerrados que la fuente tiene de ese dólar, en un solo pedido.
 
         Es lo que permite convertir meses enteros sin preguntar día por día
@@ -52,11 +51,11 @@ class RateHistoryProvider(Protocol):
 
 
 class QuoteRepository(Protocol):
-    async def for_day(self, day: date, types: frozenset[RateType]) -> list[Quote]:
+    async def for_day(self, day: date, types: frozenset[QuoteKind]) -> list[Quote]:
         """Lo guardado de ese día. Si hay de varias fuentes, una por tipo."""
         ...
 
-    async def for_range(self, rate_type: RateType, since: date, until: date) -> list[Quote]:
+    async def for_range(self, rate_type: QuoteKind, since: date, until: date) -> list[Quote]:
         """Lo guardado entre las dos fechas, incluidas: una por día, ordenadas por día."""
         ...
 
