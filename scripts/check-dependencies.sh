@@ -20,9 +20,12 @@ backend() {
   uv run pip-audit --strict --disable-pip --require-hashes -r "$requisitos"
 }
 
+# npm audit no deja ignorar un aviso puntual. Los que no tienen versión
+# corregida se aceptan uno por uno, con motivo y fecha de revisión, en
+# frontend/audit-exceptions.json.
 frontend() {
   cd "$raiz/frontend"
-  npm audit --audit-level=moderate
+  node "$raiz/scripts/npm-audit.mjs" audit-exceptions.json
 }
 
 # Las imágenes tienen que estar construidas antes (docker compose build).

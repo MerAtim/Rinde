@@ -236,6 +236,17 @@ y la auditoría diaria (`.github/workflows/auditoria.yml`). La auditoría corre
 todos los días sobre `main`; si encuentra algo abre un issue, y lo cierra cuando
 todo vuelve a estar en verde.
 
+Un aviso del frontend sin versión corregida deja la CI en rojo sin ninguna acción
+posible, y `npm audit` no permite ignorar uno solo. Esos avisos se aceptan de a
+uno en `frontend/audit-exceptions.json`, con el motivo y una fecha de revisión.
+El chequeo falla si aparece un aviso que no está en la lista, si una excepción
+vence o si una ya no hace falta. Excepciones vigentes:
+
+* `picomatch` por
+  [GHSA-fc5q-39xc-vjpf](https://github.com/advisories/GHSA-fc5q-39xc-vjpf), hasta
+  el 2026-12-17. No hay versión corregida, y solo la usan Vite, Vitest y el
+  plugin de SVG al compilar, con los patrones de nuestra configuración.
+
 Cuando una vulnerabilidad está en una dependencia transitiva y el paquete que la
 trae todavía no admite la versión corregida, se fuerza con `overrides` en
 `frontend/package.json`, acotado al rango vulnerable. Overrides vigentes:
