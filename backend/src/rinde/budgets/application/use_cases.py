@@ -21,7 +21,6 @@ from rinde.budgets.application.ports import (
     Transaction,
 )
 from rinde.budgets.domain.budget import (
-    BUDGET_CURRENCIES,
     BudgetLimit,
     BudgetProgress,
     Converter,
@@ -204,16 +203,20 @@ class GetBudgets:
         since: date,
         until: date,
     ) -> dict[Currency, Converter]:
-        """Solo se buscan cotizaciones si algún gasto está en otra moneda convertible."""
-        targets = {
-            vigency.limit.currency
-            for category_id, vigency in limits.items()
-            if vigency.limit is not None
-            for expense in by_category.get(category_id, [])
-            if expense.money.currency is not vigency.limit.currency
-            and expense.money.currency in BUDGET_CURRENCIES
-        }
+        """Solo se buscan cotizaciones si algún gasto está en otra moneda.
+
+        Un gasto en Bitcoin también cuenta, convertido con su precio (ADR-0029).
+        """
+        sources: defaultdict[Currency, set[Currency]] = defaultdict(set)
+        for category_id, vigency in limits.items():
+            if vigency.limit is None:
+                continue
+            for expense in by_category.get(category_id, []):
+                if expense.money.currency is not vigency.limit.currency:
+                    sources[vigency.limit.currency].add(expense.money.currency)
         return {
-            target: await self._deps.converters.converter(target, rate_type, since, until)
-            for target in sorted(targets)
+            target: await self._deps.converters.converter(
+                target, rate_type, since, until, frozenset(sources[target])
+            )
+            for target in sorted(sources)
         }

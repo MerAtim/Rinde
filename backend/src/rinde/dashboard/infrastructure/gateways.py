@@ -80,11 +80,16 @@ class RatesConverterFactory:
         self._factory = factory
 
     async def converter(
-        self, target: Currency, rate_type: RateType, since: date, until: date
+        self,
+        target: Currency,
+        rate_type: RateType,
+        since: date,
+        until: date,
+        currencies: frozenset[Currency],
     ) -> Converter:
         async with self._factory() as unit:
             # `DayConverter` ya cumple el puerto del dashboard: no hace falta traducirlo.
-            return await unit.converter.execute(target, rate_type, since, until)
+            return await unit.converter.execute(target, rate_type, since, until, currencies)
 
 
 class InflationPriceIndexReader:

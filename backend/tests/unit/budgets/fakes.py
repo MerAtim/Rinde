@@ -102,9 +102,16 @@ class FakeConverterFactory:
     def __init__(self, **converters: TableConverter) -> None:
         self._converters = {Currency(code): converter for code, converter in converters.items()}
         self.calls: list[tuple[Currency, RateType, date, date]] = []
+        self.currencies: list[frozenset[Currency]] = []
 
     async def converter(
-        self, target: Currency, rate_type: RateType, since: date, until: date
+        self,
+        target: Currency,
+        rate_type: RateType,
+        since: date,
+        until: date,
+        currencies: frozenset[Currency],
     ) -> Converter:
         self.calls.append((target, rate_type, since, until))
+        self.currencies.append(currencies)
         return self._converters.get(target) or TableConverter(target)
