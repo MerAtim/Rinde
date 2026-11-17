@@ -14,7 +14,12 @@ dependencies = [
     "python-multipart>=0.0.33",
     "sqlalchemy[asyncio]>=2.0.52",
     "tzdata>=2026.3",
-    "uvicorn[standard]>=0.52.4",
+    # Uvicorn con solo las piezas que se usan: el parser HTTP y el bucle de
+    # eventos en C. El extra "standard" sumaba además YAML, websockets y la
+    # recarga en caliente, que Rinde no usa y que agrandaban la superficie.
+    "uvicorn>=0.52.4",
+    "httptools>=0.9.0",
+    "uvloop>=0.23.0; sys_platform != 'win32' and sys_platform != 'cygwin' and platform_python_implementation != 'PyPy'",
 ]
 
 [build-system]

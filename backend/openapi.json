@@ -3496,8 +3496,7 @@
                   "type": "number"
                 },
                 {
-                  "type": "string",
-                  "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                  "type": "string"
                 }
               ],
               "description": "Monto como string decimal, por ejemplo \"1500.00\"",
