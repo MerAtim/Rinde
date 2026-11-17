@@ -25,6 +25,7 @@ Las capturas salen de una demo real, contra la API y la base de verdad, con el a
 * **Transferencias entre cuentas propias**, que no cuentan como gasto ni como ingreso. Entre monedas distintas se guardan los dos montos, sin inventar una cotización: la tasa real es la que te dieron ([ADR-0014](docs/adr/0014-modelo-de-transferencias.md)).
 * **Una sola lista** con movimientos y transferencias, paginada por cursor. Los reportes de gasto siguen leyendo solo los movimientos: una transferencia no ensucia el resumen por categoría.
 * **Cotizaciones del dólar** oficial, MEP, CCL, blue, tarjeta y cripto, con compra, venta, fuente y fecha real. Si una fuente no responde, contesta la siguiente, pero nunca con otro tipo de dólar. Los días pasados se guardan la primera vez que se piden; para un período de meses se trae la serie entera en un solo pedido ([ADR-0016](docs/adr/0016-fuentes-de-cotizaciones.md), [ADR-0018](docs/adr/0018-modelo-de-lectura-del-dashboard.md)).
+* **Precio del Bitcoin** del mercado internacional, de Kraken con Bitstamp de respaldo, sin clave y con un precio por día. Una billetera en Bitcoin muestra su equivalente, el dashboard lo suma al patrimonio y un gasto en Bitcoin cuenta en su presupuesto. Se convierte en dos pasos: a dólares con el precio del Bitcoin de ese día, y a pesos con el dólar que elegiste ([ADR-0029](docs/adr/0029-precio-del-bitcoin.md)).
 * **Equivalentes y preferencias:** cada persona elige en qué moneda ve los totales y con qué dólar se convierte (por defecto, pesos al MEP). En Cuentas, el saldo de cada cuenta en la otra moneda muestra su equivalente. Se convierte con la cotización guardada del día y del lado prudente: nunca se valúa de más lo que tenés ni de menos lo que debés ([ADR-0017](docs/adr/0017-conversion-al-consultar.md)).
 * **Dashboard en el inicio:** patrimonio de hoy y al cierre de cada mes, ingresos y gastos de cada mes y gasto por categoría, en la moneda de referencia. Cada monto se convierte con la cotización de su día, y lo que no se puede convertir se muestra aparte en vez de inventarse. El período y la cuenta se eligen arriba y quedan en la dirección; cada gráfico tiene su tabla equivalente. La API responde en menos de 300 ms con 50.000 movimientos, y una prueba lo verifica en cada cambio ([ADR-0018](docs/adr/0018-modelo-de-lectura-del-dashboard.md), [ADR-0020](docs/adr/0020-pantalla-del-dashboard.md)).
 * **Pesos de hoy:** en el dashboard, los ingresos y gastos de cada mes también se ven ajustados por inflación, en pesos del último mes con IPC publicado. Usa el índice oficial del INDEC, que se guarda la primera vez que se pide. Un mes sin IPC todavía, como el mes en curso, queda vacío en lugar de mostrarse sin ajustar ([ADR-0025](docs/adr/0025-pesos-constantes.md)).
@@ -113,9 +114,7 @@ Los números de tiempo son de una corrida local; los de la CI quedan en cada cor
 
 ## Qué falta
 
-* El precio del Bitcoin.
-
-El detalle y el orden están en el [roadmap](docs/roadmap.md).
+Las fases del roadmap están completas. Lo que podría venir después está en el [roadmap](docs/roadmap.md).
 
 ## Stack
 
