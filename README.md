@@ -119,7 +119,7 @@ Las fases del roadmap están completas. Lo que podría venir después está en e
 
 ## Stack
 
-* **Backend:** Python 3.14, FastAPI, SQLAlchemy 2 con mapeo imperativo, Alembic, Pydantic v2, PostgreSQL 18, uv.
+* **Backend:** Python 3.15, FastAPI, SQLAlchemy 2 con mapeo imperativo, Alembic, Pydantic v2, PostgreSQL 18, uv.
 * **Frontend:** React 19, TypeScript, Vite, TanStack Query, React Aria, Chart.js, react-i18next.
 * **Infraestructura:** Docker Compose y GitHub Actions.
 
