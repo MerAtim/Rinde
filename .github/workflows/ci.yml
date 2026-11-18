@@ -156,12 +156,12 @@ jobs:
     # que ver (ADR-0019). Fijada por digest, como las acciones. El usuario 1001
     # es el del runner: así el espacio de trabajo queda con el mismo dueño.
     container:
-      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
+      image: mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
       options: --user 1001
     env:
       # Tiene que ser la misma versión de la imagen: el paso que la compara
       # avisa cuando una actualización de @playwright/test la deja atrás.
-      PLAYWRIGHT_IMAGE_VERSION: 1.65.0
+      PLAYWRIGHT_IMAGE_VERSION: 1.65.1
     defaults:
       run:
         working-directory: frontend
@@ -295,7 +295,7 @@ jobs:
       # host deja llegar al puerto que publica el compose.
       - name: Flujos críticos de punta a punta
         env:
-          PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
+          PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.65.1-noble@sha256:1507cbfc550a63a6b7396791ca4f00df17beb56342d2447b3f106c306f525579
         run: |
           docker run --rm --network host --ipc host --user 1001             --env CI=true --env HOME=/tmp             --volume "$PWD:/work" --workdir /work/frontend             "$PLAYWRIGHT_IMAGE"             bash -c "npm ci --no-audit --no-fund && npm run e2e:flujos"
 
