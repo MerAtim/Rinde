@@ -1,12 +1,13 @@
 """Configuración de la aplicación, leída de variables de entorno con prefijo RINDE_."""
 
 from functools import lru_cache
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import Field, SecretStr, field_validator
+from pydantic import Field, SecretStr, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _DATABASE_DRIVER = "postgresql+psycopg://"
+_MIN_ORIGIN_SECRET_LENGTH = 32
 
 
 class Settings(BaseSettings):
@@ -31,6 +32,9 @@ class Settings(BaseSettings):
     bitstamp_url: str = "https://www.bitstamp.net"
     # IPC del INDEC para los pesos constantes (ADR-0025).
     datos_gob_ar_url: str = "https://apis.datos.gob.ar"
+    # Secreto que manda el Worker de Cloudflare (ADR-0032). Varios separados por
+    # coma, para rotarlo sin corte. Obligatorio en producción.
+    origin_secret: SecretStr | None = None
 
     @field_validator("database_url")
     @classmethod
@@ -40,9 +44,39 @@ class Settings(BaseSettings):
             raise ValueError(msg)
         return value
 
+    @field_validator("origin_secret")
+    @classmethod
+    def _require_strong_origin_secrets(cls, value: SecretStr | None) -> SecretStr | None:
+        if value is not None and any(
+            len(secret) < _MIN_ORIGIN_SECRET_LENGTH for secret in _split(value)
+        ):
+            msg = (
+                "Cada secreto de RINDE_ORIGIN_SECRET necesita "
+                f"{_MIN_ORIGIN_SECRET_LENGTH} caracteres o más"
+            )
+            raise ValueError(msg)
+        return value
+
+    @model_validator(mode="after")
+    def _require_origin_secret_in_production(self) -> Self:
+        # Seguro por defecto: sin el secreto, la API de producción quedaría
+        # abierta a quien la llame directo, así que no arranca.
+        if self.is_production and self.origin_secret is None:
+            msg = "En producción hace falta RINDE_ORIGIN_SECRET (ADR-0032)"
+            raise ValueError(msg)
+        return self
+
     @property
     def is_production(self) -> bool:
         return self.environment == "production"
+
+    @property
+    def origin_secrets(self) -> tuple[str, ...]:
+        return _split(self.origin_secret) if self.origin_secret is not None else ()
+
+
+def _split(value: SecretStr) -> tuple[str, ...]:
+    return tuple(secret.strip() for secret in value.get_secret_value().split(","))
 
 
 @lru_cache

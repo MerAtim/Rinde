@@ -1,5 +1,6 @@
 from fastapi import status
 from fastapi.testclient import TestClient
+from pydantic import SecretStr
 
 from rinde.config import Settings
 from rinde.main import create_app
@@ -50,11 +51,17 @@ def test_docs_are_published_outside_production(settings: Settings) -> None:
 
 
 def test_docs_are_hidden_in_production(settings: Settings) -> None:
-    production = settings.model_copy(update={"environment": "production"})
+    production = settings.model_copy(
+        update={"environment": "production", "origin_secret": SecretStr("s" * 32)}
+    )
 
     with _client(production) as client:
-        assert client.get("/api/docs").status_code == status.HTTP_404_NOT_FOUND
-        assert client.get("/api/openapi.json").status_code == status.HTTP_404_NOT_FOUND
+        # Aun pasando el control de origen (ADR-0032), la documentación no existe.
+        origin = {"X-Rinde-Origin": "s" * 32}
+        assert client.get("/api/docs", headers=origin).status_code == status.HTTP_404_NOT_FOUND
+        assert (
+            client.get("/api/openapi.json", headers=origin).status_code == status.HTTP_404_NOT_FOUND
+        )
 
 
 def test_default_wiring_uses_real_database_probe(settings: Settings) -> None:

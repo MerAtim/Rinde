@@ -83,10 +83,14 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
   andamiaje ya existe y corre en CI desde la fase 0: se adelantó porque es el
   único tipo de prueba que ve el maquetado (ADR-0013)
 
+## Seguridad, después de las fases
+* [x] Lectura del PDF en un proceso aislado con tope de memoria, CPU y tiempo, contra
+  bombas de descompresión (ADR-0031)
+* [x] Secreto compartido entre el Worker y la API: nadie llama directo a Render ni
+  esquiva los límites por dirección (ADR-0032)
+* [x] Análisis estático de seguridad con CodeQL en Python, TypeScript y workflows
+
 ## Después (solo si hay tiempo)
-* Secreto compartido entre el Worker y la API: hoy el origen de Render es alcanzable
-  desde internet, así que quien lo llame directo puede inventar la cabecera con la
-  dirección de origen y esquivar ese límite (no el límite por cuenta)
 * Ingreso con Google y Microsoft por OpenID Connect (código con PKCE, validado en el
   backend), con la misma sesión en cookie. Requiere un ADR que reemplace a ADR-0007
   (hoy sin email ni datos personales), dominio propio para las URL de retorno y
