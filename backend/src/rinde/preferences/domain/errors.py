@@ -8,6 +8,6 @@ class PreferencesError(DomainError):
 
 
 class ReferenceCurrencyNotAllowedError(PreferencesError):
-    """Bitcoin no puede ser la moneda de los totales: no tiene cotización (ADR-0017)."""
+    """Bitcoin no puede ser la moneda de los totales: su valor cambia cada día (ADR-0029)."""
 
     code = "PREFERENCES_CURRENCY_NOT_ALLOWED"

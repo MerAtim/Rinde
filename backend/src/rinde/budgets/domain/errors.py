@@ -32,7 +32,7 @@ class BudgetAmountInvalidError(BudgetError):
 
 
 class BudgetCurrencyNotAllowedError(BudgetError):
-    """Bitcoin no puede ser la moneda del tope: no tiene cotización (ADR-0017)."""
+    """Bitcoin no puede ser la moneda del tope: su valor cambia cada día (ADR-0029)."""
 
     code = "BUDGET_CURRENCY_NOT_ALLOWED"
 
