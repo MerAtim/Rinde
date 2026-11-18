@@ -92,7 +92,7 @@ flowchart LR
   api --> fuentes["Fuentes públicas<br/>dólar, Bitcoin, IPC del INDEC"]
 ```
 
-El navegador ve un único origen, así que no hace falta CORS y la política de contenido puede quedar en `'self'`.
+El navegador ve un único origen, así que no hace falta CORS y la política de contenido puede quedar en `'self'`. La API solo atiende a quien pasa por el Worker: cada pedido lleva un secreto compartido, y sin él responde 403. Así nadie puede llamar directo a Render, inventar la dirección de origen y esquivar los límites de intentos ([ADR-0032](docs/adr/0032-secreto-entre-worker-y-api.md)).
 
 **Dinero.** Nunca `float`: `Decimal` en Python, `NUMERIC` en PostgreSQL y strings en JSON. El frontend no hace cuentas con montos, solo los formatea. Las conversiones no se guardan: se calculan al consultar, con la cotización inmutable de cada día, y cada una informa la tasa, el tipo de dólar, la fuente y la fecha que usó ([ADR-0017](docs/adr/0017-conversion-al-consultar.md)).
 

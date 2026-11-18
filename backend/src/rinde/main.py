@@ -108,6 +108,7 @@ from rinde.rates.infrastructure.factory import (
 from rinde.shared.api.body_limit import BodySizeLimitMiddleware
 from rinde.shared.api.csrf import CsrfRejectedError, csrf_error_handler
 from rinde.shared.api.errors import domain_error_handler
+from rinde.shared.api.origin import OriginSecretMiddleware
 from rinde.shared.domain.errors import DomainError
 from rinde.shared.infrastructure.clock import SystemClock
 from rinde.shared.infrastructure.events import InProcessEventBus
@@ -274,7 +275,7 @@ def create_app(  # noqa: PLR0913
     app.state.budgets_factory = budgets_factory
     app.state.alerts_factory = alerts_factory
     app.state.imports_factory = imports_factory
-    app.add_middleware(BodySizeLimitMiddleware, max_bytes=MAX_BODY_BYTES)
+    _add_middlewares(app, config)
     app.state.session_cookie = SessionCookie(
         name=SECURE_COOKIE_NAME if config.session_cookie_secure else PLAIN_COOKIE_NAME,
         secure=config.session_cookie_secure,
@@ -282,6 +283,22 @@ def create_app(  # noqa: PLR0913
     )
     _register_modules(app)
     return app
+
+
+def _add_middlewares(app: FastAPI, config: Settings) -> None:
+    """El último que se agrega es el primero que corre.
+
+    Primero se mira el origen (ADR-0032), y después el tamaño del cuerpo: un
+    pedido que no viene del Worker no llega ni a leerse. La configuración ya
+    exige el secreto en producción; esto es la segunda barrera, por si alguien
+    la arma sin validarla.
+    """
+    app.add_middleware(BodySizeLimitMiddleware, max_bytes=MAX_BODY_BYTES)
+    if config.origin_secrets:
+        app.add_middleware(OriginSecretMiddleware, secrets=config.origin_secrets)
+    elif config.is_production:
+        msg = "En producción hace falta RINDE_ORIGIN_SECRET (ADR-0032)"
+        raise RuntimeError(msg)
 
 
 def _sql_rates(
