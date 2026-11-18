@@ -84,7 +84,7 @@ from rinde.imports.infrastructure.gateways import (
 from rinde.imports.infrastructure.gateways import (
     TransactionsCategoryReader as ImportsCategoryReader,
 )
-from rinde.imports.infrastructure.pdf import PdfPlumberText
+from rinde.imports.infrastructure.sandbox import SandboxedPdfText
 from rinde.inflation.application.unit import InflationUnitFactory
 from rinde.inflation.infrastructure.factory import (
     SqlAlchemyInflationUnitFactory,
@@ -378,7 +378,7 @@ def _sql_imports(
             accounts=TransactionsAccountInspector(transactions),
             registrar=TransactionsRegistrar(transactions),
             categories=ImportsCategoryReader(transactions),
-            pdf=PdfPlumberText(),
+            pdf=SandboxedPdfText(),
         ),
         SystemClock(),
     )

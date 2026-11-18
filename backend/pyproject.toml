@@ -98,6 +98,8 @@ filterwarnings = [
 [tool.coverage.run]
 source = ["rinde"]
 branch = true
+# La lectura de PDF corre en un proceso aparte (ADR-0031): sin esto, su código no se mide.
+patch = ["subprocess"]
 
 [tool.coverage.report]
 fail_under = 90
