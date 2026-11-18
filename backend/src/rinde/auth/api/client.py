@@ -5,11 +5,10 @@ Render. La dirección de la conexión es entonces la del último proxy y no sirv
 para contar nada. Cloudflare pone la del visitante en `CF-Connecting-IP` y la
 reescribe en su borde, así que quien pase por Cloudflare no puede falsearla.
 
-Límite conocido y aceptado: el origen de Render es alcanzable desde internet,
-así que alguien que lo llame directo puede inventar la cabecera. Con eso esquiva
-este límite, pero no el límite por cuenta, que no depende de ninguna cabecera.
-Cerrarlo del todo pide un secreto compartido entre el Worker y la API, que es
-una decisión de despliegue aparte y está anotada en el roadmap.
+El origen de Render es alcanzable desde internet, y quien lo llamara directo
+podría inventar la cabecera. Por eso en producción la API solo atiende pedidos
+que traen el secreto que agrega el Worker (ADR-0032): la cabecera solo puede
+venir de Cloudflare.
 
 La dirección se valida antes de usarla: es un dato que viene de afuera y termina
 en la base, así que se trata como cualquier otra entrada no confiable.
