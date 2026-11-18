@@ -16,7 +16,7 @@ La API corre en un plan gratuito que se suspende sin tráfico: si es la primera 
 
 Las capturas salen de una demo real, contra la API y la base de verdad, con el aviso que ve cualquier visitante.
 
-**Estado:** en construcción. El avance está en el [roadmap](docs/roadmap.md).
+**Estado:** todas las fases del [roadmap](docs/roadmap.md) están completas.
 
 ## Qué hace hoy
 
@@ -77,7 +77,7 @@ Las flechas punteadas no son importaciones. Las alertas se enteran de un gasto p
 
 Algunos patrones, donde resuelven un problema concreto:
 
-* **Chain of Responsibility y Decorator** en las cotizaciones: si una fuente no responde contesta la siguiente, y lo respondido se guarda en memoria un rato ([ADR-0016](docs/adr/0016-fuentes-de-cotizaciones.md)).
+* **Chain of Responsibility y Decorator** en las cotizaciones: si una fuente no responde contesta la siguiente, y lo respondido se guarda en memoria un rato ([ADR-0016](docs/adr/0016-fuentes-de-cotizaciones.md)). Un enrutador manda cada pedido a su cadena: los dólares por un lado y el Bitcoin por otro ([ADR-0029](docs/adr/0029-precio-del-bitcoin.md)).
 * **Strategy** en la importación: CSV configurable y PDF de Banco Macro detrás de la misma interfaz ([ADR-0023](docs/adr/0023-modelo-de-importacion.md)).
 * **Specification** en las reglas de categoría: gana la más específica ([ADR-0024](docs/adr/0024-reglas-de-categoria.md)).
 * **Unit of Work** por pedido, y operaciones de varias filas en una sola transacción.
@@ -89,27 +89,27 @@ flowchart LR
   navegador["Navegador"] --> worker["Cloudflare Worker<br/>frontend y proxy de /api"]
   worker --> api["Render<br/>API FastAPI en Docker"]
   api --> base[("Neon<br/>PostgreSQL 18")]
-  api --> fuentes["Fuentes públicas<br/>dólar, IPC del INDEC"]
+  api --> fuentes["Fuentes públicas<br/>dólar, Bitcoin, IPC del INDEC"]
 ```
 
 El navegador ve un único origen, así que no hace falta CORS y la política de contenido puede quedar en `'self'`.
 
-**Dinero.** Nunca `float`: `Decimal` en Python, `NUMERIC` en PostgreSQL y strings en JSON. El frontend no hace cuentas con montos, solo los formatea. Una conversión guarda la tasa, el tipo de dólar, la fuente y la fecha, y un monto histórico se convierte con la cotización de su día.
+**Dinero.** Nunca `float`: `Decimal` en Python, `NUMERIC` en PostgreSQL y strings en JSON. El frontend no hace cuentas con montos, solo los formatea. Las conversiones no se guardan: se calculan al consultar, con la cotización inmutable de cada día, y cada una informa la tasa, el tipo de dólar, la fuente y la fecha que usó ([ADR-0017](docs/adr/0017-conversion-al-consultar.md)).
 
 ## Calidad, medida
 
 | Qué | Cuánto | Cómo se verifica |
 | --- | --- | --- |
-| Tests del backend | 1131: dominio, casos de uso, API e integración contra PostgreSQL | En cada cambio, en la CI |
+| Tests del backend | 1165: dominio, casos de uso, API e integración contra PostgreSQL | En cada cambio, en la CI |
 | Cobertura del backend | 98 % | La CI falla por debajo del mínimo |
-| Tests del frontend | 361, con axe-core en las pantallas | En cada cambio, en la CI |
+| Tests del frontend | 364, con axe-core en las pantallas | En cada cambio, en la CI |
 | Pruebas de extremo a extremo | 42 en Chromium, a 360 px y en los dos idiomas | Contra el build de producción ([ADR-0013](docs/adr/0013-pruebas-de-extremo-a-extremo.md)) |
 | Flujos críticos | 3, sin nada simulado: registrarse y volver a entrar, abrir una cuenta y registrar un gasto, y probar la demo | Contra el entorno completo de `docker compose`, en cada cambio |
-| Dashboard con 50.000 movimientos | p95 de 133 ms, con un límite de 300 ms | Una prueba lo mide en cada cambio y deja el número en el resumen de la corrida |
+| Dashboard con 50.000 movimientos | p95 de 123 ms, con un límite de 300 ms | Una prueba lo mide en cada cambio y deja el número en el resumen de la corrida |
 | Una cuenta demo | 127 filas y 34 kB | Una prueba falla si pasa de 100 kB |
 | Acceso a datos ajenos | Ningún endpoint lo permite | Una prueba recorre todas las rutas: sin sesión dan 401, con recursos de otra persona dan 404 |
 | Dependencias e imágenes | Auditadas todos los días | Si aparece una vulnerabilidad, se abre un issue solo |
-| Decisiones | 28 ADR, con alternativas y costos | [docs/adr](docs/adr/README.md) |
+| Decisiones | 30 ADR, con alternativas y costos | [docs/adr](docs/adr/README.md) |
 
 Los números de tiempo son de una corrida local; los de la CI quedan en cada corrida.
 
@@ -253,8 +253,9 @@ trae todavía no admite la versión corregida, se fuerza con `overrides` en
 
 * `minimatch` 10.x a `^11.0.5` por
   [GHSA-g3hv-75wg-m249](https://github.com/advisories/GHSA-g3hv-75wg-m249).
-  ESLint y typescript-eslint todavía piden `^10`; el lint, los tipos y los tests
-  pasan con la 11. Se quita cuando ambos acepten `^11`.
+  ESLint ya pide `^11`; typescript-eslint todavía pide `^10`, y el lint, los
+  tipos y los tests pasan con la 11. Se quita cuando typescript-eslint acepte
+  `^11`.
 
 Los PR de Dependabot que suben una versión de parche se integran solos cuando la
 CI da verde ([ADR-0015](docs/adr/0015-auto-merge-de-dependabot.md)). Quedan
