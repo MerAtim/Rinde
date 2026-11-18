@@ -1,6 +1,6 @@
 # ADR-0002: Representación de dinero y cotizaciones múltiples
 
-* **Estado:** Aceptado. El snapshot de conversión por transacción, reemplazado por [ADR-0017](0017-conversion-al-consultar.md)
+* **Estado:** Aceptado. El snapshot de conversión por transacción, reemplazado por [ADR-0017](0017-conversion-al-consultar.md). La pregunta del dólar tarjeta la cierra [ADR-0030](0030-gastos-en-dolares-con-tarjeta.md)
 * **Fecha:** 2026-09-11
 
 ## Contexto

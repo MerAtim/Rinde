@@ -47,6 +47,9 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
   Bitstamp y conversión en dos pasos (ADR-0029)
 * [x] Conversión al consultar, con el histórico guardado, y moneda y tipo de
   referencia por usuario (ADR-0017, reemplaza el snapshot por transacción)
+* [x] Gastos en dólares con tarjeta: se valúan con el dólar de referencia y el pago
+  del resumen guarda lo que se pagó. Cierra la pregunta abierta de ADR-0002
+  (ADR-0030)
 
 ## Fase 4: dashboard
 * [x] Gasto por categoría, flujo mensual, patrimonio neto en ARS y en USD (tipo elegido).
@@ -54,7 +57,7 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * [x] Filtros globales sincronizados con la URL; alternativa en tabla para accesibilidad
   (ADR-0020)
 * [x] Objetivo medible: p95 < 300 ms del endpoint de dashboard con 50k transacciones
-  (sembradas). Lo verifica una prueba en CI; medición local: p95 de 155 ms (ADR-0018)
+  (sembradas). Lo verifica una prueba en CI; medición local: p95 de 123 ms (ADR-0018)
 
 ## Fase 5: presupuestos y alertas
 * [x] Presupuestos mensuales por categoría, con vigencia desde el mes en curso y en
@@ -88,4 +91,7 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
   backend), con la misma sesión en cookie. Requiere un ADR que reemplace a ADR-0007
   (hoy sin email ni datos personales), dominio propio para las URL de retorno y
   vinculación solo desde una sesión abierta, nunca por coincidencia de email
+* Que el PR de Dependabot que sube `@playwright/test` actualice también la imagen
+  de Playwright de la CI: hoy Dependabot solo cambia su digest, y el salto de
+  versión se agrega a mano en el mismo PR (ADR-0019)
 * MFA TOTP · exportación y borrado de datos del usuario · OpenTelemetry · PWA · notificaciones por email
