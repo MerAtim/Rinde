@@ -30,7 +30,12 @@ from rinde.budgets.domain.errors import (
 from rinde.shared.domain.money import Currency, Money
 
 BUDGET_CURRENCIES = frozenset({Currency.ARS, Currency.USD})
-"""Las que tienen cotización entre sí. Bitcoin, todavía no (ADR-0017)."""
+"""Las monedas de un tope.
+
+Bitcoin tiene precio desde ADR-0029 y lo gastado en Bitcoin cuenta, pero no es
+unidad de un tope: su valor en pesos cambia todos los días, y un tope en Bitcoin
+no diría cuánto se puede gastar.
+"""
 
 WARNING_SHARE = Decimal("0.8")
 """Desde el 80 % del tope, el presupuesto avisa. Las alertas usan el mismo umbral."""
@@ -137,7 +142,7 @@ class BudgetProgress:
     """Gastado sobre tope: 1 es el tope, y puede pasarlo."""
     status: BudgetStatus
     unconverted: list[Money]
-    """Lo que no entró en `spent`, en su moneda: Bitcoin, o un día sin cotización."""
+    """Lo que no entró en `spent`, en su moneda: lo de un día sin cotización."""
 
     @classmethod
     def measure(
