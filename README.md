@@ -109,6 +109,7 @@ El navegador ve un único origen, así que no hace falta CORS y la política de 
 | Una cuenta demo | 127 filas y 34 kB | Una prueba falla si pasa de 100 kB |
 | Acceso a datos ajenos | Ningún endpoint lo permite | Una prueba recorre todas las rutas: sin sesión dan 401, con recursos de otra persona dan 404 |
 | Dependencias e imágenes | Auditadas todos los días | Si aparece una vulnerabilidad, se abre un issue solo |
+| Análisis estático de seguridad | CodeQL sobre Python, TypeScript y los workflows, con las reglas extendidas de seguridad | En cada cambio y una vez por semana; los hallazgos van a la pestaña Security |
 | Decisiones | 30 ADR, con alternativas y costos | [docs/adr](docs/adr/README.md) |
 
 Los números de tiempo son de una corrida local; los de la CI quedan en cada corrida.

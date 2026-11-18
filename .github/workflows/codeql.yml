@@ -1,0 +1,54 @@
+# Análisis estático de seguridad con CodeQL.
+#
+# Ruff ya corre las reglas de bandit sobre el backend en cada cambio. CodeQL
+# suma otra mirada: sigue el recorrido de los datos desde la entrada hasta donde
+# se usan (inyecciones, rutas, redirecciones) en Python, en TypeScript y en los
+# propios workflows. Los hallazgos quedan en la pestaña Security del repositorio.
+name: CodeQL
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  # Una vez por semana, aunque no cambie el código: las reglas sí cambian.
+  schedule:
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analizar:
+    name: Analizar (${{ matrix.lenguaje }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      # Para subir los resultados a la pestaña Security.
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        lenguaje: [python, javascript-typescript, actions]
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Ninguno de los tres necesita compilar: CodeQL lee el código fuente.
+      - name: Preparar CodeQL
+        uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          languages: ${{ matrix.lenguaje }}
+          build-mode: none
+          queries: security-extended
+
+      - name: Analizar
+        uses: github/codeql-action/analyze@33d7b85da1a04171e211befe2c739303b9a4c066 # v4.39.3
+        with:
+          category: /language:${{ matrix.lenguaje }}
