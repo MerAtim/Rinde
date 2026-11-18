@@ -32,3 +32,4 @@
 | [0028](0028-cuenta-demo.md) | Cuenta demo: una por visita, sembrada al crearse, que se borra sola | Aceptado | 2026-11-15 |
 | [0029](0029-precio-del-bitcoin.md) | Precio del Bitcoin: Kraken con Bitstamp de respaldo, y conversión en dos pasos | Aceptado | 2026-11-16 |
 | [0030](0030-gastos-en-dolares-con-tarjeta.md) | Gastos en dólares con tarjeta: se valúan con el dólar de referencia, y el pago guarda lo que se pagó | Aceptado | 2026-11-17 |
+| [0032](0032-secreto-entre-worker-y-api.md) | Solo el Worker habla con la API: un secreto compartido de origen | Aceptado | 2026-11-18 |
