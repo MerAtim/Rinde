@@ -48,9 +48,14 @@ if ! "${pg[@]}" pg_restore --exit-on-error --single-transaction --no-owner --no-
   # error y el comando de esquema que lo causó ("Command was"; las filas viajan
   # aparte, en el COPY, y no aparecen ahí), con todo lo que va entre comillas
   # tapado. Las líneas DETAIL, que citan valores, no salen.
-  grep -E 'from TOC entry|ERROR:|Command was:' "$trabajo/restauracion.log" \
+  # El comando ocupa varias líneas: se publica entero, hasta el próximo mensaje
+  # de pg_restore.
+  awk '/from TOC entry|ERROR:/ { print; comando = 0; next }
+       /^Command was:/ { print; comando = 1; next }
+       /^pg_restore:/ { comando = 0 }
+       comando { print }' "$trabajo/restauracion.log" \
     | sed -E "s/\"[^\"]*\"/\"...\"/g; s/'[^']*'/'...'/g" \
-    | cut -c1-300 | head -n 6 >&2 || true
+    | cut -c1-300 | head -n 40 >&2 || true
   exit 1
 fi
 
