@@ -86,4 +86,4 @@ Se ensaya la restauración completa, pasos 1 a 5 contra una base descartable, al
 
 | Fecha | Copia usada | Resultado |
 | --- | --- | --- |
-| | | |
+| 2026-11-21 | `rinde-2026-11-21.dump.gpg` (corrida 44954517155) | Descargada y descifrada con la clave privada; restaurada sin errores en un PostgreSQL 18.7 descartable, en la migración 0020. Sin el paso de entrar a la app: el destino fue local, no un despliegue. |
