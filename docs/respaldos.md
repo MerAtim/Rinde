@@ -60,7 +60,20 @@ docker run --rm -i postgres:18-alpine pg_restore \
   --dbname="postgresql://<usuario>:<contraseña>@<host>/<base>?sslmode=require" < rinde.dump
 ```
 
-### 4. Verificar y cambiar
+### 4. Volver a aplicar las bajas
+
+Una cuenta borrada por su dueño después de la fecha de la copia vuelve a aparecer en la base restaurada, y tiene que borrarse de nuevo (ADR-0034). La lista de bajas está en la tabla `account_deletions`: se copia de la base en uso si todavía se puede leer, y si no, de la copia más reciente. Con `psql` conectado a la base restaurada:
+
+```sql
+CREATE TEMP TABLE bajas (LIKE account_deletions);
+\copy bajas FROM 'bajas.csv' CSV
+INSERT INTO account_deletions SELECT * FROM bajas ON CONFLICT DO NOTHING;
+DELETE FROM users WHERE id IN (SELECT user_id FROM account_deletions);
+```
+
+`bajas.csv` sale de la base de origen con `\copy account_deletions TO 'bajas.csv' CSV`. Tiene solo identificadores y fechas, sin datos personales.
+
+### 5. Verificar y cambiar
 
 * `SELECT version_num FROM alembic_version` da la misma migración que dice el log del workflow para esa copia.
 * Se entra a la app con una cuenta conocida y se ven sus movimientos.
@@ -69,7 +82,7 @@ Si está bien, se cambia `RINDE_DATABASE_URL` en Render y en el entorno `producc
 
 ## Ensayos
 
-Se ensaya la restauración completa, pasos 1 a 4 contra una base descartable, al menos una vez por trimestre y cada vez que cambia la clave.
+Se ensaya la restauración completa, pasos 1 a 5 contra una base descartable, al menos una vez por trimestre y cada vez que cambia la clave.
 
 | Fecha | Copia usada | Resultado |
 | --- | --- | --- |
