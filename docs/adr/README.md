@@ -34,3 +34,4 @@
 | [0030](0030-gastos-en-dolares-con-tarjeta.md) | Gastos en dólares con tarjeta: se valúan con el dólar de referencia, y el pago guarda lo que se pagó | Aceptado | 2026-11-17 |
 | [0031](0031-pdf-en-proceso-aislado.md) | La lectura de un PDF corre en un proceso aislado con topes | Aceptado | 2026-11-18 |
 | [0032](0032-secreto-entre-worker-y-api.md) | Solo el Worker habla con la API: un secreto compartido de origen | Aceptado | 2026-11-18 |
+| [0033](0033-respaldos-de-la-base.md) | Respaldo diario de la base, cifrado y probado, en GitHub Actions | Aceptado | 2026-11-21 |
