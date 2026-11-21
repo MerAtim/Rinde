@@ -1,0 +1,113 @@
+name: Respaldo de la base
+
+# Neon Free guarda solo 6 horas de historia y no hace respaldos programados
+# (ADR-0033). Este workflow copia la base de producción todos los días, prueba
+# que la copia se restaura en una base vacía, la cifra con la clave pública del
+# respaldo y la guarda 90 días como artefacto. Abrirla requiere la clave
+# privada, que no está en GitHub. El repositorio es público y cualquiera con
+# cuenta puede descargar un artefacto: por eso la copia nunca sale sin cifrar.
+# Cómo restaurar: docs/respaldos.md.
+#
+# GitHub desactiva los workflows programados de un repositorio público después
+# de 60 días sin actividad. Si eso pasa, se reactiva desde la pestaña Actions.
+
+on:
+  schedule:
+    # 07:43 UTC (04:43 en Argentina), la hora de menos uso. Minuto no redondo:
+    # en punto, GitHub demora o descarta corridas programadas por la carga.
+    - cron: "43 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Una copia a medias no se cancela por otra: se espera a que termine.
+concurrency:
+  group: respaldo
+  cancel-in-progress: false
+
+jobs:
+  respaldo:
+    name: Copia, prueba y cifrado
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    # El entorno solo admite main: desde otra rama no se llega al secreto.
+    environment: produccion
+    # Base vacía donde se prueba la restauración. Misma imagen que la de PG
+    # abajo (un servicio no puede leer variables de entorno).
+    services:
+      verificacion:
+        image: postgres:18-alpine@sha256:d3e1620b530c944afa6e887d22eb899824da68e19c52024bf98f5220c88a65b2
+        env:
+          POSTGRES_DB: verificacion
+          POSTGRES_USER: rinde
+          POSTGRES_PASSWORD: solo_para_verificar
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rinde -d verificacion"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # El cliente de PostgreSQL del runner es más viejo que la base, y pg_dump
+      # no copia un servidor más nuevo que él. Se usa el de la imagen oficial.
+      - name: Copiar, probar y cifrar
+        env:
+          ORIGEN: ${{ secrets.RINDE_DATABASE_URL }}
+          VERIFICACION: postgresql://rinde:solo_para_verificar@127.0.0.1:5432/verificacion
+          CLAVE: .github/respaldo/clave-publica.asc
+          PG: docker run --rm -i --network host postgres:18-alpine@sha256:d3e1620b530c944afa6e887d22eb899824da68e19c52024bf98f5220c88a65b2
+        run: |
+          archivo="rinde-$(date -u +%F).dump.gpg"
+          bash scripts/backup-database.sh "$RUNNER_TEMP/$archivo"
+          echo "ARCHIVO=$archivo" >> "$GITHUB_ENV"
+
+      # Ya viene comprimida y cifrada: volver a comprimir no achica nada.
+      - name: Guardar la copia cifrada
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ env.ARCHIVO }}
+          path: ${{ runner.temp }}/${{ env.ARCHIVO }}
+          retention-days: 90
+          compression-level: 0
+          if-no-files-found: error
+
+  aviso:
+    name: Aviso en un issue
+    needs: [respaldo]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      FALLO: ${{ needs.respaldo.result == 'failure' }}
+      CORRIDA: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      TITULO: "Respaldo de la base: falló la copia diaria"
+    steps:
+      - name: Abrir, actualizar o cerrar el issue
+        run: |
+          abierto="$(gh issue list --state open --search "in:title \"$TITULO\"" --json number,title \
+            --jq "map(select(.title == env.TITULO)) | first | .number // empty")"
+
+          if [[ "$FALLO" == "true" ]]; then
+            mensaje="El respaldo del $(date -u +%F) falló y no se guardó ninguna copia. El detalle está en $CORRIDA"
+            if [[ -n "$abierto" ]]; then
+              gh issue comment "$abierto" --body "$mensaje"
+            else
+              gh issue create --title "$TITULO" --body "$mensaje"
+            fi
+            exit 1
+          fi
+
+          if [[ -n "$abierto" ]]; then
+            gh issue close "$abierto" --comment "El respaldo del $(date -u +%F) se guardó bien: $CORRIDA"
+          fi

@@ -35,6 +35,9 @@ client_secret*.json
 *.keystore
 *.gpg
 *.asc
+# La clave pública del respaldo es pública por diseño: con ella solo se cifra
+# (ADR-0033). La privada sigue ignorada por la regla de arriba.
+!.github/respaldo/clave-publica.asc
 id_rsa*
 id_ed25519*
 id_ecdsa*
