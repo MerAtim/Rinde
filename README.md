@@ -110,7 +110,8 @@ El navegador ve un único origen, así que no hace falta CORS y la política de 
 | Acceso a datos ajenos | Ningún endpoint lo permite | Una prueba recorre todas las rutas: sin sesión dan 401, con recursos de otra persona dan 404 |
 | Dependencias e imágenes | Auditadas todos los días | Si aparece una vulnerabilidad, se abre un issue solo |
 | Análisis estático de seguridad | CodeQL sobre Python, TypeScript y los workflows, con las reglas extendidas de seguridad | En cada cambio y una vez por semana; los hallazgos van a la pestaña Security |
-| Decisiones | 32 ADR, con alternativas y costos | [docs/adr](docs/adr/README.md) |
+| Respaldos de la base | Uno por día, guardado 90 días y cifrado | Cada copia se restaura en una base vacía antes de guardarse; si falla, se abre un issue ([docs/respaldos.md](docs/respaldos.md)) |
+| Decisiones | 33 ADR, con alternativas y costos | [docs/adr](docs/adr/README.md) |
 
 Los números de tiempo son de una corrida local; los de la CI quedan en cada corrida.
 
@@ -145,6 +146,8 @@ La aplicación queda en http://localhost:8080 y el estado de la API en http://lo
 ## En producción
 
 Se publica automáticamente al integrar en `main` ([ADR-0005](docs/adr/0005-hosting-gratuito.md)): frontend en Cloudflare Workers, API en Render y PostgreSQL en Neon, todo en planes gratuitos. La imagen que se despliega es la misma que pasó el escaneo de vulnerabilidades.
+
+Neon Free guarda solo 6 horas de historia, así que la base se respalda todos los días por fuera: la copia se prueba restaurándola, se cifra con una clave pública cuya privada no está en GitHub y se guarda 90 días ([ADR-0033](docs/adr/0033-respaldos-de-la-base.md), [cómo restaurar](docs/respaldos.md)).
 
 **Dirección pública:** https://rinde.meratim.workers.dev
 

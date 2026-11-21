@@ -89,6 +89,8 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * [x] Secreto compartido entre el Worker y la API: nadie llama directo a Render ni
   esquiva los límites por dirección (ADR-0032)
 * [x] Análisis estático de seguridad con CodeQL en Python, TypeScript y workflows
+* [x] Respaldo diario de la base fuera de Neon, probado y cifrado, con la guía para
+  restaurarlo (ADR-0033)
 
 ## Después (solo si hay tiempo)
 * Ingreso con Google y Microsoft por OpenID Connect (código con PKCE, validado en el
