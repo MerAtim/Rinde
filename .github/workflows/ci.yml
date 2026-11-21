@@ -289,6 +289,19 @@ jobs:
             exit 1
           fi
 
+      # PostgreSQL aparece en el compose, que actualiza Dependabot, y en
+      # servicios y comandos de los workflows, que Dependabot no ve. Una versión
+      # vieja en el respaldo ya rompió la restauración (ADR-0033): esto obliga a
+      # mover todas juntas.
+      - name: Comprobar que todas las imágenes de PostgreSQL son la misma
+        run: |
+          distintas="$(grep -rhoE 'postgres:[0-9][^[:space:]"]*' docker-compose.yml .github/workflows | sort -u)"
+          if [[ "$(wc -l <<< "$distintas")" != 1 ]]; then
+            echo "::error::Las imágenes de PostgreSQL no coinciden. Usá la del docker-compose.yml en todos lados:"
+            echo "$distintas"
+            exit 1
+          fi
+
       # Los flujos críticos contra este mismo entorno: nginx, la API y la base
       # de verdad (ADR-0013, decisión 3). Corren en la imagen oficial de
       # Playwright, fijada por digest, por el motivo de ADR-0019. La red del
