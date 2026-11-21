@@ -42,8 +42,14 @@ echo "Copiando la base..."
 echo "Probando que se restaura en una base vacía..."
 if ! "${pg[@]}" pg_restore --exit-on-error --single-transaction --no-owner --no-acl \
   --dbname="$VERIFICACION" < "$copia" 2> "$trabajo/restauracion.log"; then
-  # El detalle puede citar valores de una fila: no se publica.
-  echo "::error::La copia no se pudo restaurar ($(grep -c 'error' "$trabajo/restauracion.log") errores). No se guarda." >&2
+  echo "::error::La copia no se pudo restaurar. No se guarda." >&2
+  # El mensaje puede citar valores de una fila: se publica solo qué objeto del
+  # esquema falló (la línea "from TOC entry", que nombra tipo y nombre, nunca
+  # datos) y el error con todo lo que va entre comillas tapado. Las líneas
+  # DETAIL, que citan valores, no salen.
+  grep -E 'from TOC entry|ERROR:' "$trabajo/restauracion.log" \
+    | sed -E "s/\"[^\"]*\"/\"...\"/g; s/'[^']*'/'...'/g" \
+    | cut -c1-200 | head -n 6 >&2 || true
   exit 1
 fi
 
