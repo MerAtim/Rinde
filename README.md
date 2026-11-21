@@ -39,6 +39,7 @@ Las capturas salen de una demo real, contra la API y la base de verdad, con el a
 * **Reglas de categoría al importar:** en la vista previa podés recordar "si dice COTO, es Supermercado", y las próximas importaciones lo aplican solas. Si coinciden dos reglas gana la más específica, y cada categoría propuesta dice qué regla la eligió ([ADR-0024](docs/adr/0024-reglas-de-categoria.md)).
 * **Filtros por categoría y por texto**, que se comparten en la dirección. La búsqueda no distingue tildes ni mayúsculas: "panaderia" encuentra "Panadería".
 * **Cuenta y sesión** con usuario, contraseña y código de recuperación, sin email ([ADR-0007](docs/adr/0007-autenticacion.md)).
+* **Borrar la cuenta**, desde Preferencias: se confirma con la contraseña y se borran en el momento el usuario y todo lo que cargó, como pide la Ley 25.326. Una prueba verifica que no queda ninguna fila de esa cuenta en ninguna tabla ([ADR-0034](docs/adr/0034-borrar-la-cuenta-y-exportar-los-datos.md)).
 * **Demo sin registrarse:** "Probar la demo", en la pantalla de ingreso, abre una cuenta propia con tres meses de datos inventados: cuentas en pesos y en dólares, gastos, transferencias, una compra en cuotas, recurrentes y un presupuesto con su alerta. Cada visita tiene la suya, se carga por los mismos casos de uso que cualquier dato y se borra sola a las dos horas, con todo lo que tenga. Un aviso fijo dice a qué hora ([ADR-0028](docs/adr/0028-cuenta-demo.md)).
 * **Interfaz en español y en inglés**, con modo oscuro y claro.
 
@@ -100,9 +101,9 @@ El navegador ve un único origen, así que no hace falta CORS y la política de 
 
 | Qué | Cuánto | Cómo se verifica |
 | --- | --- | --- |
-| Tests del backend | 1165: dominio, casos de uso, API e integración contra PostgreSQL | En cada cambio, en la CI |
+| Tests del backend | 1196: dominio, casos de uso, API e integración contra PostgreSQL | En cada cambio, en la CI |
 | Cobertura del backend | 98 % | La CI falla por debajo del mínimo |
-| Tests del frontend | 364, con axe-core en las pantallas | En cada cambio, en la CI |
+| Tests del frontend | 372, con axe-core en las pantallas | En cada cambio, en la CI |
 | Pruebas de extremo a extremo | 42 en Chromium, a 360 px y en los dos idiomas | Contra el build de producción ([ADR-0013](docs/adr/0013-pruebas-de-extremo-a-extremo.md)) |
 | Flujos críticos | 3, sin nada simulado: registrarse y volver a entrar, abrir una cuenta y registrar un gasto, y probar la demo | Contra el entorno completo de `docker compose`, en cada cambio |
 | Dashboard con 50.000 movimientos | p95 de 123 ms, con un límite de 300 ms | Una prueba lo mide en cada cambio y deja el número en el resumen de la corrida |
@@ -111,7 +112,7 @@ El navegador ve un único origen, así que no hace falta CORS y la política de 
 | Dependencias e imágenes | Auditadas todos los días | Si aparece una vulnerabilidad, se abre un issue solo |
 | Análisis estático de seguridad | CodeQL sobre Python, TypeScript y los workflows, con las reglas extendidas de seguridad | En cada cambio y una vez por semana; los hallazgos van a la pestaña Security |
 | Respaldos de la base | Uno por día, guardado 90 días y cifrado | Cada copia se restaura en una base vacía antes de guardarse; si falla, se abre un issue ([docs/respaldos.md](docs/respaldos.md)) |
-| Decisiones | 33 ADR, con alternativas y costos | [docs/adr](docs/adr/README.md) |
+| Decisiones | 34 ADR, con alternativas y costos | [docs/adr](docs/adr/README.md) |
 
 Los números de tiempo son de una corrida local; los de la CI quedan en cada corrida.
 

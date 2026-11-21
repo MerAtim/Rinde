@@ -12,6 +12,7 @@ from rinde.auth.domain.errors import UsernameTakenError
 from rinde.auth.domain.user import User
 from rinde.auth.domain.username import Username
 from rinde.auth.infrastructure.tables import (
+    account_deletions,
     client_activity,
     failed_login_attempts,
     sessions,
@@ -97,6 +98,14 @@ class SqlAlchemyUserRepository:
                 users.c.demo_expires_at.is_not(None), users.c.demo_expires_at <= now
             )
         )
+
+    async def delete(self, user_id: UUID, *, at: datetime) -> None:
+        # ON DELETE CASCADE se lleva todo lo de la cuenta, auditoría incluida.
+        # La constancia va en la misma transacción: no hay baja sin registro.
+        await self._session.execute(
+            insert(account_deletions).values(user_id=user_id, deleted_at=at)
+        )
+        await self._session.execute(delete(users).where(users.c.id == user_id))
 
 
 class SqlAlchemySessionRepository:

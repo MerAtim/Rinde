@@ -4,6 +4,7 @@ import pytest
 
 from rinde.auth.application.sessions import hash_token
 from rinde.auth.domain.errors import (
+    DemoNotDeletableError,
     InvalidCredentialsError,
     InvalidRecoveryCodeError,
     NotAuthenticatedError,
@@ -80,3 +81,58 @@ async def test_expired_sessions_are_rejected_and_removed() -> None:
             await unit.authenticate.execute(registration.session_token)
 
     assert factory.sessions.store == {}
+
+
+async def test_deleting_the_account_removes_it_with_its_sessions_and_leaves_a_record() -> None:
+    factory = InMemoryAuthUnitFactory()
+
+    async with factory() as unit:
+        registration = await unit.register.execute("mechi", PASSPHRASE)
+        other = await unit.register.execute("otra", PASSPHRASE)
+        await unit.delete_account.execute(registration.user.id, PASSPHRASE)
+
+        assert registration.user.id not in factory.users.store
+        assert factory.users.deletions == [(registration.user.id, factory.clock.now())]
+        assert hash_token(registration.session_token) not in factory.sessions.store
+        with pytest.raises(NotAuthenticatedError):
+            await unit.authenticate.execute(registration.session_token)
+        # La cuenta de otra persona sigue igual.
+        assert await unit.authenticate.execute(other.session_token) == other.user
+
+
+async def test_deleting_the_account_requires_the_right_password() -> None:
+    factory = InMemoryAuthUnitFactory()
+
+    async with factory() as unit:
+        registration = await unit.register.execute("mechi", PASSPHRASE)
+        with pytest.raises(InvalidCredentialsError):
+            await unit.delete_account.execute(registration.user.id, "otra frase bastante larga")
+
+    assert registration.user.id in factory.users.store
+    assert factory.users.deletions == []
+
+
+async def test_wrong_confirmations_count_toward_the_account_lock() -> None:
+    factory = InMemoryAuthUnitFactory()
+
+    async with factory() as unit:
+        registration = await unit.register.execute("mechi", PASSPHRASE)
+        for _ in range(10):
+            with pytest.raises(InvalidCredentialsError):
+                await unit.delete_account.execute(registration.user.id, "otra frase bastante larga")
+        with pytest.raises(TooManyAttemptsError):
+            await unit.delete_account.execute(registration.user.id, PASSPHRASE)
+
+    assert registration.user.id in factory.users.store
+
+
+async def test_a_demo_cannot_be_deleted_by_hand() -> None:
+    factory = InMemoryAuthUnitFactory()
+
+    async with factory() as unit:
+        demo = await unit.start_demo.execute()
+        user = await unit.authenticate.execute(demo.session_token)
+        with pytest.raises(DemoNotDeletableError):
+            await unit.delete_account.execute(user.id, PASSPHRASE)
+
+    assert user.id in factory.users.store

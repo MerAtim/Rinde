@@ -5,6 +5,7 @@ from fastapi.responses import JSONResponse
 
 from rinde.auth.domain.errors import (
     AuthError,
+    DemoNotDeletableError,
     DemoUnavailableError,
     InvalidCredentialsError,
     InvalidRecoveryCodeError,
@@ -17,6 +18,7 @@ from rinde.auth.domain.errors import (
 _UNPROCESSABLE = 422
 _STATUS_BY_ERROR: tuple[tuple[type[AuthError], int], ...] = (
     (UsernameTakenError, status.HTTP_409_CONFLICT),
+    (DemoNotDeletableError, status.HTTP_409_CONFLICT),
     (InvalidCredentialsError, status.HTTP_401_UNAUTHORIZED),
     (InvalidRecoveryCodeError, status.HTTP_401_UNAUTHORIZED),
     (NotAuthenticatedError, status.HTTP_401_UNAUTHORIZED),

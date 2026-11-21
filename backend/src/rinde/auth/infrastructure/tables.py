@@ -86,3 +86,14 @@ failed_login_attempts = Table(
     Column("attempted_at", DateTime(timezone=True), nullable=False),
     Index("ix_failed_login_attempts_username_attempted_at", "username", "attempted_at"),
 )
+
+# Constancia de cada baja: solo el identificador y la fecha, ningún dato de la
+# persona. Sin clave foránea a propósito: la cuenta ya no existe. Si se restaura
+# un respaldo anterior a la baja, esta lista dice qué cuentas volver a borrar
+# (ADR-0034).
+account_deletions = Table(
+    "account_deletions",
+    metadata,
+    Column("user_id", Uuid, primary_key=True),
+    Column("deleted_at", DateTime(timezone=True), nullable=False),
+)

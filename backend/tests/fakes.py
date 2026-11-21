@@ -136,6 +136,7 @@ class InMemoryUsers:
     def __init__(self) -> None:
         self.store: dict[UUID, User] = {}
         self.demo_locks = 0
+        self.deletions: list[tuple[UUID, datetime]] = []
 
     async def add(self, user: User) -> None:
         if any(existing.username == user.username for existing in self.store.values()):
@@ -168,6 +169,10 @@ class InMemoryUsers:
 
     async def purge_expired_demos(self, now: datetime) -> None:
         self.store = {key: user for key, user in self.store.items() if not user.is_expired(now)}
+
+    async def delete(self, user_id: UUID, *, at: datetime) -> None:
+        del self.store[user_id]
+        self.deletions.append((user_id, at))
 
 
 class InMemorySessions:

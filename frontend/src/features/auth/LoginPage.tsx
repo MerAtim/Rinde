@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 
 import { Alert } from "../../shared/ui/Alert";
 import { Button } from "../../shared/ui/Button";
@@ -11,6 +11,7 @@ import { TextField } from "../../shared/ui/TextField";
 import { type AuthErrorCode, login } from "./api";
 import styles from "./AuthForm.module.css";
 import { AuthLayout } from "./AuthLayout";
+import type { AccountDeletedState } from "./DeleteAccountSection";
 import { DemoStart } from "./DemoStart";
 import { errorCodeOf, fieldOf } from "./errors";
 import { SESSION_QUERY_KEY } from "./useSession";
@@ -18,6 +19,8 @@ import { SESSION_QUERY_KEY } from "./useSession";
 export function LoginPage() {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const location = useLocation();
+  const accountDeleted = (location.state as Partial<AccountDeletedState> | null)?.accountDeleted;
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [localError, setLocalError] = useState<AuthErrorCode | null>(null);
@@ -46,6 +49,11 @@ export function LoginPage() {
           </h1>
           <p className={cx(styles.subtitle)}>{t("auth.login.subtitle")}</p>
         </div>
+        {accountDeleted ? (
+          <p role="status" className={cx(styles.notice)}>
+            {t("auth.login.accountDeleted")}
+          </p>
+        ) : null}
         {field === "form" ? <Alert>{message}</Alert> : null}
         <form
           className={cx(styles.form)}

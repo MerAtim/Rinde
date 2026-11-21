@@ -146,6 +146,29 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/auth/me/delete": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Borrar la cuenta propia con todos sus datos
+     * @description Borra la cuenta y todo lo suyo en el momento, y cierra la sesión (ADR-0034).
+     *
+     *     Se confirma con la contraseña. No tiene vuelta atrás: los respaldos cifrados
+     *     la conservan hasta 90 días, y si se restaurara uno, la baja se vuelve a aplicar.
+     */
+    post: operations["delete_account_api_auth_me_delete_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/accounts": {
     parameters: {
       query?: never;
@@ -1186,6 +1209,14 @@ export interface components {
       unconverted: components["schemas"]["UnconvertedResponse"][];
       /** @description Solo con `prices=constant` */
       constant: components["schemas"]["ConstantPricesResponse"] | null;
+    };
+    /** DeleteAccountRequest */
+    DeleteAccountRequest: {
+      /**
+       * Password
+       * Format: password
+       */
+      password: string;
     };
     /** DemoResponse */
     DemoResponse: {
@@ -2270,6 +2301,75 @@ export interface operations {
       };
       /** @description Unauthorized */
       401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  delete_account_api_auth_me_delete_post: {
+    parameters: {
+      query?: never;
+      header?: {
+        "x-requested-with"?: string | null;
+      };
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["DeleteAccountRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Unauthorized */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Forbidden */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Conflict */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unprocessable Content */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Too Many Requests */
+      429: {
         headers: {
           [name: string]: unknown;
         };

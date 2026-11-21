@@ -23,6 +23,12 @@ class RecoverRequest(BaseModel):
     new_password: SecretStr = Field(min_length=1, max_length=512)
 
 
+class DeleteAccountRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    password: SecretStr = Field(min_length=1, max_length=512)
+
+
 class RegisterResponse(BaseModel):
     username: str
     recovery_code: str

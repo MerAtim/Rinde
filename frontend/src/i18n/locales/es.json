@@ -80,7 +80,8 @@
       "forgot": "¿Olvidaste la contraseña?",
       "goRecover": "Usá tu código de recuperación",
       "noAccount": "¿No tenés cuenta?",
-      "goSignup": "Creá una"
+      "goSignup": "Creá una",
+      "accountDeleted": "Borramos tu cuenta y todos tus datos."
     },
     "recover": {
       "title": "Recuperá tu cuenta",
@@ -142,7 +143,8 @@
       "NOT_AUTHENTICATED": "Tu sesión terminó. Ingresá de nuevo.",
       "CSRF_REJECTED": "No pudimos validar el pedido. Recargá la página y probá de nuevo.",
       "NETWORK_ERROR": "No hay conexión con Rinde. Revisá tu internet y probá de nuevo.",
-      "UNKNOWN_ERROR": "Algo salió mal. Probá de nuevo en un momento."
+      "UNKNOWN_ERROR": "Algo salió mal. Probá de nuevo en un momento.",
+      "DEMO_NOT_DELETABLE": "Una demo no se borra a mano: se borra sola cuando vence."
     }
   },
   "accounts": {
@@ -459,6 +461,24 @@
       "CSRF_REJECTED": "No pudimos guardar. Recargá la página y probá de nuevo.",
       "NETWORK_ERROR": "No hay conexión. Probá de nuevo en un momento.",
       "UNKNOWN_ERROR": "No pudimos guardar tus preferencias."
+    }
+  },
+  "account": {
+    "delete": {
+      "title": "Borrar tu cuenta",
+      "description": "Se borran tu usuario y todo lo que cargaste: cuentas, movimientos, presupuestos y alertas. No se puede deshacer.",
+      "demo": "Esta demo se borra sola, con todo lo que tiene, cuando vence.",
+      "open": "Borrar mi cuenta",
+      "confirmTitle": "¿Borrar tu cuenta para siempre?",
+      "warning": "Se borran tu usuario y todos tus datos en este momento, y se cierra tu sesión. No hay forma de recuperarlos. Para confirmar, ingresá tu contraseña.",
+      "password": "Contraseña",
+      "confirm": "Borrar para siempre",
+      "deleting": "Borrando…",
+      "cancel": "Cancelar",
+      "errors": {
+        "PASSWORD_REQUIRED": "Ingresá tu contraseña para confirmar.",
+        "INVALID_CREDENTIALS": "La contraseña no es correcta."
+      }
     }
   },
   "dashboard": {
