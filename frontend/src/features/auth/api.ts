@@ -20,6 +20,7 @@ const SERVER_CODES = [
   "RECOVERY_CODE_INVALID",
   "TOO_MANY_ATTEMPTS",
   "DEMO_UNAVAILABLE",
+  "DEMO_NOT_DELETABLE",
   "NOT_AUTHENTICATED",
   "CSRF_REJECTED",
 ] as const;
@@ -66,6 +67,11 @@ export async function startDemo(): Promise<DemoResponse> {
 
 export async function logout(): Promise<void> {
   await api.post("/api/auth/logout");
+}
+
+/** Borra la cuenta y todos sus datos en el momento; se confirma con la contraseña (ADR-0034). */
+export async function deleteAccount(password: string): Promise<void> {
+  await api.post("/api/auth/me/delete", { password });
 }
 
 export async function recover(

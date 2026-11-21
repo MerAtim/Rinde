@@ -43,6 +43,14 @@ class UserRepository(Protocol):
         """Borra las demos vencidas y, en cascada, todos sus datos."""
         ...
 
+    async def delete(self, user_id: UUID, *, at: datetime) -> None:
+        """Borra la cuenta y, en cascada, todos sus datos, y deja constancia de la baja.
+
+        La constancia guarda solo el identificador y la fecha: sirve para volver
+        a borrar la cuenta si se restaura un respaldo anterior (ADR-0034).
+        """
+        ...
+
 
 class SessionRepository(Protocol):
     async def add(self, session: Session) -> None: ...

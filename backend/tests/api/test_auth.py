@@ -169,3 +169,54 @@ def test_recovery_changes_the_password_rotates_the_code_and_closes_old_sessions(
     )
     assert reuse.status_code == status.HTTP_401_UNAUTHORIZED
     assert reuse.json() == {"code": "RECOVERY_CODE_INVALID"}
+
+
+def _delete_account(client: TestClient, password: str, headers: dict[str, str] = CSRF) -> Any:
+    return client.post("/api/auth/me/delete", json={"password": password}, headers=headers)
+
+
+def test_deleting_the_account_closes_the_session_and_leaves_other_accounts_alone(
+    client: TestClient, auth: InMemoryAuthUnitFactory
+) -> None:
+    _register(client, "otra")
+    client.cookies.clear()
+    _register(client)
+
+    response = _delete_account(client, PASSPHRASE)
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert COOKIE not in client.cookies
+    assert client.get("/api/auth/me").status_code == status.HTTP_401_UNAUTHORIZED
+    assert _login(client, PASSPHRASE).json() == {"code": "INVALID_CREDENTIALS"}
+    assert _login(client, PASSPHRASE, username="otra").status_code == status.HTTP_204_NO_CONTENT
+    assert len(auth.users.deletions) == 1
+
+
+def test_deleting_the_account_with_a_wrong_password_keeps_everything(
+    client: TestClient,
+) -> None:
+    _register(client)
+
+    response = _delete_account(client, "otra frase bastante larga")
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json() == {"code": "INVALID_CREDENTIALS"}
+    assert client.get("/api/auth/me").status_code == status.HTTP_200_OK
+
+
+def test_deleting_the_account_requires_the_csrf_header(client: TestClient) -> None:
+    _register(client)
+
+    response = _delete_account(client, PASSPHRASE, headers={})
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert client.get("/api/auth/me").status_code == status.HTTP_200_OK
+
+
+def test_a_demo_answers_that_it_cannot_be_deleted(client: TestClient) -> None:
+    client.post("/api/auth/demo", headers=CSRF)
+
+    response = _delete_account(client, PASSPHRASE)
+
+    assert response.status_code == status.HTTP_409_CONFLICT
+    assert response.json() == {"code": "DEMO_NOT_DELETABLE"}

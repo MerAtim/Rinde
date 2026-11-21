@@ -59,6 +59,12 @@ class TooManyAttemptsError(AuthError):
         self.retry_after_seconds = retry_after_seconds
 
 
+class DemoNotDeletableError(AuthError):
+    """Una demo no tiene contraseña con la que confirmar, y se borra sola al vencer (ADR-0028)."""
+
+    code = "DEMO_NOT_DELETABLE"
+
+
 class DemoUnavailableError(AuthError):
     """Ya hay tantas demos como admite el servicio: no es culpa de quien pide."""
 

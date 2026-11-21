@@ -91,6 +91,8 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * [x] Análisis estático de seguridad con CodeQL en Python, TypeScript y workflows
 * [x] Respaldo diario de la base fuera de Neon, probado y cifrado, con la guía para
   restaurarlo (ADR-0033)
+* [x] Borrar la cuenta con todos sus datos, confirmado con la contraseña (ADR-0034)
+* [ ] Exportar todos los datos propios en un JSON (ADR-0034)
 
 ## Después (solo si hay tiempo)
 * Ingreso con Google y Microsoft por OpenID Connect (código con PKCE, validado en el

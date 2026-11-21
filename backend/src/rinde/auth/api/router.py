@@ -12,6 +12,7 @@ from rinde.auth.api.cookies import SessionCookie, session_cookie
 from rinde.auth.api.dependencies import auth_unit
 from rinde.auth.api.schemas import (
     Credentials,
+    DeleteAccountRequest,
     DemoResponse,
     MeResponse,
     RecoverRequest,
@@ -21,6 +22,7 @@ from rinde.auth.api.schemas import (
 from rinde.auth.application.demo import DEMO_TTL
 from rinde.auth.application.unit import AuthUnit
 from rinde.shared.api.csrf import CSRF
+from rinde.shared.api.identity import CurrentUserId
 from rinde.shared.api.schemas import error_responses
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -134,3 +136,30 @@ async def start_demo(
 async def me(request: Request, unit: Unit, cookie: SessionCookieDep) -> MeResponse:
     user = await unit.authenticate.execute(cookie.read(request))
     return MeResponse(username=user.username.value, demo_expires_at=user.demo_expires_at)
+
+
+# POST y no DELETE: la contraseña viaja en el cuerpo, y la RFC 9110 no le da
+# significado al cuerpo de un DELETE; un intermediario puede descartarlo.
+@router.post(
+    "/me/delete",
+    status_code=status.HTTP_204_NO_CONTENT,
+    dependencies=CSRF,
+    responses=error_responses(401, 403, 409, 422, 429),
+    summary="Borrar la cuenta propia con todos sus datos",
+)
+async def delete_account(  # noqa: PLR0913  (cada parámetro es una dependencia que inyecta FastAPI)
+    *,
+    payload: DeleteAccountRequest,
+    response: Response,
+    user_id: CurrentUserId,
+    unit: Unit,
+    cookie: SessionCookieDep,
+    client: ClientAddress,
+) -> None:
+    """Borra la cuenta y todo lo suyo en el momento, y cierra la sesión (ADR-0034).
+
+    Se confirma con la contraseña. No tiene vuelta atrás: los respaldos cifrados
+    la conservan hasta 90 días, y si se restaurara uno, la baja se vuelve a aplicar.
+    """
+    await unit.delete_account.execute(user_id, payload.password.get_secret_value(), client)
+    cookie.clear(response)
