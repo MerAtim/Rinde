@@ -52,7 +52,7 @@ Si la clave privada no está en el llavero, primero `gpg --import rinde-respaldo
 
 ### 3. Restaurar en una base nueva
 
-Nunca sobre la base en uso: primero en una base nueva, y se cambia cuando está verificada. En Neon, una base nueva dentro del mismo proyecto o un proyecto nuevo, con la URL de conexión directa (la que no dice `-pooler`).
+Nunca sobre la base en uso: primero en una base nueva, y se cambia cuando está verificada. El servidor de destino y el `pg_restore` tienen que ser de la misma versión menor que la base de origen o de una más nueva: desde la 18.7, cada columna nueva guarda una opción interna (`pg_attver`) que una 18.6 rechaza con `unrecognized parameter`. En Neon, una base nueva dentro del mismo proyecto o un proyecto nuevo, con la URL de conexión directa (la que no dice `-pooler`).
 
 ```bash
 docker run --rm -i postgres:18-alpine pg_restore \
