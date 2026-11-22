@@ -464,9 +464,20 @@
     }
   },
   "account": {
+    "export": {
+      "title": "Download your data",
+      "description": "A JSON file with everything Rinde stores about you: accounts, transactions, transfers, installments, recurring items, budgets, alerts, imports and the change history. Other programs can open it.",
+      "download": "Download my data",
+      "downloading": "Preparing the file…",
+      "done": "Done: the file is in your downloads. It has all your data, so keep it somewhere safe.",
+      "errors": {
+        "NETWORK_ERROR": "Can't reach Rinde. Check your connection and try again.",
+        "UNKNOWN_ERROR": "We couldn't prepare the file. Try again in a moment."
+      }
+    },
     "delete": {
       "title": "Delete your account",
-      "description": "This deletes your user and everything you added: accounts, transactions, budgets and alerts. It can't be undone.",
+      "description": "Your user and everything you added are deleted: accounts, transactions, budgets and alerts. It can't be undone, so if you want to keep a copy, download your data first.",
       "demo": "This demo deletes itself, with everything in it, when it expires.",
       "open": "Delete my account",
       "confirmTitle": "Delete your account forever?",
