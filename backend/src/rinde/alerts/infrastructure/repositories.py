@@ -5,13 +5,27 @@ from collections.abc import Collection
 from datetime import date, datetime
 from uuid import UUID
 
-from sqlalchemy import func, select, update
+from sqlalchemy import RowMapping, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from rinde.alerts.domain.alert import BudgetAlert, Threshold
 from rinde.alerts.infrastructure.tables import ONCE_PER_MONTH, budget_alerts
 from rinde.shared.domain.money import Currency, Money
+
+
+def _to_alert(row: RowMapping) -> BudgetAlert:
+    return BudgetAlert(
+        id=row["id"],
+        owner_id=row["owner_id"],
+        category_id=row["category_id"],
+        month=row["month"],
+        threshold=Threshold(row["threshold"]),
+        limit=Money(row["limit_amount"], Currency(row["currency"])),
+        spent=Money(row["spent_amount"], Currency(row["currency"])),
+        raised_at=row["raised_at"],
+        read_at=row["read_at"],
+    )
 
 
 class SqlAlchemyAlertRepository:
@@ -59,20 +73,15 @@ class SqlAlchemyAlertRepository:
             .order_by(budget_alerts.c.raised_at.desc(), budget_alerts.c.id.desc())
             .limit(limit)
         )
-        return [
-            BudgetAlert(
-                id=row["id"],
-                owner_id=row["owner_id"],
-                category_id=row["category_id"],
-                month=row["month"],
-                threshold=Threshold(row["threshold"]),
-                limit=Money(row["limit_amount"], Currency(row["currency"])),
-                spent=Money(row["spent_amount"], Currency(row["currency"])),
-                raised_at=row["raised_at"],
-                read_at=row["read_at"],
-            )
-            for row in result.mappings()
-        ]
+        return [_to_alert(row) for row in result.mappings()]
+
+    async def all_for_owner(self, owner_id: UUID) -> list[BudgetAlert]:
+        result = await self._session.execute(
+            select(budget_alerts)
+            .where(budget_alerts.c.owner_id == owner_id)
+            .order_by(budget_alerts.c.raised_at, budget_alerts.c.id)
+        )
+        return [_to_alert(row) for row in result.mappings()]
 
     async def unread_count(self, owner_id: UUID) -> int:
         count = await self._session.scalar(

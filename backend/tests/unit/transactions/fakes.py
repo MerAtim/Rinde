@@ -15,6 +15,7 @@ from rinde.transactions.application.events import ExpenseRecorded
 from rinde.transactions.application.pagination import Cursor
 from rinde.transactions.application.ports import (
     AccountBalance,
+    AuditEntry,
     BalanceChange,
     FlowSum,
     GeneratedInstallment,
@@ -94,6 +95,12 @@ class FakeTransactionRepository:
         ):
             raise TransactionAlreadyImportedError
         self.rows[transaction.id] = transaction
+
+    async def everything_for_owner(self, owner_id: UUID) -> list[Transaction]:
+        return sorted(
+            (row for row in self.rows.values() if row.owner_id == owner_id),
+            key=lambda row: (row.created_at, row.id),
+        )
 
     async def add_installment(self, transaction: Transaction) -> bool:
         # Como el índice único de la base (ADR-0026): una cuota ya generada no entra.
@@ -300,6 +307,12 @@ class FakeTransferRepository:
     async def add(self, transfer: Transfer) -> None:
         self.rows[transfer.id] = transfer
 
+    async def everything_for_owner(self, owner_id: UUID) -> list[Transfer]:
+        return sorted(
+            (row for row in self.rows.values() if row.owner_id == owner_id),
+            key=lambda row: (row.created_at, row.id),
+        )
+
     async def get(self, transfer_id: UUID, owner_id: UUID) -> Transfer | None:
         found = self.rows.get(transfer_id)
         return found if found and found.owner_id == owner_id else None
@@ -371,9 +384,14 @@ class FakeTransferRepository:
 class FakeTransferAuditLog:
     def __init__(self) -> None:
         self.entries: list[tuple[AuditAction, UUID, datetime]] = []
+        self._owners: list[UUID] = []
 
     async def record(self, action: AuditAction, transfer: Transfer, at: datetime) -> None:
         self.entries.append((action, transfer.id, at))
+        self._owners.append(transfer.owner_id)
+
+    async def entries_for_owner(self, owner_id: UUID) -> list[AuditEntry]:
+        return _entries(self.entries, self._owners, owner_id)
 
     @property
     def actions(self) -> list[AuditAction]:
@@ -468,13 +486,29 @@ class FakeRecurringRules:
 class FakeAuditLog:
     def __init__(self) -> None:
         self.entries: list[tuple[AuditAction, UUID, datetime]] = []
+        self._owners: list[UUID] = []
 
     async def record(self, action: AuditAction, transaction: Transaction, at: datetime) -> None:
         self.entries.append((action, transaction.id, at))
+        self._owners.append(transaction.owner_id)
+
+    async def entries_for_owner(self, owner_id: UUID) -> list[AuditEntry]:
+        return _entries(self.entries, self._owners, owner_id)
 
     @property
     def actions(self) -> list[AuditAction]:
         return [action for action, _, _ in self.entries]
+
+
+def _entries(
+    entries: list[tuple[AuditAction, UUID, datetime]], owners: list[UUID], owner_id: UUID
+) -> list[AuditEntry]:
+    """Sin la foto del cambio: la arma el adaptador de la base, que se prueba aparte."""
+    return [
+        AuditEntry(subject_id=subject_id, action=action, recorded_at=at, snapshot={})
+        for (action, subject_id, at), owner in zip(entries, owners, strict=True)
+        if owner == owner_id
+    ]
 
 
 def _matches(description: object, text: str) -> bool:
