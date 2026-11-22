@@ -10,7 +10,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from rinde.auth.api.client import ClientAddress
+from rinde.shared.api.client import ClientAddress
 
 
 @pytest.fixture
