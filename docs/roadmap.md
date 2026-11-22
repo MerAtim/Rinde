@@ -92,7 +92,7 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * [x] Respaldo diario de la base fuera de Neon, probado y cifrado, con la guía para
   restaurarlo (ADR-0033)
 * [x] Borrar la cuenta con todos sus datos, confirmado con la contraseña (ADR-0034)
-* [ ] Exportar todos los datos propios en un JSON (ADR-0034)
+* [x] Exportar todos los datos propios en un JSON (ADR-0034)
 
 ## Después (solo si hay tiempo)
 * Ingreso con Google y Microsoft por OpenID Connect (código con PKCE, validado en el
@@ -102,4 +102,4 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * Que el PR de Dependabot que sube `@playwright/test` actualice también la imagen
   de Playwright de la CI: hoy Dependabot solo cambia su digest, y el salto de
   versión se agrega a mano en el mismo PR (ADR-0019)
-* MFA TOTP · exportación y borrado de datos del usuario · OpenTelemetry · PWA · notificaciones por email
+* MFA TOTP · OpenTelemetry · PWA · notificaciones por email
