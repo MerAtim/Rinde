@@ -11,6 +11,7 @@ from rinde.auth.application.ports import (
     FailedAttemptRepository,
     PasswordHasher,
     SecretGenerator,
+    SecurityLog,
     SessionRepository,
     Transaction,
     UserRepository,
@@ -27,6 +28,7 @@ class AuthServices:
     secrets: SecretGenerator
     session_ttl: timedelta
     demo_seeder: DemoSeeder
+    security_log: SecurityLog
 
 
 @dataclass(frozen=True, slots=True)

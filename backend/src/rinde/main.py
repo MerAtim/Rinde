@@ -42,6 +42,7 @@ from rinde.auth.domain.errors import AuthError
 from rinde.auth.infrastructure.argon2_hasher import Argon2PasswordHasher
 from rinde.auth.infrastructure.factory import SqlAlchemyAuthUnitFactory
 from rinde.auth.infrastructure.pwned_passwords import PwnedPasswordsChecker
+from rinde.auth.infrastructure.security_log import LoggingSecurityLog
 from rinde.auth.infrastructure.system import SecureRandomSecrets
 from rinde.budgets.api.errors import budgets_error_handler
 from rinde.budgets.api.router import router as budgets_router
@@ -115,6 +116,7 @@ from rinde.shared.api.origin import OriginSecretMiddleware
 from rinde.shared.domain.errors import DomainError
 from rinde.shared.infrastructure.clock import SystemClock
 from rinde.shared.infrastructure.events import InProcessEventBus
+from rinde.shared.infrastructure.security_log import configure_security_log
 from rinde.transactions.api.errors import transactions_error_handler
 from rinde.transactions.api.installments import router as installments_router
 from rinde.transactions.api.recurring import router as recurring_router
@@ -160,6 +162,7 @@ def create_app(  # noqa: PLR0913, PLR0915
     Los parámetros opcionales permiten reemplazar la infraestructura en los tests.
     """
     config = settings or get_settings()
+    configure_security_log()
     engine: AsyncEngine | None = None
     http_client: httpx.AsyncClient | None = None
 
@@ -247,6 +250,7 @@ def create_app(  # noqa: PLR0913, PLR0915
                     ModulesDemoWriter(accounts_factory, transactions_factory, budgets_factory),
                     SystemClock(),
                 ),
+                security_log=LoggingSecurityLog(),
             ),
         )
 

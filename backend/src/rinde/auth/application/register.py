@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from uuid import uuid4
 
 from rinde.auth.application.dependencies import AuthDependencies
-from rinde.auth.application.ports import ClientAction
+from rinde.auth.application.ports import ClientAction, SecurityEvent
 from rinde.auth.application.rate_limits import ensure_client_under_limit, record_client_action
 from rinde.auth.application.sessions import SessionIssuer
 from rinde.auth.domain.errors import (
@@ -59,6 +59,7 @@ class RegisterUser:
         await record_client_action(deps, ClientAction.REGISTRATION, client)
         token = await self._issuer.issue(user.id)
         await deps.transaction.commit()
+        services.security_log.record(SecurityEvent.USER_CREATED, user.id, client=client)
         return Registration(
             user=user,
             recovery_code=format_recovery_code(recovery_symbols),

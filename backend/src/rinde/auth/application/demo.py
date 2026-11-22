@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from uuid import uuid4
 
 from rinde.auth.application.dependencies import AuthDependencies
-from rinde.auth.application.ports import ClientAction
+from rinde.auth.application.ports import ClientAction, SecurityDetail, SecurityEvent
 from rinde.auth.application.rate_limits import ensure_client_under_limit, record_client_action
 from rinde.auth.application.sessions import SessionIssuer
 from rinde.auth.domain.errors import DemoUnavailableError
@@ -45,6 +45,9 @@ class StartDemo:
         await deps.services.demo_seeder.seed(user.id)
         token = await self._issuer.issue(user.id, expires_at=expires_at)
         await deps.transaction.commit()
+        deps.services.security_log.record(
+            SecurityEvent.USER_CREATED, user.id, SecurityDetail.DEMO, client=client
+        )
         return StartedDemo(
             username=user.username.value,
             expires_at=expires_at,

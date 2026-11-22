@@ -5,8 +5,9 @@ from datetime import datetime, timedelta
 from uuid import UUID
 
 from rinde.auth.application.dependencies import AuthDependencies
-from rinde.auth.application.ports import Session
+from rinde.auth.application.ports import SecurityDetail, SecurityEvent, Session
 from rinde.auth.domain.errors import TooManyAttemptsError
+from rinde.auth.domain.user import User
 from rinde.auth.domain.username import Username
 
 # NIST SP 800-63B-4 exige limitar los intentos fallidos sobre cada cuenta.
@@ -39,9 +40,22 @@ class SessionIssuer:
         return token
 
 
-async def ensure_not_locked(deps: AuthDependencies, username: Username) -> None:
+def known_account(user: User | None) -> tuple[UUID, ...]:
+    """El identificador para el registro de seguridad, si la cuenta existe."""
+    return (user.id,) if user else ()
+
+
+async def ensure_not_locked(
+    deps: AuthDependencies, username: Username, user: User | None, client: str | None
+) -> None:
     since = deps.services.clock.now() - ATTEMPT_WINDOW
     if await deps.failed_attempts.count_since(username, since) >= MAX_FAILED_ATTEMPTS:
+        deps.services.security_log.record(
+            SecurityEvent.ACCOUNT_LOCKED,
+            *known_account(user),
+            SecurityDetail.MAX_RETRIES,
+            client=client,
+        )
         raise TooManyAttemptsError(retry_after_seconds=int(ATTEMPT_WINDOW.total_seconds()))
 
 

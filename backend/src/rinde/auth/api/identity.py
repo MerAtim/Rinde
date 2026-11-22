@@ -6,6 +6,7 @@ from fastapi import Request
 
 from rinde.auth.api.cookies import SessionCookie
 from rinde.auth.application.unit import AuthUnitFactory
+from rinde.shared.api.client import client_address
 
 
 async def identify_user(request: Request) -> UUID:
@@ -13,5 +14,5 @@ async def identify_user(request: Request) -> UUID:
     factory: AuthUnitFactory = request.app.state.auth_factory
     cookie: SessionCookie = request.app.state.session_cookie
     async with factory() as unit:
-        user = await unit.authenticate.execute(cookie.read(request))
+        user = await unit.authenticate.execute(cookie.read(request), client_address(request))
     return user.id

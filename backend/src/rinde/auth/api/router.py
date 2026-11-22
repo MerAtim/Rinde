@@ -81,11 +81,15 @@ async def login(
     summary="Cerrar sesión",
 )
 async def logout(
-    request: Request, response: Response, unit: Unit, cookie: SessionCookieDep
+    request: Request,
+    response: Response,
+    unit: Unit,
+    cookie: SessionCookieDep,
+    client: ClientAddress,
 ) -> None:
     token = cookie.read(request)
     if token:
-        await unit.logout.execute(token)
+        await unit.logout.execute(token, client)
     cookie.clear(response)
 
 
@@ -133,8 +137,10 @@ async def start_demo(
 
 
 @router.get("/me", responses=error_responses(401), summary="Cuenta de la sesión actual")
-async def me(request: Request, unit: Unit, cookie: SessionCookieDep) -> MeResponse:
-    user = await unit.authenticate.execute(cookie.read(request))
+async def me(
+    request: Request, unit: Unit, cookie: SessionCookieDep, client: ClientAddress
+) -> MeResponse:
+    user = await unit.authenticate.execute(cookie.read(request), client)
     return MeResponse(username=user.username.value, demo_expires_at=user.demo_expires_at)
 
 
