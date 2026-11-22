@@ -95,6 +95,9 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
 * [x] Exportar todos los datos propios en un JSON (ADR-0034)
 * [x] Registro de eventos de seguridad con el vocabulario de OWASP (ADR-0035). Faltan
   las alertas: hoy alguien tiene que mirar el registro
+* [x] Política de seguridad (SECURITY.md) con reporte privado en GitHub, y modelo de
+  amenazas STRIDE con los riesgos aceptados y lo que los cerraría
+* [ ] Un rol de la base para las migraciones y otro, con menos permisos, para la API
 
 ## Después (solo si hay tiempo)
 * Ingreso con Google y Microsoft por OpenID Connect (código con PKCE, validado en el
