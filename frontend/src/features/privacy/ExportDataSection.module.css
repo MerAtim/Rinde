@@ -1,0 +1,15 @@
+.section {
+  display: grid;
+  gap: var(--rinde-space-3);
+  padding-top: var(--rinde-space-5);
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.title {
+  font: 500 22px/28px var(--md-ref-typeface-plain);
+}
+
+.text {
+  color: var(--md-sys-color-on-surface-variant);
+  font: 400 14px/20px var(--md-ref-typeface-plain);
+}
