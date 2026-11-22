@@ -41,6 +41,10 @@ class BatchRepository(Protocol):
         """Solo los del dueño, con sus líneas."""
         ...
 
+    async def for_owner(self, owner_id: UUID) -> list[ImportBatch]:
+        """Todos los del dueño, con sus líneas, del más viejo al más nuevo."""
+        ...
+
     async def save_confirmation(self, batch: ImportBatch) -> None:
         """Guarda cuándo se confirmó y cuántas líneas entraron."""
         ...

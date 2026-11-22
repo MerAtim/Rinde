@@ -95,6 +95,9 @@ from rinde.preferences.api.router import router as preferences_router
 from rinde.preferences.application.unit import PreferencesUnitFactory
 from rinde.preferences.domain.errors import PreferencesError
 from rinde.preferences.infrastructure.factory import SqlAlchemyPreferencesUnitFactory
+from rinde.privacy.api.router import router as privacy_router
+from rinde.privacy.application.use_cases import ExportPersonalData, PrivacyDependencies
+from rinde.privacy.infrastructure import gateways as privacy
 from rinde.rates.api.errors import rates_error_handler
 from rinde.rates.api.router import router as rates_router
 from rinde.rates.application.unit import RatesUnitFactory
@@ -134,7 +137,9 @@ MAX_BODY_BYTES = MAX_IMPORT_BYTES + 64 * 1024
 
 # Un parámetro por módulo con infraestructura reemplazable: la cantidad crece con
 # los módulos, no con la complejidad de la función. Todos son opcionales y por nombre.
-def create_app(  # noqa: PLR0913
+# Lo mismo con las sentencias: es la raíz de composición, y arma cada módulo en
+# una línea recta, sin ramas que la complejidad cuente.
+def create_app(  # noqa: PLR0913, PLR0915
     settings: Settings | None = None,
     *,
     database_probe: DatabaseProbe | None = None,
@@ -245,6 +250,16 @@ def create_app(  # noqa: PLR0913
             ),
         )
 
+    privacy_export = _privacy_export(
+        auth=auth_factory,
+        preferences=preferences_factory,
+        accounts=accounts_factory,
+        transactions=transactions_factory,
+        budgets=budgets_factory,
+        alerts=alerts_factory,
+        imports=imports_factory,
+    )
+
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         yield
@@ -275,6 +290,7 @@ def create_app(  # noqa: PLR0913
     app.state.budgets_factory = budgets_factory
     app.state.alerts_factory = alerts_factory
     app.state.imports_factory = imports_factory
+    app.state.privacy_export = privacy_export
     _add_middlewares(app, config)
     app.state.session_cookie = SessionCookie(
         name=SECURE_COOKIE_NAME if config.session_cookie_secure else PLAIN_COOKIE_NAME,
@@ -401,6 +417,33 @@ def _sql_imports(
     )
 
 
+def _privacy_export(  # noqa: PLR0913  (una fábrica por módulo que se exporta)
+    *,
+    auth: AuthUnitFactory,
+    preferences: PreferencesUnitFactory,
+    accounts: AccountsUnitFactory,
+    transactions: TransactionsUnitFactory,
+    budgets: BudgetsUnitFactory,
+    alerts: AlertsUnitFactory,
+    imports: ImportsUnitFactory,
+) -> ExportPersonalData:
+    """Como el dashboard: la exportación lee a cada módulo por su capa de
+    aplicación, con las mismas fábricas que usan sus endpoints (ADR-0034).
+    """
+    return ExportPersonalData(
+        PrivacyDependencies(
+            profile=privacy.AuthProfileReader(auth),
+            preferences=privacy.ModulePreferencesReader(preferences),
+            accounts=privacy.ModuleAccountsReader(accounts),
+            ledger=privacy.TransactionsLedgerReader(transactions),
+            budgets=privacy.ModuleBudgetsReader(budgets),
+            alerts=privacy.ModuleAlertsReader(alerts),
+            imports=privacy.ModuleImportsReader(imports),
+            clock=SystemClock(),
+        )
+    )
+
+
 def _register_modules(app: FastAPI) -> None:
     """Los manejadores de errores y los routers de cada módulo."""
     # Del más general al más específico: Starlette elige el manejador más cercano
@@ -429,5 +472,6 @@ def _register_modules(app: FastAPI) -> None:
         budgets_router,
         alerts_router,
         imports_router,
+        privacy_router,
     ):
         app.include_router(router, prefix=API_PREFIX)

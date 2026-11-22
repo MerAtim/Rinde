@@ -464,9 +464,20 @@
     }
   },
   "account": {
+    "export": {
+      "title": "Descargar tus datos",
+      "description": "Un archivo JSON con todo lo que Rinde guarda de vos: cuentas, movimientos, transferencias, cuotas, recurrentes, presupuestos, alertas, importaciones y el historial de cambios. Lo podés abrir con otro programa.",
+      "download": "Descargar mis datos",
+      "downloading": "Preparando el archivo…",
+      "done": "Listo: el archivo quedó en tus descargas. Tiene todos tus datos, guardalo en un lugar seguro.",
+      "errors": {
+        "NETWORK_ERROR": "No hay conexión con Rinde. Revisá tu internet y probá de nuevo.",
+        "UNKNOWN_ERROR": "No pudimos preparar el archivo. Probá de nuevo en un momento."
+      }
+    },
     "delete": {
       "title": "Borrar tu cuenta",
-      "description": "Se borran tu usuario y todo lo que cargaste: cuentas, movimientos, presupuestos y alertas. No se puede deshacer.",
+      "description": "Se borran tu usuario y todo lo que cargaste: cuentas, movimientos, presupuestos y alertas. No se puede deshacer, así que si querés quedarte con una copia, descargá tus datos antes.",
       "demo": "Esta demo se borra sola, con todo lo que tiene, cuando vence.",
       "open": "Borrar mi cuenta",
       "confirmTitle": "¿Borrar tu cuenta para siempre?",

@@ -8,6 +8,7 @@ from rinde.auth.application.delete_account import DeleteAccount
 from rinde.auth.application.demo import StartDemo
 from rinde.auth.application.dependencies import AuthDependencies
 from rinde.auth.application.login import LoginUser
+from rinde.auth.application.profile import GetProfile
 from rinde.auth.application.recover import RecoverAccount
 from rinde.auth.application.register import RegisterUser
 from rinde.auth.application.session_access import AuthenticateSession, LogoutUser
@@ -23,6 +24,7 @@ class AuthUnit:
     authenticate: AuthenticateSession
     start_demo: StartDemo
     delete_account: DeleteAccount
+    profile: GetProfile
 
 
 class AuthUnitFactory(Protocol):
@@ -41,4 +43,5 @@ def build_auth_unit(deps: AuthDependencies) -> AuthUnit:
         authenticate=AuthenticateSession(deps),
         start_demo=StartDemo(deps, issuer),
         delete_account=DeleteAccount(deps),
+        profile=GetProfile(deps),
     )

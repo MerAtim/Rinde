@@ -220,3 +220,13 @@ class GetBudgets:
             )
             for target in sorted(sources)
         }
+
+
+class ExportBudgets:
+    """Todas las vigencias de la persona, pasadas y futuras, para la exportación (ADR-0034)."""
+
+    def __init__(self, deps: BudgetsDependencies) -> None:
+        self._deps = deps
+
+    async def execute(self, owner_id: UUID) -> list[BudgetLimit]:
+        return await self._deps.budgets.history(owner_id, date.max)

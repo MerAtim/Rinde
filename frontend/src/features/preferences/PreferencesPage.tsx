@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 
 import { Alert } from "../../shared/ui/Alert";
 import { DeleteAccountSection } from "../auth/DeleteAccountSection";
+import { ExportDataSection } from "../privacy/ExportDataSection";
 import { Button } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
 import { SegmentedButton } from "../../shared/ui/SegmentedButton";
@@ -30,6 +31,8 @@ export function PreferencesPage() {
       {preferences.isError ? <Alert>{t("preferences.loadError")}</Alert> : null}
       {/* El formulario arranca con lo guardado: se monta recién cuando llegó. */}
       {preferences.isSuccess ? <PreferencesForm saved={preferences.data} /> : null}
+      {/* Primero la copia: así quien va a borrar su cuenta ve antes cómo llevarse sus datos. */}
+      <ExportDataSection />
       <DeleteAccountSection />
     </div>
   );

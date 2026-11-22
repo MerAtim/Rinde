@@ -14,6 +14,7 @@ from rinde.alerts.application.ports import (
 from rinde.alerts.application.use_cases import (
     AlertsDependencies,
     EvaluateBudgetAlerts,
+    ExportAlerts,
     ListAlerts,
     MarkAlertsRead,
 )
@@ -32,6 +33,7 @@ class AlertsUnit:
     evaluate: EvaluateBudgetAlerts
     list: ListAlerts
     mark_read: MarkAlertsRead
+    export: ExportAlerts
 
 
 class AlertsUnitFactory(Protocol):
@@ -57,4 +59,5 @@ def build_alerts_unit(
         evaluate=EvaluateBudgetAlerts(deps),
         list=ListAlerts(deps),
         mark_read=MarkAlertsRead(deps),
+        export=ExportAlerts(deps),
     )

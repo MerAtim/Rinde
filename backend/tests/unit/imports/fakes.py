@@ -25,6 +25,10 @@ class InMemoryBatchRepository:
         found = self.rows.get(batch_id)
         return found if found and found.owner_id == owner_id else None
 
+    async def for_owner(self, owner_id: UUID) -> list[ImportBatch]:
+        mine = [batch for batch in self.rows.values() if batch.owner_id == owner_id]
+        return sorted(mine, key=lambda batch: (batch.created_at, batch.id))
+
     async def save_confirmation(self, batch: ImportBatch) -> None:
         self.rows[batch.id] = replace(
             self.rows[batch.id],

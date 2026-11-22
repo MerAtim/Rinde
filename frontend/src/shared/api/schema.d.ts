@@ -797,6 +797,29 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/privacy/export": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Descargar todos mis datos
+     * @description Todo lo que Rinde guarda de la persona, en un JSON, como archivo para descargar.
+     *
+     *     Incluye lo borrado que todavía se guarda y el historial de cambios. Nunca
+     *     los hashes de la contraseña ni del código de recuperación.
+     */
+    get: operations["export_personal_data_api_privacy_export_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -806,6 +829,27 @@ export interface components {
      * @enum {string}
      */
     AccountKind: "cash" | "bank" | "credit_card" | "virtual_wallet" | "crypto_wallet";
+    /** AccountOut */
+    AccountOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /** Kind */
+      kind: string;
+      /** Currency */
+      currency: string;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Archived At */
+      archived_at: string | null;
+    };
     /** AccountResponse */
     AccountResponse: {
       /**
@@ -839,6 +883,35 @@ export interface components {
        * @description Solo en las sembradas: la interfaz las traduce
        */
       slug: string | null;
+    };
+    /** AlertOut */
+    AlertOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Category Id
+       * Format: uuid
+       */
+      category_id: string;
+      /**
+       * Month
+       * Format: date
+       */
+      month: string;
+      /** Threshold */
+      threshold: string;
+      limit: components["schemas"]["MoneyOut"];
+      spent: components["schemas"]["MoneyOut"];
+      /**
+       * Raised At
+       * Format: date-time
+       */
+      raised_at: string;
+      /** Read At */
+      read_at: string | null;
     };
     /** AlertResponse */
     AlertResponse: {
@@ -1000,6 +1073,31 @@ export interface components {
       since: string;
       limit: components["schemas"]["MoneyResponse"];
     };
+    /** BudgetOut */
+    BudgetOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Category Id
+       * Format: uuid
+       */
+      category_id: string;
+      /**
+       * Since
+       * Format: date
+       */
+      since: string;
+      /** @description Vacío: desde ese mes la categoría no tiene tope */
+      limit: components["schemas"]["MoneyOut"] | null;
+      /**
+       * Recorded At
+       * Format: date-time
+       */
+      recorded_at: string;
+    };
     /**
      * BudgetRequest
      * @description El tope entero, en su moneda: es reemplazarlo, no parchearlo.
@@ -1052,6 +1150,28 @@ export interface components {
       /** Budgets */
       budgets: components["schemas"]["BudgetResponse"][];
     };
+    /** CategoryOut */
+    CategoryOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Name */
+      name: string;
+      /** Kind */
+      kind: string;
+      /**
+       * Slug
+       * @description Solo en las categorías que sembró Rinde
+       */
+      slug: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+    };
     /** CategoryRequest */
     CategoryRequest: {
       /** Name */
@@ -1070,6 +1190,28 @@ export interface components {
       kind: components["schemas"]["TransactionKind"];
       /** Slug */
       slug: string | null;
+    };
+    /** CategoryRuleOut */
+    CategoryRuleOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Pattern */
+      pattern: string;
+      /**
+       * Category Id
+       * Format: uuid
+       */
+      category_id: string;
+      /** Kind */
+      kind: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
     };
     /** CategorySpendingResponse */
     CategorySpendingResponse: {
@@ -1283,6 +1425,29 @@ export interface components {
       /** Detail */
       detail?: components["schemas"]["ValidationError"][];
     };
+    /** HistoryOut */
+    HistoryOut: {
+      /**
+       * Subject Id
+       * Format: uuid
+       * @description El movimiento o la transferencia que cambió
+       */
+      subject_id: string;
+      /** Action */
+      action: string;
+      /**
+       * Recorded At
+       * Format: date-time
+       */
+      recorded_at: string;
+      /**
+       * Snapshot
+       * @description Cómo quedó después del cambio
+       */
+      snapshot: {
+        [key: string]: components["schemas"]["JsonValue"];
+      };
+    };
     /**
      * HistoryPageResponse
      * @description Movimientos y transferencias en una sola línea de tiempo (ADR-0014).
@@ -1318,6 +1483,113 @@ export interface components {
        */
       type: "transfer";
       transfer: components["schemas"]["TransferResponse"];
+    };
+    /** ImportBatchOut */
+    ImportBatchOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Account Id
+       * Format: uuid
+       */
+      account_id: string;
+      /** File Name */
+      file_name: string;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Confirmed At */
+      confirmed_at: string | null;
+      /** Imported */
+      imported: number;
+      /** Skipped */
+      skipped: number;
+      /** Errors */
+      errors: components["schemas"]["ImportErrorOut"][];
+      /** Lines */
+      lines: components["schemas"]["ImportLineOut"][];
+    };
+    /** ImportErrorOut */
+    ImportErrorOut: {
+      /** Line */
+      line: number;
+      /** Problem */
+      problem: string;
+    };
+    /** ImportLineOut */
+    ImportLineOut: {
+      /** Number */
+      number: number;
+      /**
+       * Occurred On
+       * Format: date
+       */
+      occurred_on: string;
+      /** Description */
+      description: string | null;
+      /** @description Con signo, como en el archivo: negativo es un gasto */
+      money: components["schemas"]["MoneyOut"];
+      /** Status */
+      status: string;
+    };
+    /** ImportsOut */
+    ImportsOut: {
+      /** Batches */
+      batches: components["schemas"]["ImportBatchOut"][];
+      /** Category Rules */
+      category_rules: components["schemas"]["CategoryRuleOut"][];
+    };
+    /** InstallmentOut */
+    InstallmentOut: {
+      /**
+       * Plan Id
+       * Format: uuid
+       */
+      plan_id: string;
+      /** Number */
+      number: number;
+      /** Count */
+      count: number;
+    };
+    /** InstallmentPlanOut */
+    InstallmentPlanOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Account Id
+       * Format: uuid
+       */
+      account_id: string;
+      /**
+       * Category Id
+       * Format: uuid
+       */
+      category_id: string;
+      total: components["schemas"]["MoneyOut"];
+      /** Count */
+      count: number;
+      /**
+       * First On
+       * Format: date
+       */
+      first_on: string;
+      /** Description */
+      description: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Cancelled At */
+      cancelled_at: string | null;
     };
     /** InstallmentPlanRequest */
     InstallmentPlanRequest: {
@@ -1409,6 +1681,24 @@ export interface components {
       /** Count */
       count: number;
     };
+    JsonValue: unknown;
+    /** LedgerOut */
+    LedgerOut: {
+      /** Categories */
+      categories: components["schemas"]["CategoryOut"][];
+      /** Transactions */
+      transactions: components["schemas"]["TransactionOut"][];
+      /** Transfers */
+      transfers: components["schemas"]["TransferOut"][];
+      /** Installment Plans */
+      installment_plans: components["schemas"]["InstallmentPlanOut"][];
+      /** Recurring Rules */
+      recurring_rules: components["schemas"]["RecurringRuleOut"][];
+      /** Transaction History */
+      transaction_history: components["schemas"]["HistoryOut"][];
+      /** Transfer History */
+      transfer_history: components["schemas"]["HistoryOut"][];
+    };
     /** LineErrorResponse */
     LineErrorResponse: {
       /** Line */
@@ -1466,6 +1756,12 @@ export interface components {
        */
       demo_expires_at: string | null;
     };
+    /** MoneyOut */
+    MoneyOut: {
+      /** Amount */
+      amount: string;
+      currency: components["schemas"]["Currency"];
+    };
     /** MoneyResponse */
     MoneyResponse: {
       /** Amount */
@@ -1518,6 +1814,41 @@ export interface components {
        */
       until: string;
     };
+    /** PersonalDataResponse */
+    PersonalDataResponse: {
+      /**
+       * Format Version
+       * @description Sube si cambia algo que un lector no esperaría
+       */
+      format_version: number;
+      /**
+       * Generated At
+       * Format: date-time
+       */
+      generated_at: string;
+      profile: components["schemas"]["ProfileOut"];
+      preferences: components["schemas"]["PreferencesOut"];
+      /** Accounts */
+      accounts: components["schemas"]["AccountOut"][];
+      ledger: components["schemas"]["LedgerOut"];
+      /** Budgets */
+      budgets: components["schemas"]["BudgetOut"][];
+      /** Alerts */
+      alerts: components["schemas"]["AlertOut"][];
+      imports: components["schemas"]["ImportsOut"];
+    };
+    /** PreferencesOut */
+    PreferencesOut: {
+      /** Reference Currency */
+      reference_currency: string;
+      /** Rate Type */
+      rate_type: string;
+      /**
+       * Updated At
+       * @description Vacío si nunca se cambiaron
+       */
+      updated_at: string | null;
+    };
     /**
      * PreferencesRequest
      * @description Las dos van siempre: es reemplazar las preferencias, no parchear una.
@@ -1540,6 +1871,23 @@ export interface components {
      * @enum {string}
      */
     Prices: "nominal" | "constant";
+    /** ProfileOut */
+    ProfileOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /** Username */
+      username: string;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Demo Expires At */
+      demo_expires_at: string | null;
+    };
     /** QuoteResponse */
     QuoteResponse: {
       /**
@@ -1612,6 +1960,16 @@ export interface components {
       /** Recovery Code */
       recovery_code: string;
     };
+    /** RecurrenceOut */
+    RecurrenceOut: {
+      /**
+       * Rule Id
+       * Format: uuid
+       */
+      rule_id: string;
+      /** Number */
+      number: number;
+    };
     /**
      * RecurrenceRefResponse
      * @description De qué movimiento recurrente salió y qué vez es (ADR-0027).
@@ -1634,6 +1992,43 @@ export interface components {
       amount: string;
       /** Description */
       description?: string | null;
+    };
+    /** RecurringRuleOut */
+    RecurringRuleOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Account Id
+       * Format: uuid
+       */
+      account_id: string;
+      /** Kind */
+      kind: string;
+      /**
+       * Category Id
+       * Format: uuid
+       */
+      category_id: string;
+      money: components["schemas"]["MoneyOut"];
+      /** Frequency */
+      frequency: string;
+      /**
+       * Starts On
+       * Format: date
+       */
+      starts_on: string;
+      /** Description */
+      description: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Cancelled At */
+      cancelled_at: string | null;
     };
     /** RecurringRuleRequest */
     RecurringRuleRequest: {
@@ -1791,6 +2186,53 @@ export interface components {
      * @enum {string}
      */
     TransactionKind: "income" | "expense";
+    /** TransactionOut */
+    TransactionOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * Account Id
+       * Format: uuid
+       */
+      account_id: string;
+      /** Kind */
+      kind: string;
+      money: components["schemas"]["MoneyOut"];
+      /**
+       * Category Id
+       * Format: uuid
+       */
+      category_id: string;
+      /**
+       * Occurred On
+       * Format: date
+       */
+      occurred_on: string;
+      /** Description */
+      description: string | null;
+      /**
+       * Imported
+       * @description Si entró por una importación de resumen
+       */
+      imported: boolean;
+      installment: components["schemas"]["InstallmentOut"] | null;
+      recurrence: components["schemas"]["RecurrenceOut"] | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+      /** Deleted At */
+      deleted_at: string | null;
+    };
     /** TransactionPageResponse */
     TransactionPageResponse: {
       /** Items */
@@ -1842,6 +2284,45 @@ export interface components {
       installment: components["schemas"]["InstallmentRefResponse"] | null;
       /** @description Solo en los generados por un movimiento recurrente */
       recurrence: components["schemas"]["RecurrenceRefResponse"] | null;
+    };
+    /** TransferOut */
+    TransferOut: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string;
+      /**
+       * From Account Id
+       * Format: uuid
+       */
+      from_account_id: string;
+      sent: components["schemas"]["MoneyOut"];
+      /**
+       * To Account Id
+       * Format: uuid
+       */
+      to_account_id: string;
+      received: components["schemas"]["MoneyOut"];
+      /**
+       * Occurred On
+       * Format: date
+       */
+      occurred_on: string;
+      /** Description */
+      description: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+      /** Deleted At */
+      deleted_at: string | null;
     };
     /** TransferPageResponse */
     TransferPageResponse: {
@@ -4963,6 +5444,35 @@ export interface operations {
       };
       /** @description Unprocessable Content */
       422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  export_personal_data_api_privacy_export_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PersonalDataResponse"];
+        };
+      };
+      /** @description Unauthorized */
+      401: {
         headers: {
           [name: string]: unknown;
         };

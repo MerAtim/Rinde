@@ -1,10 +1,11 @@
 """Repositorio de lotes de importación sobre PostgreSQL. No confirma: lo hace la transacción."""
 
+from collections import defaultdict
 from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import delete, insert, select, update
+from sqlalchemy import RowMapping, delete, insert, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +17,37 @@ from rinde.shared.domain.money import Currency
 
 EXPENSE = "expense"
 INCOME = "income"
+
+
+def _to_batch(row: RowMapping, lines: list[RowMapping]) -> ImportBatch:
+    currency = Currency(row["currency"])
+    return ImportBatch(
+        id=row["id"],
+        owner_id=row["owner_id"],
+        account_id=row["account_id"],
+        currency=currency,
+        file_name=row["file_name"],
+        file_sha256=row["file_sha256"],
+        created_at=row["created_at"],
+        confirmed_at=row["confirmed_at"],
+        imported=row["imported"],
+        skipped=row["skipped"],
+        errors=[
+            LineError(int(item["line"]), LineProblem(item["problem"])) for item in row["errors"]
+        ],
+        lines=[
+            BatchLine(
+                number=line["number"],
+                occurred_on=line["occurred_on"],
+                description=line["description"],
+                # La columna tiene la escala de Bitcoin; se ajusta a la de la moneda.
+                signed_amount=Decimal(line["amount"]).quantize(currency.quantum),
+                fingerprint=line["fingerprint"],
+                status=LineStatus(line["status"]),
+            )
+            for line in lines
+        ],
+    )
 
 
 class SqlAlchemyBatchRepository:
@@ -66,39 +98,32 @@ class SqlAlchemyBatchRepository:
         row = result.mappings().one_or_none()
         if row is None:
             return None
-        currency = Currency(row["currency"])
         lines = await self._session.execute(
             select(import_lines)
             .where(import_lines.c.batch_id == batch_id)
             .order_by(import_lines.c.number)
         )
-        return ImportBatch(
-            id=row["id"],
-            owner_id=row["owner_id"],
-            account_id=row["account_id"],
-            currency=currency,
-            file_name=row["file_name"],
-            file_sha256=row["file_sha256"],
-            created_at=row["created_at"],
-            confirmed_at=row["confirmed_at"],
-            imported=row["imported"],
-            skipped=row["skipped"],
-            errors=[
-                LineError(int(item["line"]), LineProblem(item["problem"])) for item in row["errors"]
-            ],
-            lines=[
-                BatchLine(
-                    number=line["number"],
-                    occurred_on=line["occurred_on"],
-                    description=line["description"],
-                    # La columna tiene la escala de Bitcoin; se ajusta a la de la moneda.
-                    signed_amount=Decimal(line["amount"]).quantize(currency.quantum),
-                    fingerprint=line["fingerprint"],
-                    status=LineStatus(line["status"]),
-                )
-                for line in lines.mappings()
-            ],
+        return _to_batch(row, list(lines.mappings()))
+
+    async def for_owner(self, owner_id: UUID) -> list[ImportBatch]:
+        result = await self._session.execute(
+            select(import_batches)
+            .where(import_batches.c.owner_id == owner_id)
+            .order_by(import_batches.c.created_at, import_batches.c.id)
         )
+        rows = list(result.mappings())
+        if not rows:
+            return []
+        # Todas las líneas en una sola consulta, no una por lote.
+        lines = await self._session.execute(
+            select(import_lines)
+            .where(import_lines.c.batch_id.in_([row["id"] for row in rows]))
+            .order_by(import_lines.c.batch_id, import_lines.c.number)
+        )
+        by_batch: defaultdict[UUID, list[RowMapping]] = defaultdict(list)
+        for line in lines.mappings():
+            by_batch[line["batch_id"]].append(line)
+        return [_to_batch(row, by_batch[row["id"]]) for row in rows]
 
     async def save_confirmation(self, batch: ImportBatch) -> None:
         await self._session.execute(
