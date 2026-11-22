@@ -20,6 +20,7 @@ from rinde.imports.application.use_cases import (
     ConfirmBatch,
     CreateBatch,
     DiscardBatch,
+    ExportImports,
     GetBatch,
     ImportsDependencies,
 )
@@ -42,6 +43,7 @@ class ImportsUnit:
     confirm: ConfirmBatch
     discard: DiscardBatch
     macro_pdf: StatementReader
+    export: ExportImports
     """El lector del resumen PDF de Macro. El del CSV lo arma el pedido con su formato."""
 
 
@@ -73,4 +75,5 @@ def build_imports_unit(
         confirm=ConfirmBatch(deps),
         discard=DiscardBatch(deps),
         macro_pdf=MacroPdfReader(gateways.pdf),
+        export=ExportImports(deps),
     )

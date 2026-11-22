@@ -230,3 +230,22 @@ class DiscardBatch:
         if not await deps.batches.delete(batch_id, owner_id):
             raise ImportBatchNotFoundError
         await deps.transaction.commit()
+
+
+@dataclass(frozen=True, slots=True)
+class ImportsExport:
+    batches: list[ImportBatch]
+    rules: list[CategoryRule]
+
+
+class ExportImports:
+    """Los lotes importados, con sus líneas, y las reglas aprendidas (ADR-0034)."""
+
+    def __init__(self, deps: ImportsDependencies) -> None:
+        self._deps = deps
+
+    async def execute(self, owner_id: UUID) -> ImportsExport:
+        return ImportsExport(
+            batches=await self._deps.batches.for_owner(owner_id),
+            rules=await self._deps.rules.for_owner(owner_id),
+        )

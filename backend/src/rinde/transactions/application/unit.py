@@ -11,6 +11,7 @@ from rinde.transactions.application.categories import (
     RenameCategory,
 )
 from rinde.transactions.application.dependencies import TransactionsDependencies
+from rinde.transactions.application.export import ExportLedger
 from rinde.transactions.application.imported import InspectImport, RegisterImported
 from rinde.transactions.application.installments import (
     CancelInstallmentPlan,
@@ -76,6 +77,7 @@ class TransactionsUnit:
     change_rule: ChangeRecurringRule
     cancel_rule: CancelRecurringRule
     generate_due_recurring: GenerateDueRecurring
+    export: ExportLedger
 
 
 class TransactionsUnitFactory(Protocol):
@@ -116,4 +118,5 @@ def build_transactions_unit(deps: TransactionsDependencies) -> TransactionsUnit:
         change_rule=ChangeRecurringRule(deps),
         cancel_rule=CancelRecurringRule(deps),
         generate_due_recurring=GenerateDueRecurring(deps),
+        export=ExportLedger(deps),
     )

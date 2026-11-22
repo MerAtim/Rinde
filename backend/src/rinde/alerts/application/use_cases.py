@@ -117,3 +117,13 @@ class MarkAlertsRead:
         deps = self._deps
         await deps.alerts.mark_read(owner_id, ids, deps.clock.now())
         await deps.transaction.commit()
+
+
+class ExportAlerts:
+    """Todas las alertas de la persona, no solo las del aviso, para la exportación (ADR-0034)."""
+
+    def __init__(self, deps: AlertsDependencies) -> None:
+        self._deps = deps
+
+    async def execute(self, owner_id: UUID) -> list[BudgetAlert]:
+        return await self._deps.alerts.all_for_owner(owner_id)

@@ -15,6 +15,7 @@ from rinde.budgets.application.ports import (
 )
 from rinde.budgets.application.use_cases import (
     BudgetsDependencies,
+    ExportBudgets,
     GetBudgets,
     RemoveBudget,
     SetBudget,
@@ -36,6 +37,7 @@ class BudgetsUnit:
     get: GetBudgets
     set: SetBudget
     remove: RemoveBudget
+    export: ExportBudgets
 
 
 class BudgetsUnitFactory(Protocol):
@@ -59,4 +61,9 @@ def build_budgets_unit(
         converters=gateways.converters,
         clock=clock,
     )
-    return BudgetsUnit(get=GetBudgets(deps), set=SetBudget(deps), remove=RemoveBudget(deps))
+    return BudgetsUnit(
+        get=GetBudgets(deps),
+        set=SetBudget(deps),
+        remove=RemoveBudget(deps),
+        export=ExportBudgets(deps),
+    )

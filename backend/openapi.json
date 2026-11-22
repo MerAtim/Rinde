@@ -4613,6 +4613,38 @@
           }
         }
       }
+    },
+    "/api/privacy/export": {
+      "get": {
+        "tags": [
+          "privacy"
+        ],
+        "summary": "Descargar todos mis datos",
+        "description": "Todo lo que Rinde guarda de la persona, en un JSON, como archivo para descargar.\n\nIncluye lo borrado que todavía se guarda y el historial de cambios. Nunca\nlos hashes de la contraseña ni del código de recuperación.",
+        "operationId": "export_personal_data_api_privacy_export_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalDataResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -4627,6 +4659,54 @@
           "crypto_wallet"
         ],
         "title": "AccountKind"
+      },
+      "AccountOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "archived_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Archived At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "currency",
+          "created_at",
+          "archived_at"
+        ],
+        "title": "AccountOut"
       },
       "AccountResponse": {
         "properties": {
@@ -4705,6 +4785,64 @@
           "slug"
         ],
         "title": "AlertCategoryResponse"
+      },
+      "AlertOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Id"
+          },
+          "month": {
+            "type": "string",
+            "format": "date",
+            "title": "Month"
+          },
+          "threshold": {
+            "type": "string",
+            "title": "Threshold"
+          },
+          "limit": {
+            "$ref": "#/components/schemas/MoneyOut"
+          },
+          "spent": {
+            "$ref": "#/components/schemas/MoneyOut"
+          },
+          "raised_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Raised At"
+          },
+          "read_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Read At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "category_id",
+          "month",
+          "threshold",
+          "limit",
+          "spent",
+          "raised_at",
+          "read_at"
+        ],
+        "title": "AlertOut"
       },
       "AlertResponse": {
         "properties": {
@@ -5023,6 +5161,50 @@
         ],
         "title": "BudgetLimitResponse"
       },
+      "BudgetOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Id"
+          },
+          "since": {
+            "type": "string",
+            "format": "date",
+            "title": "Since"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MoneyOut"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Vacío: desde ese mes la categoría no tiene tope"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Recorded At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "category_id",
+          "since",
+          "limit",
+          "recorded_at"
+        ],
+        "title": "BudgetOut"
+      },
       "BudgetRequest": {
         "properties": {
           "amount": {
@@ -5130,6 +5312,49 @@
         ],
         "title": "BudgetsResponse"
       },
+      "CategoryOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug",
+            "description": "Solo en las categorías que sembró Rinde"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "kind",
+          "slug",
+          "created_at"
+        ],
+        "title": "CategoryOut"
+      },
       "CategoryRequest": {
         "properties": {
           "name": {
@@ -5184,6 +5409,42 @@
           "slug"
         ],
         "title": "CategoryResponse"
+      },
+      "CategoryRuleOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "pattern": {
+            "type": "string",
+            "title": "Pattern"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "pattern",
+          "category_id",
+          "kind",
+          "updated_at"
+        ],
+        "title": "CategoryRuleOut"
       },
       "CategorySpendingResponse": {
         "properties": {
@@ -5670,6 +5931,41 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
+      "HistoryOut": {
+        "properties": {
+          "subject_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Subject Id",
+            "description": "El movimiento o la transferencia que cambió"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "recorded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Recorded At"
+          },
+          "snapshot": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Snapshot",
+            "description": "Cómo quedó después del cambio"
+          }
+        },
+        "type": "object",
+        "required": [
+          "subject_id",
+          "action",
+          "recorded_at",
+          "snapshot"
+        ],
+        "title": "HistoryOut"
+      },
       "HistoryPageResponse": {
         "properties": {
           "items": {
@@ -5750,6 +6046,255 @@
         ],
         "title": "HistoryTransfer",
         "description": "Una transferencia dentro del historial."
+      },
+      "ImportBatchOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "file_name": {
+            "type": "string",
+            "title": "File Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "confirmed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed At"
+          },
+          "imported": {
+            "type": "integer",
+            "title": "Imported"
+          },
+          "skipped": {
+            "type": "integer",
+            "title": "Skipped"
+          },
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/ImportErrorOut"
+            },
+            "type": "array",
+            "title": "Errors"
+          },
+          "lines": {
+            "items": {
+              "$ref": "#/components/schemas/ImportLineOut"
+            },
+            "type": "array",
+            "title": "Lines"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "account_id",
+          "file_name",
+          "created_at",
+          "confirmed_at",
+          "imported",
+          "skipped",
+          "errors",
+          "lines"
+        ],
+        "title": "ImportBatchOut"
+      },
+      "ImportErrorOut": {
+        "properties": {
+          "line": {
+            "type": "integer",
+            "title": "Line"
+          },
+          "problem": {
+            "type": "string",
+            "title": "Problem"
+          }
+        },
+        "type": "object",
+        "required": [
+          "line",
+          "problem"
+        ],
+        "title": "ImportErrorOut"
+      },
+      "ImportLineOut": {
+        "properties": {
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "money": {
+            "$ref": "#/components/schemas/MoneyOut",
+            "description": "Con signo, como en el archivo: negativo es un gasto"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "number",
+          "occurred_on",
+          "description",
+          "money",
+          "status"
+        ],
+        "title": "ImportLineOut"
+      },
+      "ImportsOut": {
+        "properties": {
+          "batches": {
+            "items": {
+              "$ref": "#/components/schemas/ImportBatchOut"
+            },
+            "type": "array",
+            "title": "Batches"
+          },
+          "category_rules": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryRuleOut"
+            },
+            "type": "array",
+            "title": "Category Rules"
+          }
+        },
+        "type": "object",
+        "required": [
+          "batches",
+          "category_rules"
+        ],
+        "title": "ImportsOut"
+      },
+      "InstallmentOut": {
+        "properties": {
+          "plan_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Plan Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan_id",
+          "number",
+          "count"
+        ],
+        "title": "InstallmentOut"
+      },
+      "InstallmentPlanOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Id"
+          },
+          "total": {
+            "$ref": "#/components/schemas/MoneyOut"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count"
+          },
+          "first_on": {
+            "type": "string",
+            "format": "date",
+            "title": "First On"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "cancelled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelled At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "account_id",
+          "category_id",
+          "total",
+          "count",
+          "first_on",
+          "description",
+          "created_at",
+          "cancelled_at"
+        ],
+        "title": "InstallmentPlanOut"
       },
       "InstallmentPlanRequest": {
         "properties": {
@@ -5921,6 +6466,71 @@
         "title": "InstallmentRefResponse",
         "description": "De qué compra en cuotas es este gasto: \"cuota 3 de 6\" (ADR-0026)."
       },
+      "JsonValue": {},
+      "LedgerOut": {
+        "properties": {
+          "categories": {
+            "items": {
+              "$ref": "#/components/schemas/CategoryOut"
+            },
+            "type": "array",
+            "title": "Categories"
+          },
+          "transactions": {
+            "items": {
+              "$ref": "#/components/schemas/TransactionOut"
+            },
+            "type": "array",
+            "title": "Transactions"
+          },
+          "transfers": {
+            "items": {
+              "$ref": "#/components/schemas/TransferOut"
+            },
+            "type": "array",
+            "title": "Transfers"
+          },
+          "installment_plans": {
+            "items": {
+              "$ref": "#/components/schemas/InstallmentPlanOut"
+            },
+            "type": "array",
+            "title": "Installment Plans"
+          },
+          "recurring_rules": {
+            "items": {
+              "$ref": "#/components/schemas/RecurringRuleOut"
+            },
+            "type": "array",
+            "title": "Recurring Rules"
+          },
+          "transaction_history": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryOut"
+            },
+            "type": "array",
+            "title": "Transaction History"
+          },
+          "transfer_history": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryOut"
+            },
+            "type": "array",
+            "title": "Transfer History"
+          }
+        },
+        "type": "object",
+        "required": [
+          "categories",
+          "transactions",
+          "transfers",
+          "installment_plans",
+          "recurring_rules",
+          "transaction_history",
+          "transfer_history"
+        ],
+        "title": "LedgerOut"
+      },
       "LineErrorResponse": {
         "properties": {
           "line": {
@@ -6034,6 +6644,23 @@
           "demo_expires_at"
         ],
         "title": "MeResponse"
+      },
+      "MoneyOut": {
+        "properties": {
+          "amount": {
+            "type": "string",
+            "title": "Amount"
+          },
+          "currency": {
+            "$ref": "#/components/schemas/Currency"
+          }
+        },
+        "type": "object",
+        "required": [
+          "amount",
+          "currency"
+        ],
+        "title": "MoneyOut"
       },
       "MoneyResponse": {
         "properties": {
@@ -6164,6 +6791,98 @@
         ],
         "title": "PeriodResponse"
       },
+      "PersonalDataResponse": {
+        "properties": {
+          "format_version": {
+            "type": "integer",
+            "title": "Format Version",
+            "description": "Sube si cambia algo que un lector no esperaría"
+          },
+          "generated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Generated At"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/ProfileOut"
+          },
+          "preferences": {
+            "$ref": "#/components/schemas/PreferencesOut"
+          },
+          "accounts": {
+            "items": {
+              "$ref": "#/components/schemas/AccountOut"
+            },
+            "type": "array",
+            "title": "Accounts"
+          },
+          "ledger": {
+            "$ref": "#/components/schemas/LedgerOut"
+          },
+          "budgets": {
+            "items": {
+              "$ref": "#/components/schemas/BudgetOut"
+            },
+            "type": "array",
+            "title": "Budgets"
+          },
+          "alerts": {
+            "items": {
+              "$ref": "#/components/schemas/AlertOut"
+            },
+            "type": "array",
+            "title": "Alerts"
+          },
+          "imports": {
+            "$ref": "#/components/schemas/ImportsOut"
+          }
+        },
+        "type": "object",
+        "required": [
+          "format_version",
+          "generated_at",
+          "profile",
+          "preferences",
+          "accounts",
+          "ledger",
+          "budgets",
+          "alerts",
+          "imports"
+        ],
+        "title": "PersonalDataResponse"
+      },
+      "PreferencesOut": {
+        "properties": {
+          "reference_currency": {
+            "type": "string",
+            "title": "Reference Currency"
+          },
+          "rate_type": {
+            "type": "string",
+            "title": "Rate Type"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At",
+            "description": "Vacío si nunca se cambiaron"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reference_currency",
+          "rate_type",
+          "updated_at"
+        ],
+        "title": "PreferencesOut"
+      },
       "PreferencesRequest": {
         "properties": {
           "reference_currency": {
@@ -6210,6 +6929,44 @@
           "constant"
         ],
         "title": "Prices"
+      },
+      "ProfileOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "demo_expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Demo Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "username",
+          "created_at",
+          "demo_expires_at"
+        ],
+        "title": "ProfileOut"
       },
       "QuoteResponse": {
         "properties": {
@@ -6365,6 +7122,25 @@
         ],
         "title": "RecoverResponse"
       },
+      "RecurrenceOut": {
+        "properties": {
+          "rule_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Rule Id"
+          },
+          "number": {
+            "type": "integer",
+            "title": "Number"
+          }
+        },
+        "type": "object",
+        "required": [
+          "rule_id",
+          "number"
+        ],
+        "title": "RecurrenceOut"
+      },
       "RecurrenceRefResponse": {
         "properties": {
           "rule_id": {
@@ -6411,6 +7187,83 @@
           "amount"
         ],
         "title": "RecurringRuleChangeRequest"
+      },
+      "RecurringRuleOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Id"
+          },
+          "money": {
+            "$ref": "#/components/schemas/MoneyOut"
+          },
+          "frequency": {
+            "type": "string",
+            "title": "Frequency"
+          },
+          "starts_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Starts On"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "cancelled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cancelled At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "account_id",
+          "kind",
+          "category_id",
+          "money",
+          "frequency",
+          "starts_on",
+          "description",
+          "created_at",
+          "cancelled_at"
+        ],
+        "title": "RecurringRuleOut"
       },
       "RecurringRuleRequest": {
         "properties": {
@@ -6742,6 +7595,112 @@
         "title": "TransactionKind",
         "description": "Vive acá porque una categoría también es de ingresos o de gastos."
       },
+      "TransactionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Account Id"
+          },
+          "kind": {
+            "type": "string",
+            "title": "Kind"
+          },
+          "money": {
+            "$ref": "#/components/schemas/MoneyOut"
+          },
+          "category_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Category Id"
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "imported": {
+            "type": "boolean",
+            "title": "Imported",
+            "description": "Si entró por una importación de resumen"
+          },
+          "installment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InstallmentOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recurrence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecurrenceOut"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "deleted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "account_id",
+          "kind",
+          "money",
+          "category_id",
+          "occurred_on",
+          "description",
+          "imported",
+          "installment",
+          "recurrence",
+          "created_at",
+          "updated_at",
+          "deleted_at"
+        ],
+        "title": "TransactionOut"
+      },
       "TransactionPageResponse": {
         "properties": {
           "items": {
@@ -6875,6 +7834,83 @@
           "recurrence"
         ],
         "title": "TransactionResponse"
+      },
+      "TransferOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Id"
+          },
+          "from_account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "From Account Id"
+          },
+          "sent": {
+            "$ref": "#/components/schemas/MoneyOut"
+          },
+          "to_account_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "To Account Id"
+          },
+          "received": {
+            "$ref": "#/components/schemas/MoneyOut"
+          },
+          "occurred_on": {
+            "type": "string",
+            "format": "date",
+            "title": "Occurred On"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "deleted_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deleted At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "from_account_id",
+          "sent",
+          "to_account_id",
+          "received",
+          "occurred_on",
+          "description",
+          "created_at",
+          "updated_at",
+          "deleted_at"
+        ],
+        "title": "TransferOut"
       },
       "TransferPageResponse": {
         "properties": {

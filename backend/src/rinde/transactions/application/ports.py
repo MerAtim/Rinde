@@ -2,10 +2,11 @@
 
 Como en cuentas, ninguna lectura acepta solo un identificador: siempre pide
 también el dueño, así un caso de uso no puede olvidarse de filtrar por el
-usuario autenticado. Y ningún listado devuelve movimientos borrados (ADR-0011).
+usuario autenticado. Y ningún listado devuelve movimientos borrados (ADR-0011),
+salvo el de la exportación, que es de todo lo guardado (ADR-0034).
 """
 
-from collections.abc import Collection
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass
 from datetime import date, datetime
 from enum import StrEnum
@@ -159,6 +160,14 @@ class TransactionRepository(Protocol):
         self, owner_id: UUID, filters: TransactionFilters, *, cursor: str | None, limit: int
     ) -> Page:
         """De la más reciente a la más vieja, sin los borrados."""
+        ...
+
+    async def everything_for_owner(self, owner_id: UUID) -> list[Transaction]:
+        """Todos, borrados incluidos, del más viejo al más nuevo: para la exportación.
+
+        La persona tiene derecho a ver todo lo que se guarda de ella (ADR-0034), y
+        un movimiento borrado se sigue guardando (ADR-0011).
+        """
         ...
 
     async def balances_for_owner(self, owner_id: UUID) -> list[AccountBalance]:
@@ -339,6 +348,10 @@ class TransferRepository(Protocol):
         """De la más reciente a la más vieja, sin las borradas."""
         ...
 
+    async def everything_for_owner(self, owner_id: UUID) -> list[Transfer]:
+        """Todas, borradas incluidas, como en movimientos: para la exportación."""
+        ...
+
     async def balances_for_owner(self, owner_id: UUID) -> list[AccountBalance]:
         """Lo que cada cuenta recibió menos lo que envió, sin las borradas."""
         ...
@@ -350,16 +363,36 @@ class TransferRepository(Protocol):
     async def save(self, transfer: Transfer) -> None: ...
 
 
+@dataclass(frozen=True, slots=True)
+class AuditEntry:
+    """Un registro del log de auditoría, tal como se guardó."""
+
+    subject_id: UUID
+    """El movimiento o la transferencia de la que habla."""
+    action: AuditAction
+    recorded_at: datetime
+    snapshot: Mapping[str, object]
+    """Cómo quedó después del cambio, en JSON: montos como texto, fechas ISO."""
+
+
 class AuditLog(Protocol):
     """Append-only: solo se agrega (ADR-0011). La base rechaza actualizar y borrar."""
 
     async def record(self, action: AuditAction, transaction: Transaction, at: datetime) -> None: ...
+
+    async def entries_for_owner(self, owner_id: UUID) -> list[AuditEntry]:
+        """Todo el historial del dueño, del registro más viejo al más nuevo."""
+        ...
 
 
 class TransferAuditLog(Protocol):
     """Append-only, igual que el de movimientos (ADR-0014, decisión 4)."""
 
     async def record(self, action: AuditAction, transfer: Transfer, at: datetime) -> None: ...
+
+    async def entries_for_owner(self, owner_id: UUID) -> list[AuditEntry]:
+        """Como en movimientos."""
+        ...
 
 
 class Clock(Protocol):

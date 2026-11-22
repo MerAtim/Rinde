@@ -1,7 +1,9 @@
 """Repositorios de movimientos sobre PostgreSQL. No confirman: lo hace la transacción.
 
 Ninguna lectura arma su propia consulta: todas parten de `_alive`, que ya excluye
-los movimientos borrados. Es la mitigación del borrado lógico (ADR-0011).
+los movimientos borrados. Es la mitigación del borrado lógico (ADR-0011). Las
+excepciones están a la vista y dicen por qué: `get`, para deshacer, y
+`everything_for_owner`, para la exportación de los datos (ADR-0034).
 """
 
 from collections.abc import Collection
@@ -34,6 +36,7 @@ from rinde.shared.domain.text import fold
 from rinde.transactions.application.pagination import Cursor
 from rinde.transactions.application.ports import (
     AccountBalance,
+    AuditEntry,
     BalanceChange,
     FlowSum,
     GeneratedInstallment,
@@ -199,6 +202,15 @@ class SqlAlchemyTransactionRepository:
         )
         row = result.mappings().one_or_none()
         return _to_transaction(row) if row else None
+
+    async def everything_for_owner(self, owner_id: UUID) -> list[Transaction]:
+        # Sin `_alive` a propósito: la exportación incluye los borrados (ADR-0034).
+        result = await self._session.execute(
+            select(transactions)
+            .where(transactions.c.owner_id == owner_id)
+            .order_by(transactions.c.created_at, transactions.c.id)
+        )
+        return [_to_transaction(row) for row in result.mappings()]
 
     async def page_for_owner(
         self, owner_id: UUID, filters: TransactionFilters, *, cursor: str | None, limit: int
@@ -416,6 +428,15 @@ class SqlAlchemyTransferRepository:
         row = result.mappings().one_or_none()
         return _to_transfer(row) if row else None
 
+    async def everything_for_owner(self, owner_id: UUID) -> list[Transfer]:
+        # Sin `_alive` a propósito: la exportación incluye las borradas (ADR-0034).
+        result = await self._session.execute(
+            select(transfers)
+            .where(transfers.c.owner_id == owner_id)
+            .order_by(transfers.c.created_at, transfers.c.id)
+        )
+        return [_to_transfer(row) for row in result.mappings()]
+
     async def page_for_owner(
         self, owner_id: UUID, filters: TransferFilters, *, cursor: str | None, limit: int
     ) -> TransferPage:
@@ -545,6 +566,22 @@ class SqlAlchemyTransferAuditLog:
             )
         )
 
+    async def entries_for_owner(self, owner_id: UUID) -> list[AuditEntry]:
+        result = await self._session.execute(
+            select(transfer_audit)
+            .where(transfer_audit.c.owner_id == owner_id)
+            .order_by(transfer_audit.c.recorded_at, transfer_audit.c.id)
+        )
+        return [
+            AuditEntry(
+                subject_id=row["transfer_id"],
+                action=AuditAction(row["action"]),
+                recorded_at=row["recorded_at"],
+                snapshot=row["snapshot"],
+            )
+            for row in result.mappings()
+        ]
+
 
 def _to_category(row: RowMapping) -> Category:
     return Category(
@@ -672,6 +709,22 @@ class SqlAlchemyAuditLog:
                 },
             )
         )
+
+    async def entries_for_owner(self, owner_id: UUID) -> list[AuditEntry]:
+        result = await self._session.execute(
+            select(transaction_audit)
+            .where(transaction_audit.c.owner_id == owner_id)
+            .order_by(transaction_audit.c.recorded_at, transaction_audit.c.id)
+        )
+        return [
+            AuditEntry(
+                subject_id=row["transaction_id"],
+                action=AuditAction(row["action"]),
+                recorded_at=row["recorded_at"],
+                snapshot=row["snapshot"],
+            )
+            for row in result.mappings()
+        ]
 
 
 class SqlAlchemyIdempotencyStore:

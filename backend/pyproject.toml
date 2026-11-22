@@ -127,6 +127,7 @@ containers = [
     "rinde.imports",
     "rinde.inflation",
     "rinde.demo",
+    "rinde.privacy",
 ]
 layers = ["(api) | infrastructure", "application", "(domain)"]
 
@@ -156,6 +157,7 @@ source_modules = [
     "rinde.inflation.application",
     "rinde.inflation.domain",
     "rinde.demo.application",
+    "rinde.privacy.application",
     "rinde.shared.domain",
 ]
 forbidden_modules = ["fastapi", "starlette", "sqlalchemy", "psycopg", "pydantic", "httpx", "argon2"]
@@ -166,6 +168,7 @@ type = "forbidden"
 source_modules = ["rinde.shared"]
 forbidden_modules = [
     "rinde.demo",
+    "rinde.privacy",
     "rinde.auth",
     "rinde.health",
     "rinde.accounts",
@@ -408,3 +411,40 @@ source_modules = [
     "rinde.inflation",
 ]
 forbidden_modules = ["rinde.demo"]
+
+[[tool.importlinter.contracts]]
+name = "Solo los adaptadores de privacidad conocen otros módulos: su aplicación, no"
+type = "forbidden"
+source_modules = ["rinde.privacy.application"]
+forbidden_modules = [
+    "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
+    "rinde.health", "rinde.dashboard", "rinde.budgets", "rinde.alerts", "rinde.imports",
+    "rinde.inflation", "rinde.demo",
+]
+
+[[tool.importlinter.contracts]]
+name = "Privacidad lee a los otros módulos por su capa de aplicación, nunca por su API, su base ni su dominio"
+type = "forbidden"
+# Solo las importaciones directas, como en el dashboard.
+allow_indirect_imports = true
+source_modules = ["rinde.privacy"]
+forbidden_modules = [
+    "rinde.health", "rinde.rates", "rinde.inflation", "rinde.dashboard", "rinde.demo",
+    "rinde.auth.api", "rinde.auth.infrastructure", "rinde.auth.domain",
+    "rinde.accounts.api", "rinde.accounts.infrastructure", "rinde.accounts.domain",
+    "rinde.transactions.api", "rinde.transactions.infrastructure", "rinde.transactions.domain",
+    "rinde.preferences.api", "rinde.preferences.infrastructure", "rinde.preferences.domain",
+    "rinde.budgets.api", "rinde.budgets.infrastructure", "rinde.budgets.domain",
+    "rinde.alerts.api", "rinde.alerts.infrastructure", "rinde.alerts.domain",
+    "rinde.imports.api", "rinde.imports.infrastructure", "rinde.imports.domain",
+]
+
+[[tool.importlinter.contracts]]
+name = "Ningún módulo depende de privacidad: es una lectura sobre todos los demás"
+type = "forbidden"
+source_modules = [
+    "rinde.auth", "rinde.accounts", "rinde.transactions", "rinde.rates", "rinde.preferences",
+    "rinde.health", "rinde.dashboard", "rinde.budgets", "rinde.alerts", "rinde.imports",
+    "rinde.inflation", "rinde.demo",
+]
+forbidden_modules = ["rinde.privacy"]

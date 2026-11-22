@@ -37,6 +37,10 @@ class InMemoryAlertRepository:
         mine.sort(key=lambda row: (row.raised_at, row.id), reverse=True)
         return mine[:limit]
 
+    async def all_for_owner(self, owner_id: UUID) -> list[BudgetAlert]:
+        mine = [row for row in self.rows if row.owner_id == owner_id]
+        return sorted(mine, key=lambda row: (row.raised_at, row.id))
+
     async def unread_count(self, owner_id: UUID) -> int:
         return sum(1 for row in self.rows if row.owner_id == owner_id and not row.is_read)
 

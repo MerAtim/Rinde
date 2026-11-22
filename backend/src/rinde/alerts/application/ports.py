@@ -28,6 +28,10 @@ class AlertRepository(Protocol):
         """Las últimas, de la más nueva a la más vieja. Solo las del dueño."""
         ...
 
+    async def all_for_owner(self, owner_id: UUID) -> list[BudgetAlert]:
+        """Todas las del dueño, de la más vieja a la más nueva: para la exportación."""
+        ...
+
     async def unread_count(self, owner_id: UUID) -> int: ...
 
     async def mark_read(self, owner_id: UUID, ids: Collection[UUID], at: datetime) -> None:
