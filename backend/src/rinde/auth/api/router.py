@@ -7,7 +7,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, Response, status
 
-from rinde.auth.api.client import ClientAddress
 from rinde.auth.api.cookies import SessionCookie, session_cookie
 from rinde.auth.api.dependencies import auth_unit
 from rinde.auth.api.schemas import (
@@ -21,6 +20,7 @@ from rinde.auth.api.schemas import (
 )
 from rinde.auth.application.demo import DEMO_TTL
 from rinde.auth.application.unit import AuthUnit
+from rinde.shared.api.client import ClientAddress
 from rinde.shared.api.csrf import CSRF
 from rinde.shared.api.identity import CurrentUserId
 from rinde.shared.api.schemas import error_responses

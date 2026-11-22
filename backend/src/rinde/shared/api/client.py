@@ -12,6 +12,9 @@ venir de Cloudflare.
 
 La dirección se valida antes de usarla: es un dato que viene de afuera y termina
 en la base, así que se trata como cualquier otra entrada no confiable.
+
+Vive en el kernel compartido porque la usan los límites de auth y el registro
+de eventos de seguridad de toda la API (ADR-0035).
 """
 
 from ipaddress import ip_address
