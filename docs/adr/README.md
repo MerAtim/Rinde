@@ -36,3 +36,4 @@
 | [0032](0032-secreto-entre-worker-y-api.md) | Solo el Worker habla con la API: un secreto compartido de origen | Aceptado | 2026-11-18 |
 | [0033](0033-respaldos-de-la-base.md) | Respaldo diario de la base, cifrado y probado, en GitHub Actions | Aceptado | 2026-11-21 |
 | [0034](0034-borrar-la-cuenta-y-exportar-los-datos.md) | Borrar la cuenta en el momento y exportar los datos en un JSON | Aceptado | 2026-11-21 |
+| [0035](0035-registro-de-eventos-de-seguridad.md) | Registro de eventos de seguridad en JSON, con el vocabulario de OWASP | Aceptado | 2026-11-22 |

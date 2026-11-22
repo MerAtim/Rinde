@@ -93,6 +93,8 @@ Cada fase es un corte vertical desplegable. No se empieza una fase con la anteri
   restaurarlo (ADR-0033)
 * [x] Borrar la cuenta con todos sus datos, confirmado con la contraseña (ADR-0034)
 * [x] Exportar todos los datos propios en un JSON (ADR-0034)
+* [x] Registro de eventos de seguridad con el vocabulario de OWASP (ADR-0035). Faltan
+  las alertas: hoy alguien tiene que mirar el registro
 
 ## Después (solo si hay tiempo)
 * Ingreso con Google y Microsoft por OpenID Connect (código con PKCE, validado en el
