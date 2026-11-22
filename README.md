@@ -125,6 +125,10 @@ El navegador ve un único origen, así que no hace falta CORS y la política de 
 
 Los números de tiempo son de una corrida local; los de la CI quedan en cada corrida.
 
+## Seguridad
+
+El [modelo de amenazas](docs/modelo-de-amenazas.md) recorre cada parte del sistema con STRIDE: qué puede salir mal, con qué se mitiga y dónde está la prueba, y qué riesgos se aceptaron y por qué. Una vulnerabilidad se reporta en privado, como explica [SECURITY.md](SECURITY.md).
+
 ## Qué falta
 
 Las fases del roadmap están completas. Lo que podría venir después está en el [roadmap](docs/roadmap.md).
