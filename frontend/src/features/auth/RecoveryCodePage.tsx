@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Navigate, useLocation, useNavigate } from "react-router";
 
+import { saveFile } from "../../shared/files/saveFile";
 import { Alert } from "../../shared/ui/Alert";
 import { Button } from "../../shared/ui/Button";
 import { Checkbox } from "../../shared/ui/Checkbox";
@@ -29,12 +30,7 @@ function isRecoveryCodeState(value: unknown): value is RecoveryCodeState {
 }
 
 function downloadText(filename: string, text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
+  saveFile(filename, new Blob([text], { type: "text/plain;charset=utf-8" }));
 }
 
 /**
