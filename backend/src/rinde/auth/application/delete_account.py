@@ -9,7 +9,7 @@ olvidada abierta no alcanza para borrar la cuenta de otro.
 from uuid import UUID
 
 from rinde.auth.application.dependencies import AuthDependencies
-from rinde.auth.application.ports import ClientAction
+from rinde.auth.application.ports import ClientAction, SecurityEvent
 from rinde.auth.application.rate_limits import ensure_client_under_limit, record_client_action
 from rinde.auth.application.sessions import ensure_not_locked, record_failure
 from rinde.auth.domain.errors import (
@@ -36,11 +36,14 @@ class DeleteAccount:
 
         # La confirmación es una contraseña más para adivinar: cuenta para los
         # mismos topes que el inicio de sesión, por cuenta y por origen.
-        await ensure_not_locked(deps, user.username)
+        await ensure_not_locked(deps, user.username, user, client)
         await ensure_client_under_limit(deps, ClientAction.LOGIN_FAILURE, client)
         if not await hasher.verify(user.password_hash, normalize_password(password)):
             await record_client_action(deps, ClientAction.LOGIN_FAILURE, client)
             await record_failure(deps, user.username)
+            deps.services.security_log.record(
+                SecurityEvent.REAUTHENTICATION_FAILED, user.id, client=client
+            )
             raise InvalidCredentialsError
 
         # La base borra las sesiones en cascada; se borran también acá para que
@@ -50,3 +53,7 @@ class DeleteAccount:
         # Los intentos fallidos guardan el nombre: también es un dato de la persona.
         await deps.failed_attempts.clear(user.username)
         await deps.transaction.commit()
+        # Quién borró y a quién: es la misma cuenta, pero el vocabulario pide los dos.
+        deps.services.security_log.record(
+            SecurityEvent.USER_DELETED, user.id, user.id, client=client
+        )

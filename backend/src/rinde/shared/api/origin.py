@@ -15,6 +15,8 @@ import hmac
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
+from rinde.shared.infrastructure.security_log import Level, record_security_event
+
 HEADER = b"x-rinde-origin"
 CODE = "ORIGIN_REJECTED"
 
@@ -40,6 +42,17 @@ class OriginSecretMiddleware:
         if self._accepts(dict(scope["headers"]).get(HEADER, b"")):
             await self._app(scope, receive, send)
             return
+        # Sin dirección de origen: quien llega sin el secreto no pasó por
+        # Cloudflare, así que la cabecera con la dirección la pudo escribir él.
+        # Registrarla sería guardar un dato inventado como si fuera cierto.
+        record_security_event(
+            "origin_rejected",
+            (),
+            level=Level.WARN,
+            description="Pedido que no llegó por el Worker de Cloudflare: se rechazó",
+            request_method=scope["method"],
+            request_uri=scope["path"],
+        )
         await JSONResponse({"code": CODE}, status_code=403)(scope, receive, send)
 
     def _accepts(self, presented: bytes) -> bool:

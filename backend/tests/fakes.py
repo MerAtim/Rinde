@@ -2,7 +2,7 @@
 
 from collections.abc import AsyncIterator, Iterable
 from contextlib import asynccontextmanager
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
@@ -15,7 +15,13 @@ from rinde.alerts.infrastructure.gateways import (
     TransactionsCategoryReader as AlertsCategoryReader,
 )
 from rinde.auth.application.dependencies import AuthDependencies, AuthServices
-from rinde.auth.application.ports import ClientAction, DemoSeeder, Session
+from rinde.auth.application.ports import (
+    ClientAction,
+    DemoSeeder,
+    SecurityEvent,
+    SecurityParam,
+    Session,
+)
 from rinde.auth.application.unit import AuthUnit, build_auth_unit
 from rinde.auth.domain.errors import UsernameTakenError
 from rinde.auth.domain.user import User
@@ -233,6 +239,28 @@ class FakeTransaction:
         self.commits += 1
 
 
+@dataclass(frozen=True, slots=True)
+class RecordedSecurityEvent:
+    event: SecurityEvent
+    params: tuple[SecurityParam, ...]
+    client: str | None
+
+
+class RecordingSecurityLog:
+    """Anota cada evento de seguridad para que el test verifique qué se registró."""
+
+    def __init__(self) -> None:
+        self.events: list[RecordedSecurityEvent] = []
+
+    def record(
+        self, event: SecurityEvent, *params: SecurityParam, client: str | None = None
+    ) -> None:
+        self.events.append(RecordedSecurityEvent(event, params, client))
+
+    def names(self) -> list[SecurityEvent]:
+        return [recorded.event for recorded in self.events]
+
+
 class RecordingSeeder:
     """Anota a quién sembró; los tests de la demo completa le pasan el sembrador real."""
 
@@ -261,6 +289,7 @@ class InMemoryAuthUnitFactory:
         self.hasher = FakeHasher()
         self.clock = clock or FakeClock()
         self.seeder = seeder or RecordingSeeder()
+        self.security_log = RecordingSecurityLog()
         self.services = AuthServices(
             hasher=self.hasher,
             breaches=FakeBreachChecker(compromised),
@@ -268,6 +297,7 @@ class InMemoryAuthUnitFactory:
             secrets=FakeSecrets(),
             session_ttl=timedelta(days=30),
             demo_seeder=self.seeder,
+            security_log=self.security_log,
         )
 
     @asynccontextmanager

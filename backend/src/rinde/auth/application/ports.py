@@ -137,3 +137,48 @@ class SecretGenerator(Protocol):
 
 class Transaction(Protocol):
     async def commit(self) -> None: ...
+
+
+class SecurityEvent(StrEnum):
+    """Hechos de seguridad que se registran (ADR-0035).
+
+    Los nombres son los del OWASP Logging Vocabulary; `authn_reauth_fail` es
+    propio, con la misma forma, porque el vocabulario no distingue la contraseña
+    que confirma una operación sensible de la que abre una sesión.
+    """
+
+    LOGIN_SUCCEEDED = "authn_login_success"
+    LOGIN_FAILED = "authn_login_fail"
+    ACCOUNT_LOCKED = "authn_login_lock"
+    REAUTHENTICATION_FAILED = "authn_reauth_fail"
+    PASSWORD_CHANGED = "authn_password_change"  # noqa: S105  (nombre de un evento, no una contraseña)
+    PASSWORD_CHANGE_FAILED = "authn_password_change_fail"  # noqa: S105  (nombre de un evento)
+    RATE_LIMIT_EXCEEDED = "excess_rate_limit_exceeded"
+    SESSION_ENDED = "session_expired"
+    SESSION_USED_AFTER_EXPIRY = "session_use_after_expire"
+    USER_CREATED = "user_created"
+    USER_DELETED = "user_deleted"
+
+
+class SecurityDetail(StrEnum):
+    """Los motivos y atributos que acompañan a un evento, con los valores del vocabulario."""
+
+    MAX_RETRIES = "maxretries"
+    LOGOUT = "logout"
+    DEMO = "demo"
+
+
+type SecurityParam = UUID | ClientAction | SecurityDetail | int
+"""Solo identificadores internos, valores cerrados y números.
+
+El tipo es la garantía: mypy rechaza pasar un `str` o un `Username`, así que ni
+el nombre de usuario ni un secreto pueden terminar en el registro por descuido.
+"""
+
+
+class SecurityLog(Protocol):
+    def record(
+        self, event: SecurityEvent, *params: SecurityParam, client: str | None = None
+    ) -> None:
+        """Registra el hecho; no falla ni frena el pedido si el destino no responde."""
+        ...

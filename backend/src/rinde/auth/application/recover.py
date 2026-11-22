@@ -3,9 +3,14 @@
 from dataclasses import dataclass
 
 from rinde.auth.application.dependencies import AuthDependencies
-from rinde.auth.application.ports import ClientAction
+from rinde.auth.application.ports import ClientAction, SecurityEvent
 from rinde.auth.application.rate_limits import ensure_client_under_limit, record_client_action
-from rinde.auth.application.sessions import SessionIssuer, ensure_not_locked, record_failure
+from rinde.auth.application.sessions import (
+    SessionIssuer,
+    ensure_not_locked,
+    known_account,
+    record_failure,
+)
 from rinde.auth.domain.errors import (
     InvalidRecoveryCodeError,
     PasswordCompromisedError,
@@ -35,22 +40,35 @@ class RecoverAccount:
         deps = self._deps
         services = deps.services
         hasher = services.hasher
+        security_log = services.security_log
 
         try:
             username = Username.parse(raw_username)
         except UsernameInvalidError, UsernameReservedError:
+            security_log.record(SecurityEvent.PASSWORD_CHANGE_FAILED, client=client)
             raise InvalidRecoveryCodeError from None
-        await ensure_not_locked(deps, username)
+        # Como en el inicio de sesión: se busca siempre, para que el bloqueo
+        # quede registrado con la cuenta, sin cambiar el tiempo de respuesta.
+        user = await deps.users.by_username(username)
+        await ensure_not_locked(deps, username, user, client)
         await ensure_client_under_limit(deps, ClientAction.LOGIN_FAILURE, client)
         normalized = check_password_policy(new_password, username)
-        code = normalize_recovery_code(raw_code)
+        try:
+            code = normalize_recovery_code(raw_code)
+        except InvalidRecoveryCodeError:
+            security_log.record(
+                SecurityEvent.PASSWORD_CHANGE_FAILED, *known_account(user), client=client
+            )
+            raise
 
-        user = await deps.users.by_username(username)
         secret_hash = user.recovery_code_hash if user else hasher.dummy_hash
         valid = await hasher.verify(secret_hash, code)
         if user is None or not valid:
             await record_client_action(deps, ClientAction.LOGIN_FAILURE, client)
             await record_failure(deps, username)
+            security_log.record(
+                SecurityEvent.PASSWORD_CHANGE_FAILED, *known_account(user), client=client
+            )
             raise InvalidRecoveryCodeError
         if await services.breaches.is_compromised(normalized):
             raise PasswordCompromisedError
@@ -66,4 +84,5 @@ class RecoverAccount:
         await deps.failed_attempts.clear(username)
         token = await self._issuer.issue(user.id)
         await deps.transaction.commit()
+        security_log.record(SecurityEvent.PASSWORD_CHANGED, user.id, client=client)
         return Recovery(recovery_code=format_recovery_code(new_symbols), session_token=token)

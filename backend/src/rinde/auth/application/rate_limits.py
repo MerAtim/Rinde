@@ -12,7 +12,7 @@ dirección puede haber muchas personas (una oficina, la red de un celular).
 from datetime import timedelta
 
 from rinde.auth.application.dependencies import AuthDependencies
-from rinde.auth.application.ports import ClientAction
+from rinde.auth.application.ports import ClientAction, SecurityEvent
 from rinde.auth.domain.errors import TooManyAttemptsError
 
 MAX_FAILURES_PER_CLIENT = 30
@@ -49,6 +49,9 @@ async def ensure_client_under_limit(
     limit, window = _LIMITS[action]
     since = deps.services.clock.now() - window
     if await deps.client_activity.count_since(action, client, since) >= limit:
+        deps.services.security_log.record(
+            SecurityEvent.RATE_LIMIT_EXCEEDED, action, limit, client=client
+        )
         raise TooManyAttemptsError(retry_after_seconds=int(window.total_seconds()))
 
 
