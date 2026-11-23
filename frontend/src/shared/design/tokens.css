@@ -112,6 +112,8 @@
   /* Skeleton: no aparece antes de 300 ms, así una respuesta rápida no parpadea. */
   --rinde-skeleton-delay: 300ms;
   --rinde-skeleton-pulse: 1600ms;
+  /* Una vuelta del indicador de progreso circular indeterminado (Material 3). */
+  --rinde-progress-spin: 1400ms;
 
   /* Capas de estado (Material 3) */
   --md-sys-state-hover-state-layer-opacity: 0.08;
