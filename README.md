@@ -165,7 +165,7 @@ Neon Free guarda solo 6 horas de historia, así que la base se respalda todos lo
 
 **Dirección pública:** https://rinde.meratim.workers.dev
 
-La API corre en una instancia gratuita de Render (0,1 CPU, 512 MB de RAM) que se suspende tras 15 minutos sin tráfico: el primer pedido después de una pausa puede tardar alrededor de un minuto. Por eso los números de rendimiento se miden en la CI y no contra producción.
+La API corre en una instancia gratuita de Render (0,1 CPU, 512 MB de RAM) que se suspende tras 15 minutos sin tráfico: el primer pedido después de una pausa puede tardar alrededor de un minuto. Mientras tanto la app muestra un indicador de carga y reintenta con espera exponencial durante unos 75 segundos, en lugar de mostrar un error. Si el borde de Render responde con un desafío de Cloudflare, que el Worker no puede resolver, el Worker lo informa como `503 API_UNAVAILABLE` con `Retry-After`. Por eso los números de rendimiento se miden en la CI y no contra producción.
 
 ## Decisiones de arquitectura
 
