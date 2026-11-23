@@ -1,0 +1,44 @@
+.root {
+  display: inline-grid;
+  inline-size: var(--rinde-space-7);
+  block-size: var(--rinde-space-7);
+}
+
+.svg {
+  inline-size: 100%;
+  block-size: 100%;
+  animation: spin var(--rinde-progress-spin) linear infinite;
+}
+
+.track,
+.indicator {
+  fill: none;
+  stroke-width: 4;
+}
+
+.track {
+  stroke: var(--md-sys-color-surface-container-highest);
+}
+
+/* Un arco de un cuarto de vuelta con punta redondeada; la vuelta la da el svg. */
+.indicator {
+  stroke: var(--md-sys-color-primary);
+  stroke-linecap: round;
+  stroke-dasharray: 32 126;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/*
+ * Con movimiento reducido el arco queda quieto: el texto de al lado ya dice que
+ * se está esperando, así que no se pierde información.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .svg {
+    animation: none;
+  }
+}
