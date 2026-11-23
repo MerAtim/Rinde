@@ -121,7 +121,7 @@ El navegador ve un único origen, así que no hace falta CORS y la política de 
 | Dependencias e imágenes | Auditadas todos los días | Si aparece una vulnerabilidad, se abre un issue solo |
 | Análisis estático de seguridad | CodeQL sobre Python, TypeScript y los workflows, con las reglas extendidas de seguridad | En cada cambio y una vez por semana; los hallazgos van a la pestaña Security |
 | Respaldos de la base | Uno por día, guardado 90 días y cifrado | Cada copia se restaura en una base vacía antes de guardarse; si falla, se abre un issue ([docs/respaldos.md](docs/respaldos.md)) |
-| Decisiones | 35 ADR, con alternativas y costos | [docs/adr](docs/adr/README.md) |
+| Decisiones | 36 ADR, con alternativas y costos | [docs/adr](docs/adr/README.md) |
 
 Los números de tiempo son de una corrida local; los de la CI quedan en cada corrida.
 
@@ -165,7 +165,7 @@ Neon Free guarda solo 6 horas de historia, así que la base se respalda todos lo
 
 **Dirección pública:** https://rinde.meratim.workers.dev
 
-La API corre en una instancia gratuita de Render (0,1 CPU, 512 MB de RAM) que se suspende tras 15 minutos sin tráfico: el primer pedido después de una pausa puede tardar alrededor de un minuto. Mientras tanto la app muestra un indicador de carga y reintenta con espera exponencial durante unos 75 segundos, en lugar de mostrar un error. Si el borde de Render responde con un desafío de Cloudflare, que el Worker no puede resolver, el Worker lo informa como `503 API_UNAVAILABLE` con `Retry-After`. Por eso los números de rendimiento se miden en la CI y no contra producción.
+La API corre en una instancia gratuita de Render (0,1 CPU, 512 MB de RAM) que se suspende tras 15 minutos sin tráfico. Para que no llegue a dormirse, un Cron Trigger del Worker llama al chequeo de vida cada 10 minutos ([ADR-0036](docs/adr/0036-mantener-despierta-la-api.md)); eso usa casi todas las 750 horas gratuitas del mes, así que no entra otro servicio gratuito en la misma cuenta de Render. Si igual se reinicia o se duerme, el primer pedido puede tardar alrededor de un minuto: mientras tanto la app muestra un indicador de carga y reintenta con espera exponencial durante unos 75 segundos, en lugar de mostrar un error. Si el borde de Render responde con un desafío de Cloudflare, que el Worker no puede resolver, el Worker lo informa como `503 API_UNAVAILABLE` con `Retry-After`. Por eso los números de rendimiento se miden en la CI y no contra producción.
 
 ## Decisiones de arquitectura
 

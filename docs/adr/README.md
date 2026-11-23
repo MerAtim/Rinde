@@ -37,3 +37,4 @@
 | [0033](0033-respaldos-de-la-base.md) | Respaldo diario de la base, cifrado y probado, en GitHub Actions | Aceptado | 2026-11-21 |
 | [0034](0034-borrar-la-cuenta-y-exportar-los-datos.md) | Borrar la cuenta en el momento y exportar los datos en un JSON | Aceptado | 2026-11-21 |
 | [0035](0035-registro-de-eventos-de-seguridad.md) | Registro de eventos de seguridad en JSON, con el vocabulario de OWASP | Aceptado | 2026-11-22 |
+| [0036](0036-mantener-despierta-la-api.md) | Mantener despierta la API con un Cron Trigger del Worker | Aceptado | 2026-11-23 |
