@@ -89,4 +89,55 @@ describe("proxyToApi", () => {
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({ code: "ORIGIN_SECRET_NOT_CONFIGURED" });
   });
+  it("informa 503 con un código estable si el borde de Render pide un desafío", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("<html>Just a moment...</html>", {
+          status: 429,
+          headers: { "Content-Type": "text/html", "cf-mitigated": "challenge" },
+        }),
+      ),
+    );
+
+    const response = await proxyToApi(
+      new Request("https://rinde.example.dev/api/auth/me"),
+      API_ORIGIN,
+      SECRET,
+    );
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ code: "API_UNAVAILABLE" });
+    expect(response.headers.get("Retry-After")).toBe("5");
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+  });
+
+  it("deja pasar un 429 de la propia API, que es un límite y no un desafío", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(Response.json({ code: "TOO_MANY_ATTEMPTS" }, { status: 429 })),
+    );
+
+    const response = await proxyToApi(
+      new Request("https://rinde.example.dev/api/auth/login"),
+      API_ORIGIN,
+      SECRET,
+    );
+
+    expect(response.status).toBe(429);
+    expect(await response.json()).toEqual({ code: "TOO_MANY_ATTEMPTS" });
+  });
+
+  it("informa 502 con un código estable si el origen no responde", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Network connection lost")));
+
+    const response = await proxyToApi(
+      new Request("https://rinde.example.dev/api/auth/me"),
+      API_ORIGIN,
+      SECRET,
+    );
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ code: "API_UNREACHABLE" });
+  });
 });
