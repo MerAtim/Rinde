@@ -14,6 +14,18 @@ export class ApiRequestError<Code extends string = string> extends Error {
   }
 }
 
+/**
+ * Un error que puede pasar solo con esperar: sin red, o un origen que todavía
+ * no responde (502, 503 y 504, como los que da el Worker mientras Render
+ * despierta la API). Un 4xx o un 500 no cambian por insistir.
+ */
+export function isTransientError(error: unknown): boolean {
+  if (!(error instanceof ApiRequestError)) {
+    return false;
+  }
+  return error.code === "NETWORK_ERROR" || [502, 503, 504].includes(error.status);
+}
+
 // Sin este encabezado la API rechaza las acciones que cambian estado (defensa CSRF).
 const CSRF_HEADER = { "X-Requested-With": "rinde" };
 

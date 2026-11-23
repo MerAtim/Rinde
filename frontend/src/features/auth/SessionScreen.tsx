@@ -3,10 +3,12 @@ import { useTranslation } from "react-i18next";
 
 import { Button } from "../../shared/ui/Button";
 import { cx } from "../../shared/ui/cx";
+import { ProgressCircle } from "../../shared/ui/ProgressCircle";
 import { StatusChip } from "../../shared/ui/StatusChip";
 import styles from "./SessionScreen.module.css";
 
 // Render Free duerme la API tras 15 minutos: si tarda, se explica en vez de parecer colgada.
+// La espera en sí (reintentos mientras despierta) la maneja useSession.
 const SLOW_AFTER_MS = 2000;
 
 interface SessionScreenProps {
@@ -35,7 +37,7 @@ export function SessionScreen({ state, onRetry }: SessionScreenProps) {
       <div className={cx(styles.panel)} role="status" aria-live="polite">
         {state === "loading" ? (
           <>
-            <StatusChip tone="neutral" icon="schedule" label={t("auth.session.loading")} />
+            <ProgressCircle label={t("auth.session.loading")} />
             {slow ? <p className={cx(styles.hint)}>{t("auth.session.waking")}</p> : null}
           </>
         ) : (
